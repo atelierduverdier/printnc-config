@@ -1,6 +1,6 @@
 # Configuration PrintNC - Atelier du Verdier - 21 mai 2026
 
-Ce dépôt rassemble les fichiers de configuration LinuxCNC (`.ini` et `.hal`) utilisés pour piloter ma fraiseuse CNC **PrintNC (Format standard avec surface de travail utile d'environ 1275x1275mm)**. 
+Ce dépôt rassemble les fichiers de configuration LinuxCNC (`.ini` et `.hal`) utilisés pour piloter ma fraiseuse CNC **PrintNC (Format standard avec surface de travail utile d'environ 1275x1275mm)**.
 
 La machine est contrôlée via l'architecture **Flexi-HAL** (firmware Remora) sur base Raspberry Pi 5 et l'interface graphique modernisée **QtDragon HD**.
 
@@ -40,11 +40,13 @@ La machine est contrôlée via l'architecture **Flexi-HAL** (firmware Remora) su
 ## 📐 Paramètres de Configuration Clés (`.ini`)
 
 * **Résolution des Pas (Scale) :**
-  * Axes X & Y : `-160` et `160` (Basé sur des drivers réglés à 1600 pas/tour et des vis au pas de 10mm).
-  * Axe Z : `400` (Basé sur un réglage à 1600 pas/tour et une vis fine au pas de 4mm).
+  * Axe X : `-160.0` (Basé sur des drivers réglés à 1600 pas/tour, vis au pas de 10mm, direction inversée matériellement).
+  * Axe Y1 (Maître) : `160.0` & Axe Y2 (Esclave/Tandem) : `-160.0` (Montage des moteurs face à face en effet miroir).
+  * Axe Z : `400.0` (Basé sur un réglage à 1600 pas/tour et une vis fine au pas de 4mm).
 * **Limites de Courses Logicielles :**
-  * X : de `-5.0mm` à `1285.0mm`
-  * Y : de `-2.0mm` à `1286.0mm`
-  * Z : de `-185.0mm` (Descente max) à `5.0mm` (Dégagement haut)
-* **Vitesses maximales (Max Velocity) :** 250 mm/s ($15\ 000\text{ mm/min}$) sur X/Y et 33.33 mm/s ($2\ 000\text{ mm/min}$) sur le Z.
+  * X : de `-5.0mm` à `1285.0mm` (Dégagement final à `5.0mm`).
+  * Y : de `-2.0mm` à `1286.0mm` (Position de repli finale `HOME` établie à `1275.0mm`).
+  * Z : de `-185.0mm` (Descente max) à `5.0mm` (Dégagement haut, `HOME` de sécurité à `0.0mm`).
+* **Vitesses maximales (Max Velocity) :** * Axes X & Y : 250 mm/s ($15\ 000\text{ mm/min}$) avec un plafond `STEPGEN_MAXVEL` à 280 mm/s.
+  * Axe Z : 33.33 mm/s ($2\ 000\text{ mm/min}$) avec une limite électrique `STEPGEN_MAXVEL` fixée à 100.0 mm/s face à la gravité.
 * **Timings des impulsions (Stepgen) :** `STEPLEN = 2500` et `STEPSPACE = 2500` pour une stabilité électrique optimale avec les drivers CL57T sur la Flexi-HAL.
