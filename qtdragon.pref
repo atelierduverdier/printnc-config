@@ -23,9 +23,9 @@ RunFromLineDialog_sound_type = READY
 
 [BOOK_KEEPING]
 last_loaded_directory = /home/expatria/linuxcnc/nc_files
-last_loaded_file = /home/expatria/linuxcnc/nc_files/GrandePlanchePercageLame.ngc
+last_loaded_file = /home/expatria/linuxcnc/nc_files/dessin.ngc
 style_QSS_Path = DEFAULT
-RecentPath_0 = /home/expatria/linuxcnc/nc_files/GrandePlanchePercageLame.ngc
+RecentPath_0 = /home/expatria/linuxcnc/nc_files/dessin.ngc
 
 [ORIGINOFFSET_SYSTEM_NAMES]
 __dialogOffsetViewWidget-G54 = User System 1
