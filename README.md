@@ -1,4 +1,4 @@
-# Configuration PrintNC - Atelier du Verdier
+# Configuration PrintNC - Atelier du Verdier - 21 mai 2026
 
 Ce dépôt rassemble les fichiers de configuration LinuxCNC (`.ini` et `.hal`) utilisés pour piloter ma fraiseuse CNC **PrintNC (Format standard avec surface de travail utile d'environ 1275x1275mm)**. 
 
