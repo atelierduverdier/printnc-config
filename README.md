@@ -31,7 +31,7 @@ La machine est contrôlée via l'architecture **Flexi-HAL** (firmware Remora) su
 * **Palpage :** Sonde mobile et/ou fixe (Tool Setter) gérée via l'interface de précision **VersaProbe**.
 
 ### 4. Structure Mécanique & Transmission
-* **Châssis :** Profilés en tubes d'acier rectangulaires massifs de **100x50mm avec une épaisseur de 4mm** (Spécificité apportant une masse et une rigidité accrues par rapport aux recommandations standard du wiki). Enceinte et pièces décoratives/liaisons en hêtre gravé issues de l'atelier.
+* **Châssis :** Profilés en tubes d'acier rectangulaires massifs de **100x50mm avec une épaisseur de 4mm** (Spécificité apportant une masse et une rigidité accrues par rapport aux recommandations standard du wiki). 
 * **Transmission Axes X & Y :** Vis à billes SFU1610 (Pas de 10mm par tour) montées sur rails de guidage linéaires HGR20.
 * **Transmission Axe Z :** Vis à billes fine SFU1204 (Pas de 4mm par tour) pour contrer l'effet de la gravité et optimiser le couple de maintien vertical de la broche.
 
