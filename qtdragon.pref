@@ -25,9 +25,9 @@ RunFromLineDialog_sound_type = READY
 
 [BOOK_KEEPING]
 last_loaded_directory = /home/expatria/linuxcnc/nc_files
-last_loaded_file = /home/expatria/linuxcnc/nc_files/Poche 1_2-Contour 1.ngc
+last_loaded_file = /home/expatria/linuxcnc/nc_files/2cerclesDeTest5.ngc
 style_QSS_Path = DEFAULT
-RecentPath_0 = /home/expatria/linuxcnc/nc_files/Poche 1_2-Contour 1.ngc
+RecentPath_0 = /home/expatria/linuxcnc/nc_files/2cerclesDeTest5.ngc
 last_saved_directory = /home/expatria/linuxcnc/nc_files
 RecentSavedPath_0 = /home/expatria/linuxcnc/nc_files/Poche 1_2-Contour 1.ngc
 
@@ -95,7 +95,7 @@ gcodegraphics-user-lat = 0.0
 gcodegraphics-user-lon = 0.0
 
 [CUSTOM_FORM_ENTRIES]
-Tool to load = 2
+Tool to load = 6
 Laser X = 100.0
 Laser Y = -20.0
 Sensor X = 10.0
