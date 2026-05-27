@@ -1,57 +1,124 @@
 O<toolchange> sub
 
 ; =====================================================================
-; PARAMÈTRES DES PALPEURS (Vérifie tes coordonnées X Y ici)
+; PARAMÈTRES
 ; =====================================================================
-#<probe_x> = -50.0          ; Position X de ton Tool Setter fixe
-#<probe_y> = 60.0           ; Position Y de ton Tool Setter fixe
-#<search_feed> = 400        ; Vitesse rapide de recherche
-#<latch_feed> = 25          ; Vitesse lente de précision
-
-G53 G0 Z0                   ; Remontée maximale de sécurité (Z tout en haut)
-;G53 G0 X200 Y0              ; Position confort devant toi pour changer la fraise
-M6                          ; Pause machine → Fenêtre QtDragon "Change tool"
-
-G53 G0 Z0                   ; Sécurité après serrage du mandrin
-G53 G0 X#<probe_x> Y#<probe_y> ; Déplacement au-dessus du Tool Setter fixe
-
-; --- SAUVEGARDE DE L'ÉTAT DE LA MACHINE ---
-M70
-
-; --- LE PALPAGE INCRÉMENTAL ---
-G91                         ; Mode relatif pour le déplacement de touche
-G38.2 Z-130 F#<search_feed> ; Palpage rapide vers le bas
-G0 Z1.0                     ; Remontée de 1mm
-G38.2 Z-5.0 F#<latch_feed>  ; Deuxième touche lente de précision
-
-; --- SÉCURISATION ET ENREGISTREMENT ---
-G90                         ; Retour immédiat en mode absolu
-#<touch_z> = #5063          ; On enregistre le point de contact MACHINE exact
-
-; --- RESTAURATION DES MODES MACHINE ---
-M71
+#<probe_x>      = -50.0
+#<probe_y>      = 60.0
+#<search_feed>  = 400
+#<latch_feed>   = 25
+#<dist_palpeur_table> = 50.384
 
 ; =====================================================================
-; CALCUL MATHÉMATIQUE STANDARD LINUXCNC (NETTOYAGE CONSTANT)
+; SÉCURITÉ + CHANGEMENT D'OUTIL
 ; =====================================================================
-; Si c'est le tout premier outil (T1), on fige la référence
-O100 IF [#5400 EQ 1]
-    G10 L1 P1 Z0            ; FORCE l'offset de l'outil 1 à être STRICTEMENT 0 dans la table
-    G43 H1                  ; Force LinuxCNC à lire cet offset nul
-    #1000 = #<touch_z>      ; On mémorise la position brute du capteur pour le T1
+G90
+
+; Annule toute compensation avant le changement outil
+G49
+
+; Remontée machine
+G53 G0 Z0
+
+; Changement outil
+M6
+
+; On annule ENCORE toute compensation pour être brut de machine
+G49
+
+; Position sécurisée
+G53 G0 Z0
+G53 G0 X#<probe_x> Y#<probe_y>
+
+; =====================================================================
+; PALPAGE OUTIL
+; =====================================================================
+M70                         ; Sauvegarde état modal
+G91                         ; Mode relatif pour la descente
+
+G38.2 Z-140 F#<search_feed> ; Premier palpage rapide
+G0 Z2.0                     ; Remontée
+G38.2 Z-5.0 F#<latch_feed>  ; Second palpage lent
+
+G90                         ; Retour absolu
+#<touch_z> = #5063          ; Capture position machine (SANS CROCHETS)
+
+(DEBUG, touch_z = [#<touch_z>])
+M71                         ; Restore modal
+
+; =====================================================================
+; CALCUL OFFSETS
+; =====================================================================
+
+O100 IF [#1001 EQ 0]
+
+    ; ================================================================
+    ; MODE NORMAL
+    ; ================================================================
+
+    O101 IF [#1000 EQ 0]
+        ; ------------------------------------------------------------
+        ; PREMIER OUTIL = OUTIL DE RÉFÉRENCE
+        ; ------------------------------------------------------------
+        #1000 = #<touch_z>  ; Sauvegarde position machine de référence
+
+        (DEBUG, REF TOOL TOUCH = [#1000])
+
+        G10 L1 P#5400 Z0    ; Offset outil de référence = 0
+        G10 L20 P1 Z#<dist_palpeur_table> ; Définition automatique du zéro table
+
+        (MSG, Premier outil reference T[#5400])
+
+    O101 ELSE
+        ; ------------------------------------------------------------
+        ; OUTILS SUIVANTS (Ex: Ton T6 enfoncé)
+        ; ------------------------------------------------------------
+        ; FORMULE : TOUCH_Z - REF pour générer l'offset négatif attendu par G43
+        #<tool_offset> = [#<touch_z> - #1000]
+
+        (DEBUG, REF = [#1000])
+        (DEBUG, TOUCH = [#<touch_z>])
+        (DEBUG, OFFSET = [#<tool_offset>])
+
+        G10 L1 P#5400 Z#<tool_offset> ; Écriture de l'offset négatif dans la table
+
+        (MSG, Offset outil T[#5400] calcule)
+    O101 ENDIF
+
 O100 ELSE
-    ; Touche actuelle (T2) - Référence (T1)
-    ; Calcule l'écart réel et l'écrit dans la table pour l'outil en cours
-    #<tool_offset> = [#<touch_z> - #1000]
-    G10 L1 P#5400 Z#<tool_offset>
+
+    ; ================================================================
+    ; MODE ALTERNATIF
+    ; ================================================================
+
+    O102 IF [#1000 EQ 0]
+        #1000 = #<touch_z>
+        G10 L1 P#5400 Z0
+        (DEBUG, REF TOOL TOUCH = [#1000])
+    O102 ELSE
+        ; Formule identique ici pour le mode alternatif
+        #<tool_offset> = [#<touch_z> - #1000]
+
+        (DEBUG, REF = [#1000])
+        (DEBUG, TOUCH = [#<touch_z>])
+        (DEBUG, OFFSET = [#<tool_offset>])
+
+        G10 L1 P#5400 Z#<tool_offset>
+    O102 ENDIF
+
 O100 ENDIF
 
-G43                         ; Activation générale de la compensation
 ; =====================================================================
-; TRAJECTOIRE DE SÉCURITÉ POUR QUITTER LE PALPEUR
+; ACTIVATION OFFSET + RETOUR
 ; =====================================================================
-G53 G0 Z0                   ; On remonte TOUT EN HAUT en coordonnées machine
-G0 X#5420 Y#5421            ; On retourne d'abord au-dessus du point de départ X/Y de la pièce
+G53 G0 Z0                   ; Remontée maximale AVANT activation G43
+G43 H#5400                  ; Activation de la compensation de longueur d'outil
+
+(DEBUG, G43 ACTIVE H[#5400])
+
+G0 X#5420 Y#5421            ; Retour au-dessus de la pièce en X/Y
+
+(MSG, Toolchange T[#5400] termine)
 
 O<toolchange> endsub
 M2

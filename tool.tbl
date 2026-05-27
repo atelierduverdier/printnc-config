@@ -1,9 +1,9 @@
-T1   P1   D+20.000000 ;20mm 
-T2   P2   D+0.062500 Z+50.533027 ;1/16 end mill 
-T3   P3   D+0.201000 Z+1.273000 ;#7 tap drill 
+T1   P1   D+3.170000 ;3.17MM 
+T2   P2   D+6.000000 Z+1.040000 ;6mm Flat 
+T3   P3   D+0.201000 ;#7 tap drill 
 T4   P4   ;Added 20220921 
 T5   P5   ;Added 20220921 
-T6   P6   Z+50.123430 ;Added 20220921 
+T6   P6   D+6.000000 Z-1.334580 ;6mm demi rond 
 T7   P7   ;Added 20220921 
 T8   P8   ;Added 20220921 
 T9   P9   ;Added 20220921 
