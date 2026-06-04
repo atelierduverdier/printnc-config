@@ -155,6 +155,12 @@
 # Flood and mist outputs
 	net flood flexi.output.COOLANT <= iocontrol.0.coolant-flood
 	net mist flexi.output.MIST <= iocontrol.0.coolant-mist
+	
+# Sorties auxiliaires (pilotables par M64/M65)
+	net aux0-sig motion.digital-out-00 => flexi.output.AUX0
+	net aux1-sig motion.digital-out-01 => flexi.output.AUX1
+	net aux2-sig motion.digital-out-02 => flexi.output.AUX2
+	net aux3-sig motion.digital-out-03 => flexi.output.AUX3
 
 # User buttons
 	#Halt is shared with motor alarms and is up in the estop loop.

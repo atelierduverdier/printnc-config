@@ -1,0 +1,5 @@
+O<set_mode_martyre> sub
+#1001 = 0
+(DEBUG, Mode actif = MARTYRE - #1001=[#1001])
+O<set_mode_martyre> endsub
+M2

@@ -1,109 +1,138 @@
 O<toolchange> sub
-
 ; =====================================================================
 ; PARAMÈTRES
 ; =====================================================================
-#<probe_x>      = -50.0
-#<probe_y>      = 60.0
-#<search_feed>  = 400
-#<latch_feed>   = 25
-#<dist_palpeur_table> = 50.384
+#<probe_x>            = -50.0
+#<probe_y>            =  60.0
+#<search_feed>        = 400
+#<latch_feed>         =  25
+#<dist_palpeur_table> = 50.525 ; Distance mesurée entre le haut du palpeur et le martyre
 
 ; =====================================================================
 ; SÉCURITÉ + CHANGEMENT D'OUTIL
 ; =====================================================================
 G90
+G49                            ; Annule toute compensation avant changement
+G53 G0 Z0                      ; Remontée machine
+M5                             ; Arrêt broche
+G4 P1.0                        ; Attente 1 seconde que la broche s'arrête
+M6                             ; Changement outil
+G49                            ; Annule encore la compensation (M6 peut la réactiver)
 
-; Annule toute compensation avant le changement outil
-G49
-
-; Remontée machine
+; Aller en position accessible pour monter l'outil
 G53 G0 Z0
+G53 G0 X150 Y0
+(MSG, Verifiez que l outil est bien monte - RESUME pour continuer)
+M1                             ; Pause - attente confirmation opérateur
 
-; Changement outil
-M6
+; =====================================================================
+; RESET AUTOMATIQUE AU PREMIER M6 DU JOB
+; #1002 = 0 -> premier appel, on remet #1000 à zéro
+; #1002 = 1 -> changements suivants, on ne touche plus à #1000
+; =====================================================================
+O105 IF [#1002 EQ 0]
+    #1000 = 0                  ; Reset référence outil
+    #1002 = 1                  ; Lève le flag "session en cours"
+    (DEBUG, Nouveau job detecte - Reset reference #1000)
+O105 ENDIF
 
-; On annule ENCORE toute compensation pour être brut de machine
-G49
+; =====================================================================
+; SÉCURITÉ : T0 = pas d'outil, on ne calcule rien
+; =====================================================================
+O120 IF [#5400 EQ 0]
+    G49
+    G53 G0 Z0
+    (MSG, Broche vide - T0 selectionne)
+    O<toolchange> endsub
+O120 ENDIF
 
-; Position sécurisée
+; =====================================================================
+; DÉPLACEMENT VERS LE PALPEUR
+; =====================================================================
 G53 G0 Z0
 G53 G0 X#<probe_x> Y#<probe_y>
 
 ; =====================================================================
 ; PALPAGE OUTIL
 ; =====================================================================
-M70                         ; Sauvegarde état modal
-G91                         ; Mode relatif pour la descente
+M70                            ; Sauvegarde état modal
+G91                            ; Mode relatif pour la descente
+G38.2 Z-140 F#<search_feed>    ; Premier palpage rapide
 
-G38.2 Z-140 F#<search_feed> ; Premier palpage rapide
-G0 Z2.0                     ; Remontée
-G38.2 Z-5.0 F#<latch_feed>  ; Second palpage lent
+; Vérification que le palpage a réussi
+O110 IF [#5070 EQ 0]
+    (MSG, ERREUR - Palpage 1 echoue - Outil casse ou palpeur absent !)
+    G90
+    G53 G0 Z0
+    M71
+    M2
+O110 ENDIF
 
-G90                         ; Retour absolu
-#<touch_z> = #5063          ; Capture position machine (SANS CROCHETS)
+G0 Z2.0                        ; Remontée
+G38.2 Z-5.0 F#<latch_feed>     ; Second palpage lent
 
+; Vérification du second palpage
+O111 IF [#5070 EQ 0]
+    (MSG, ERREUR - Palpage 2 echoue !)
+    G90
+    G53 G0 Z0
+    M71
+    M2
+O111 ENDIF
+
+G90                            ; Retour absolu
+#<touch_z> = #5063             ; Capture position machine Z au contact
 (DEBUG, touch_z = [#<touch_z>])
-M71                         ; Restore modal
+M71                            ; Restore état modal
 
 ; =====================================================================
 ; CALCUL OFFSETS
 ; =====================================================================
 
 O100 IF [#1001 EQ 0]
-
     ; ================================================================
-    ; MODE NORMAL
+    ; MODE 0 - Z ZÉRO SUR LE MARTYRE
+    ; La distance palpeur/martyre est connue (#<dist_palpeur_table>)
+    ; Le premier outil devient la référence ET définit le zéro table
     ; ================================================================
-
     O101 IF [#1000 EQ 0]
-        ; ------------------------------------------------------------
-        ; PREMIER OUTIL = OUTIL DE RÉFÉRENCE
-        ; ------------------------------------------------------------
-        #1000 = #<touch_z>  ; Sauvegarde position machine de référence
-
-        (DEBUG, REF TOOL TOUCH = [#1000])
-
-        G10 L1 P#5400 Z0    ; Offset outil de référence = 0
-        G10 L20 P1 Z#<dist_palpeur_table> ; Définition automatique du zéro table
-
-        (MSG, Premier outil reference T[#5400])
-
+        ; Premier outil = référence
+        #1000 = #<touch_z>
+        (DEBUG, REF TOOL TOUCH MODE 0 = [#1000])
+        G10 L1 P#5400 Z0                   ; Offset outil de référence = 0
+        G10 L20 P1 Z#<dist_palpeur_table>  ; Zéro table défini automatiquement
+        (MSG, Premier outil reference - Zero martyre defini)
     O101 ELSE
-        ; ------------------------------------------------------------
-        ; OUTILS SUIVANTS (Ex: Ton T6 enfoncé)
-        ; ------------------------------------------------------------
-        ; FORMULE : TOUCH_Z - REF pour générer l'offset négatif attendu par G43
+        ; Outils suivants : offset relatif à la référence
         #<tool_offset> = [#<touch_z> - #1000]
-
-        (DEBUG, REF = [#1000])
-        (DEBUG, TOUCH = [#<touch_z>])
+        (DEBUG, REF    = [#1000])
+        (DEBUG, TOUCH  = [#<touch_z>])
         (DEBUG, OFFSET = [#<tool_offset>])
-
-        G10 L1 P#5400 Z#<tool_offset> ; Écriture de l'offset négatif dans la table
-
-        (MSG, Offset outil T[#5400] calcule)
+        G10 L1 P#5400 Z#<tool_offset>
+        (MSG, Offset outil calculé - Mode martyre)
     O101 ENDIF
 
 O100 ELSE
-
     ; ================================================================
-    ; MODE ALTERNATIF
+    ; MODE 1 - Z ZÉRO PRIS MANUELLEMENT SUR LE DESSUS DE LA PIÈCE
+    ; Exemple : gravure PCB où on veut partir du dessus exact
+    ; Le zéro G54 est déjà positionné manuellement AVANT le lancement
+    ; On ne redéfinit PAS le zéro table ici
     ; ================================================================
-
     O102 IF [#1000 EQ 0]
+        ; Premier outil = référence (celui avec lequel tu as pris le Z)
         #1000 = #<touch_z>
         G10 L1 P#5400 Z0
-        (DEBUG, REF TOOL TOUCH = [#1000])
+        (DEBUG, REF TOOL TOUCH MODE 1 = [#1000])
+        (MSG, Premier outil reference - Zero piece manuel conserve)
     O102 ELSE
-        ; Formule identique ici pour le mode alternatif
+        ; Outils suivants : offset relatif à la référence
         #<tool_offset> = [#<touch_z> - #1000]
-
-        (DEBUG, REF = [#1000])
-        (DEBUG, TOUCH = [#<touch_z>])
+        (DEBUG, REF    = [#1000])
+        (DEBUG, TOUCH  = [#<touch_z>])
         (DEBUG, OFFSET = [#<tool_offset>])
-
         G10 L1 P#5400 Z#<tool_offset>
+        (MSG, Offset outil calculé - Mode piece manuel)
     O102 ENDIF
 
 O100 ENDIF
@@ -111,14 +140,11 @@ O100 ENDIF
 ; =====================================================================
 ; ACTIVATION OFFSET + RETOUR
 ; =====================================================================
-G53 G0 Z0                   ; Remontée maximale AVANT activation G43
-G43 H#5400                  ; Activation de la compensation de longueur d'outil
-
-(DEBUG, G43 ACTIVE H[#5400])
-
-G0 X#5420 Y#5421            ; Retour au-dessus de la pièce en X/Y
-
-(MSG, Toolchange T[#5400] termine)
+G53 G0 Z0                      ; Remontée max AVANT activation G43
+G43 H#5400                     ; Activation compensation longueur outil
+;(DEBUG, G43 ACTIVE H[#5400])
+G0 X#5420 Y#5421               ; Retour XY au-dessus de la pièce
+(MSG, Toolchange termine)
 
 O<toolchange> endsub
 M2

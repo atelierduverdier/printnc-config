@@ -1,26 +1,10 @@
-T1   P1   D+3.170000 ;3.17MM 
-T2   P2   D+6.000000 Z+1.040000 ;6mm Flat 
-T3   P3   D+0.201000 ;#7 tap drill 
-T4   P4   ;Added 20220921 
-T5   P5   ;Added 20220921 
-T6   P6   D+6.000000 Z-1.334580 ;6mm demi rond 
-T7   P7   ;Added 20220921 
-T8   P8   ;Added 20220921 
-T9   P9   ;Added 20220921 
-T10  P10  ;Added 20220921 
-T11  P11  ;Added 20220921 
-T12  P12  ;Added 20220921 
-T13  P13  ;Added 20220921 
-T14  P14  ;Added 20220921 
-T15  P15  ;Added 20220921 
-T16  P16  ;Added 20220921 
-T17  P17  ;Added 20220921 
-T18  P18  ;Added 20220921 
-T19  P19  ;Added 20220921 
-T20  P20  ;Added 20220921 
-T21  P21  ;Added 20220921 
-T22  P22  ;Added 20220921 
-T23  P23  ;Added 20220921 
-T24  P24  ;Added 20220921 
-T25  P25  ;Added 20220921 
-T99999 P99999 Z+0.100000 ;big tool number 
+T0   P0   ; Pas d'outil (obligatoire)
+T1   P1   ; Outil 1 (manuel)
+T2   P2   ; Outil 2 (manuel)
+T3   P3   ; Outil 3 (manuel)
+T4   P4   ; Outil 4 (manuel)
+T5   P5   ; Outil 5 (manuel)
+T6   P6   ; Outil 6 (manuel)
+T61  P61  ; Outil ATC poche 1 (X-50 Y160) - ACTIF
+T62  P62  ; Outil ATC poche 2 - en construction
+T63  P63  ; Outil ATC poche 3 - en construction

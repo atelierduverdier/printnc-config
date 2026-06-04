@@ -1,0 +1,14 @@
+; =====================================================================
+; reset_ref.ngc
+; Appelé via bouton MDI_COMMAND dans QtDragon
+; Remet à zéro les variables de session du toolchange
+; =====================================================================
+; #1000 = référence de longueur du premier outil
+; #1001 = mode (0=martyre / 1=dessus pièce) -> NON remis à zéro ici
+; #1002 = flag de session (0=nouveau job / 1=job en cours)
+; =====================================================================
+
+#1000 = 0
+#1002 = 0
+
+(MSG, Ref remise a zero - Definis #1001 puis lance ton job)

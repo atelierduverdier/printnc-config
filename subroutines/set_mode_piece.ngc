@@ -1,0 +1,5 @@
+O<set_mode_piece> sub
+#1001 = 1
+(DEBUG, Mode actif = PIECE - #1001=[#1001])
+O<set_mode_piece> endsub
+M2

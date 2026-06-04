@@ -7,6 +7,7 @@ axisToolButtonDialog_CALCULATOR = 910 539 472 376
 CalculatorDialog-geometry = 910 539 472 376
 _CALCULATOR = 910 539 472 376
 FileDialog-geometry = 641 346 407 179
+axisToolButtonDialog_ENTRY = 910 539 300 150
 
 [DIALOG_OPTIONS]
 EntryDialog_play_sound = True
@@ -24,12 +25,12 @@ RunFromLineDialog_play_sound = True
 RunFromLineDialog_sound_type = READY
 
 [BOOK_KEEPING]
-last_loaded_directory = /home/expatria/linuxcnc/nc_files
-last_loaded_file = /home/expatria/linuxcnc/nc_files/Like.ngc
+last_loaded_directory = /home/expatria/linuxcnc/configs/flexi-hal/subroutines
+last_loaded_file = /home/expatria/linuxcnc/configs/flexi-hal/subroutines/toolchange.ngc
 style_QSS_Path = DEFAULT
-RecentPath_0 = /home/expatria/linuxcnc/nc_files/Like.ngc
+RecentPath_0 = /home/expatria/linuxcnc/nc_files/reset_ref.ngc
 last_saved_directory = /home/expatria/linuxcnc/nc_files
-RecentSavedPath_0 = /home/expatria/linuxcnc/nc_files/Poche 1_2-Contour 1.ngc
+RecentSavedPath_0 = /home/expatria/linuxcnc/nc_files/Poche 1.ngc
 
 [ORIGINOFFSET_SYSTEM_NAMES]
 __dialogOffsetViewWidget-G54 = User System 1
@@ -95,7 +96,7 @@ gcodegraphics-user-lat = 0.0
 gcodegraphics-user-lon = 0.0
 
 [CUSTOM_FORM_ENTRIES]
-Tool to load = 2
+Tool to load = 0
 Laser X = 100.0
 Laser Y = -20.0
 Sensor X = 10.0
