@@ -1,10 +1,10 @@
-T0   P0   ; Pas d'outil (obligatoire)
-T1   P1   ; Outil 1 (manuel)
-T2   P2   ; Outil 2 (manuel)
-T3   P3   ; Outil 3 (manuel)
-T4   P4   ; Outil 4 (manuel)
-T5   P5   ; Outil 5 (manuel)
-T6   P6   ; Outil 6 (manuel)
-T61  P61  ; Outil ATC poche 1 (X-50 Y160) - ACTIF
-T62  P62  ; Outil ATC poche 2 - en construction
-T63  P63  ; Outil ATC poche 3 - en construction
+T0   P0   ;Pas d'outil (obligatoire) 
+T1   P1   ;Outil 1 (manuel) 
+T2   P2   ;Fraise 6mm 
+T3   P3   ;Outil 3 (manuel) 
+T4   P4   ;Outil 4 (manuel) 
+T5   P5   ;Outil 5 (manuel) 
+T6   P6   ;Outil 6 (manuel) 
+T61  P61  ;Outil ATC poche 1 (X-50 Y160) - ACTIF 
+T62  P62  ;Outil ATC poche 2 - en construction 
+T63  P63  ;Outil ATC poche 3 - en construction 

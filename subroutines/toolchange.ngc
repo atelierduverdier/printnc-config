@@ -16,7 +16,6 @@ G49                            ; Annule toute compensation avant changement
 G53 G0 Z0                      ; Remontée machine
 M5                             ; Arrêt broche
 G4 P1.0                        ; Attente 1 seconde que la broche s'arrête
-M6                             ; Changement outil
 G49                            ; Annule encore la compensation (M6 peut la réactiver)
 
 ; Aller en position accessible pour monter l'outil
