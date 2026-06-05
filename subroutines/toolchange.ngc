@@ -1,44 +1,67 @@
 O<toolchange> sub
 ; =====================================================================
-; PARAMÈTRES
+; SCRIPT DE CHANGEMENT D'OUTIL SEMI-AUTOMATIQUE
+; PrintNC Flexi-HAL 6000 - Atelier du Verdier
 ; =====================================================================
-#<probe_x>            = -50.0
-#<probe_y>            =  60.0
-#<search_feed>        = 400
-#<latch_feed>         =  25
-#<dist_palpeur_table> = 50.525 ; Distance mesurée entre le haut du palpeur et le martyre
+; Appelé par REMAP=M6 dans remora-flexi.ini
+;
+; FONCTIONNEMENT :
+;   1. Sécurise la machine (broche off, remontée Z)
+;   2. Demande à l'opérateur de monter manuellement l'outil
+;   3. Palpe automatiquement la longueur d'outil sur le palpeur fixe
+;   4. Calcule et applique l'offset de longueur d'outil
+;   5. Active la compensation G43 et revient au-dessus de la pièce
+;
+; VARIABLES UTILISATEUR (modifiables depuis QtDragon) :
+;   #1000 -> Position Z de référence du premier outil (rempli auto)
+;   #1001 -> Mode Z : 0 = martyre auto, 1 = pièce manuel
+;   #1002 -> Flag session : 0 = nouveau job, 1 = session en cours
+;
+; PARAMETRES SYSTEME UTILISES :
+;   #<_selected_tool> -> Numero d'outil demande par T_ M6
+;   #5063             -> Position Z au moment du contact palpage
+;   #5070             -> Resultat du dernier G38 (non utilise ici)
+;   #5400             -> Numero d'outil courant (mis a jour par REMAP)
+;   #5420 #5421       -> Position X Y du WCS actif (G54)
+;
+; NOTE IMPORTANTE :
+;   La gestion d'erreur de palpage a ete supprimee car les blocs
+;   "IF ... M2 ... ENDIF" cassent la preview de QtDragon.
+;   G38.2 declenche automatiquement une erreur LinuxCNC en cas
+;   d'echec de palpage, donc la verification manuelle est superflue.
+; =====================================================================
 
 ; =====================================================================
-; SÉCURITÉ + CHANGEMENT D'OUTIL
+; PARAMETRES DU PALPAGE
 ; =====================================================================
-G90
-G49                            ; Annule toute compensation avant changement
-G53 G0 Z0                      ; Remontée machine
-M5                             ; Arrêt broche
-G4 P1.0                        ; Attente 1 seconde que la broche s'arrête
-G49                            ; Annule encore la compensation (M6 peut la réactiver)
-
-; Aller en position accessible pour monter l'outil
-G53 G0 Z0
-G53 G0 X150 Y0
-(MSG, Verifiez que l outil est bien monte - RESUME pour continuer)
-M1                             ; Pause - attente confirmation opérateur
+#<probe_x>            = -50.0   ; Position X du palpeur (G53 machine)
+#<probe_y>            =  60.0   ; Position Y du palpeur (G53 machine)
+#<search_feed>        = 400     ; Vitesse premier palpage (mm/min)
+#<latch_feed>         =  25     ; Vitesse second palpage lent (mm/min)
+#<dist_palpeur_table> = 50.525  ; Distance haut palpeur -> martyre (mm)
 
 ; =====================================================================
-; RESET AUTOMATIQUE AU PREMIER M6 DU JOB
-; #1002 = 0 -> premier appel, on remet #1000 à zéro
-; #1002 = 1 -> changements suivants, on ne touche plus à #1000
+; CAPTURE DE L'OUTIL DEMANDE
+; #<_selected_tool> est passe par LinuxCNC au moment du REMAP M6
+; On le copie dans une variable locale pour clarte
 ; =====================================================================
-O105 IF [#1002 EQ 0]
-    #1000 = 0                  ; Reset référence outil
-    #1002 = 1                  ; Lève le flag "session en cours"
-    (DEBUG, Nouveau job detecte - Reset reference #1000)
-O105 ENDIF
+#<tool_num> = #<_selected_tool>
+(DEBUG, Toolchange demande pour outil T[#<tool_num>])
 
 ; =====================================================================
-; SÉCURITÉ : T0 = pas d'outil, on ne calcule rien
+; SECURITE INITIALE
 ; =====================================================================
-O120 IF [#5400 EQ 0]
+G90                            ; Mode absolu
+G49                            ; Annule toute compensation outil active
+G53 G0 Z0                      ; Remontee Z en coords machine (securite)
+M5                             ; Arret broche
+G4 P1.0                        ; Attente 1s que la broche s'arrete
+
+; =====================================================================
+; CAS PARTICULIER : T0 = pas d'outil
+; Si l'utilisateur demande T0, on ne fait rien (broche reste vide)
+; =====================================================================
+O120 IF [#<tool_num> EQ 0]
     G49
     G53 G0 Z0
     (MSG, Broche vide - T0 selectionne)
@@ -46,104 +69,104 @@ O120 IF [#5400 EQ 0]
 O120 ENDIF
 
 ; =====================================================================
-; DÉPLACEMENT VERS LE PALPEUR
+; POSITION D'ACCES POUR MONTAGE MANUEL DE L'OUTIL
+; On amene la broche en X150 Y0 (devant l'operateur) pour faciliter
+; le montage manuel de l'outil dans la pince ER
 ; =====================================================================
 G53 G0 Z0
-G53 G0 X#<probe_x> Y#<probe_y>
+G53 G0 X150 Y0
+(MSG, Verifiez que l outil est bien monte - RESUME pour continuer)
+M1                             ; Pause - attente confirmation operateur
 
 ; =====================================================================
-; PALPAGE OUTIL
+; RESET AUTOMATIQUE AU PREMIER M6 DU JOB
+; #1002 sert de flag :
+;   - 0 -> premier M6 de la session, on reinitialise la reference Z
+;   - 1 -> changements suivants, on conserve la reference du 1er outil
+; Le bouton "Reset Ref" de QtDragon remet #1002 a 0 pour repartir
 ; =====================================================================
-M70                            ; Sauvegarde état modal
+O105 IF [#1002 EQ 0]
+    #1000 = 0                  ; Reset reference Z
+    #1002 = 1                  ; Leve le flag "session en cours"
+    (DEBUG, Nouveau job detecte - Reset reference #1000)
+O105 ENDIF
+
+; =====================================================================
+; DEPLACEMENT VERS LE PALPEUR FIXE
+; =====================================================================
+G53 G0 Z0                      ; Toujours remonter avant deplacement XY
+G53 G0 X#<probe_x> Y#<probe_y> ; Position au-dessus du palpeur
+
+; =====================================================================
+; PALPAGE EN DEUX PASSES
+; Pass 1 : descente rapide pour gagner du temps
+; Pass 2 : descente lente pour precision
+; =====================================================================
+M70                            ; Sauvegarde etat modal courant
 G91                            ; Mode relatif pour la descente
-G38.2 Z-140 F#<search_feed>    ; Premier palpage rapide
+G38.2 Z-140 F#<search_feed>    ; Premier palpage rapide (max 140mm)
+G0 Z2.0                        ; Remontee de 2mm
+G38.2 Z-5.0 F#<latch_feed>     ; Second palpage lent (max 5mm)
+G90                            ; Retour mode absolu
 
-; Vérification que le palpage a réussi
-O110 IF [#5070 EQ 0]
-    (MSG, ERREUR - Palpage 1 echoue - Outil casse ou palpeur absent !)
-    G90
-    G53 G0 Z0
-    M71
-    M2
-O110 ENDIF
-
-G0 Z2.0                        ; Remontée
-G38.2 Z-5.0 F#<latch_feed>     ; Second palpage lent
-
-; Vérification du second palpage
-O111 IF [#5070 EQ 0]
-    (MSG, ERREUR - Palpage 2 echoue !)
-    G90
-    G53 G0 Z0
-    M71
-    M2
-O111 ENDIF
-
-G90                            ; Retour absolu
-#<touch_z> = #5063             ; Capture position machine Z au contact
+#<touch_z> = #5063             ; Capture position Z machine au contact
 (DEBUG, touch_z = [#<touch_z>])
-M71                            ; Restore état modal
+M71                            ; Restore etat modal sauvegarde
 
 ; =====================================================================
-; CALCUL OFFSETS
+; CALCUL DES OFFSETS SELON LE MODE
+; #1001 determine le comportement :
+;   - 0 -> MODE MARTYRE : zero Z sur le dessus du martyre (automatique)
+;   - 1 -> MODE PIECE   : zero Z deja pris manuellement sur la piece
 ; =====================================================================
 
 O100 IF [#1001 EQ 0]
-    ; ================================================================
-    ; MODE 0 - Z ZÉRO SUR LE MARTYRE
+    ; =================================================================
+    ; MODE 0 - Z ZERO SUR LE MARTYRE (cas le plus courant)
     ; La distance palpeur/martyre est connue (#<dist_palpeur_table>)
-    ; Le premier outil devient la référence ET définit le zéro table
-    ; ================================================================
+    ; Le premier outil definit la reference ET le zero table
+    ; =================================================================
     O101 IF [#1000 EQ 0]
-        ; Premier outil = référence
-        #1000 = #<touch_z>
-        (DEBUG, REF TOOL TOUCH MODE 0 = [#1000])
-        G10 L1 P#5400 Z0                   ; Offset outil de référence = 0
-        G10 L20 P1 Z#<dist_palpeur_table>  ; Zéro table défini automatiquement
+        ; --- PREMIER OUTIL DE LA SESSION ---
+        #1000 = #<touch_z>     ; Memorise sa position de contact
+        G10 L1 P#<tool_num> Z0                 ; Offset outil de ref = 0
+        G10 L20 P1 Z#<dist_palpeur_table>      ; Definit Z zero G54 sur martyre
         (MSG, Premier outil reference - Zero martyre defini)
     O101 ELSE
-        ; Outils suivants : offset relatif à la référence
+        ; --- OUTILS SUIVANTS ---
+        ; Offset = difference entre cette mesure et la reference
         #<tool_offset> = [#<touch_z> - #1000]
-        (DEBUG, REF    = [#1000])
-        (DEBUG, TOUCH  = [#<touch_z>])
-        (DEBUG, OFFSET = [#<tool_offset>])
-        G10 L1 P#5400 Z#<tool_offset>
-        (MSG, Offset outil calculé - Mode martyre)
+        G10 L1 P#<tool_num> Z#<tool_offset>
+        (MSG, Offset outil calcule - Mode martyre)
     O101 ENDIF
 
 O100 ELSE
-    ; ================================================================
-    ; MODE 1 - Z ZÉRO PRIS MANUELLEMENT SUR LE DESSUS DE LA PIÈCE
-    ; Exemple : gravure PCB où on veut partir du dessus exact
-    ; Le zéro G54 est déjà positionné manuellement AVANT le lancement
-    ; On ne redéfinit PAS le zéro table ici
-    ; ================================================================
+    ; =================================================================
+    ; MODE 1 - Z ZERO PRIS MANUELLEMENT SUR LA PIECE
+    ; Usage : gravure PCB, surfaçage avec zero deja pris au touch plate
+    ; On ne touche PAS au zero table (G54 garde sa valeur manuelle)
+    ; =================================================================
     O102 IF [#1000 EQ 0]
-        ; Premier outil = référence (celui avec lequel tu as pris le Z)
+        ; --- PREMIER OUTIL DE LA SESSION ---
+        ; C'est lui qui a servi a prendre le zero manuel
         #1000 = #<touch_z>
-        G10 L1 P#5400 Z0
-        (DEBUG, REF TOOL TOUCH MODE 1 = [#1000])
-        (MSG, Premier outil reference - Zero piece manuel conserve)
+        G10 L1 P#<tool_num> Z0
+        (MSG, Premier outil reference - Mode piece)
     O102 ELSE
-        ; Outils suivants : offset relatif à la référence
+        ; --- OUTILS SUIVANTS ---
         #<tool_offset> = [#<touch_z> - #1000]
-        (DEBUG, REF    = [#1000])
-        (DEBUG, TOUCH  = [#<touch_z>])
-        (DEBUG, OFFSET = [#<tool_offset>])
-        G10 L1 P#5400 Z#<tool_offset>
-        (MSG, Offset outil calculé - Mode piece manuel)
+        G10 L1 P#<tool_num> Z#<tool_offset>
+        (MSG, Offset outil calcule - Mode piece)
     O102 ENDIF
 
 O100 ENDIF
 
 ; =====================================================================
-; ACTIVATION OFFSET + RETOUR
+; ACTIVATION DE LA COMPENSATION + RETOUR AU-DESSUS DE LA PIECE
 ; =====================================================================
-G53 G0 Z0                      ; Remontée max AVANT activation G43
-G43 H#5400                     ; Activation compensation longueur outil
-;(DEBUG, G43 ACTIVE H[#5400])
-G0 X#5420 Y#5421               ; Retour XY au-dessus de la pièce
+G53 G0 Z0                      ; Remontee max AVANT activation G43
+G43 H#<tool_num>               ; Active compensation longueur outil
+G0 X#5420 Y#5421               ; Retour XY au-dessus du zero piece
 (MSG, Toolchange termine)
 
 O<toolchange> endsub
-M2
