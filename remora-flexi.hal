@@ -5,7 +5,7 @@
 	loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS
 
 	loadrt flexi PRU_base_freq=120000
-	loadrt not names=stepen_not,stepen_z_not
+	loadrt not names=stepen_not,stepen_z_not,aux0_not,aux1_not,aux2_not,aux3_not,flood_not,mist_not
 	loadrt estop_latch names=estop_latch
 	loadrt and2 names=run_and,step_and
 	loadrt toggle names=hold_button_toggle
@@ -21,6 +21,12 @@
 	addf flexi.write servo-thread
 	addf stepen_not servo-thread
 	addf stepen_z_not servo-thread
+	addf aux0_not servo-thread
+	addf aux1_not servo-thread
+	addf aux2_not servo-thread
+	addf aux3_not servo-thread
+	addf flood_not servo-thread
+	addf mist_not servo-thread
 	addf estop_latch servo-thread
 	addf run_and servo-thread
 	addf step_and servo-thread
@@ -150,6 +156,23 @@
 	net j0enable => flexi.output.STEP_EN
 	net j2enable => flexi.output.STEP_EN_Z
 
+
+
+# Flood and mist outputs (inverses pour relais active LOW)
+#	net flood iocontrol.0.coolant-flood => flood_not.in
+#	net flood-inv flood_not.out => flexi.output.COOLANT
+#	net mist iocontrol.0.coolant-mist => mist_not.in
+#	net mist-inv mist_not.out => flexi.output.MIST
+	
+# Sorties auxiliaires (pilotables par M64/M65, inverses pour relais active LOW)
+#	net aux0-sig motion.digital-out-00 => aux0_not.in
+#	net aux0-inv aux0_not.out => flexi.output.AUX0
+#	net aux1-sig motion.digital-out-01 => aux1_not.in
+#	net aux1-inv aux1_not.out => flexi.output.AUX1
+#	net aux2-sig motion.digital-out-02 => aux2_not.in
+#	net aux2-inv aux2_not.out => flexi.output.AUX2
+#	net aux3-sig motion.digital-out-03 => aux3_not.in
+#	net aux3-inv aux3_not.out => flexi.output.AUX3
 
 
 # Flood and mist outputs

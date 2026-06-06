@@ -1,6 +1,535 @@
 # CHANGELOG — PrintNC Flexi-HAL 6000
 ## Atelier du Verdier
 
+# Changelog — Sorties auxiliaires (relais) FlexiHAL
+
+**Date :** 6 juin 2026
+**Machine :** PrintNC — FlexiHAL (Expatria / Remora) — LinuxCNC 2.9.8 — QtDragon_hd
+
+---# Changelog # Changelog — Sorties auxiliaires (relais) FlexiHAL
+# Changelog — Sorties auxiliaires (relais) FlexiHAL
+
+**Date :** 6 juin 2026
+**Machine :** PrintNC — FlexiHAL (Expatria / Remora) — LinuxCNC 2.9.8 — QtDragon_hd
+
+---
+
+## Objectif
+
+Piloter 6 relais (charges : lumiere, arrosage, aspiration, etc.) via les sorties
+auxiliaires de la FlexiHAL, commandables depuis QtDragon et le G-code (M64/M65,
+M7/M8/M9).
+
+---
+
+## Configuration HAL retenue (AUX0–AUX3)
+
+Connexion directe, sans inversion (modules cables en active HIGH) :
+
+```hal
+# Sorties auxiliaires (pilotables par M64/M65)
+    net aux0-sig motion.digital-out-00 => flexi.output.AUX0
+    net aux1-sig motion.digital-out-01 => flexi.output.AUX1
+    net aux2-sig motion.digital-out-02 => flexi.output.AUX2
+    net aux3-sig motion.digital-out-03 => flexi.output.AUX3
+```
+
+Prerequis INI (sinon M64/M65 sont ignores silencieusement) :
+
+```ini
+[EMCMOT]
+NUM_DIO = 4
+```
+
+Flood / Mist (inchanges, sorties dediees du firmware) :
+
+```hal
+# Flood and mist outputs
+    net flood flexi.output.COOLANT <= iocontrol.0.coolant-flood
+    net mist  flexi.output.MIST    <= iocontrol.0.coolant-mist
+```
+
+---
+
+## Cablage materiel valide
+
+L'alimentation ET le signal sont pris directement sur le bornier AUX 2 fils
+(borne + et borne -) de la FlexiHAL. Sur le module relais, un petit pont relie
+DC+ et IN.
+
+```
+Bornier AUX n  (+)  -> DC+ du module, ponte directement vers IN
+                       (le + commute fournit a la fois l'alim et le signal)
+Bornier AUX n  (+)  -> IN  (via le pont DC+ <-> IN sur le module)
+Bornier AUX n  (-)  -> DC- du module (masse, c'est le - de la prise du bornier)
+```
+
+Soit, par module :
+- Borne + du bornier AUX -> DC+
+- Pont court DC+ <-> IN sur le module
+- Borne - du bornier AUX -> DC-
+
+Regles importantes :
+- Chaque relais est alimente et commande par sa propre prise AUX 2 fils.
+- Le pont DC+ <-> IN est ce qui declenche le relais (module active HIGH :
+  IN au + = relais actif).
+- Le rail AUX doit etre alimente (voir section jumper P17 ci-dessous), sinon la
+  borne + sort 0V et rien ne se passe.
+
+---
+
+## Alimentation du rail AUX (point cle)
+
+Les 4 sorties AUX partagent un rail d'alimentation high-side, selectionne par le
+jumper P17. C'est ce rail qui fournit le + present sur chaque bornier AUX 2 fils
+(et donc, dans notre cablage, l'alim DC+ et le signal IN du module) :
+- MAIN  : alim de la carte principale (24V dans notre cas)
+- 12V / 5V : max 20 mA, signalisation TTL uniquement — JAMAIS pour charge inductive
+- P17 retire : alim via l'entree dediee (fusible + protection polarite)
+
+Ne jamais peupler P17 ET l'alim externe en meme temps.
+
+Limites : 1000 mA combines pour les 4 AUX, resistance de bobine >= 150 Ohm.
+
+---
+
+## Journal de resolution (causes successives ecartees)
+
+1. M64/M65 sans effet
+   -> `NUM_DIO` absent du fichier INI. Ajout de `NUM_DIO = 4`. Les pins
+      `motion.digital-out-0x` passent writable et changent bien d'etat.
+
+2. Plusieurs relais actifs au demarrage
+   -> Sorties AUX a TRUE par defaut + jumpers de modules incoherents (un sur L,
+      les autres sur H). Homogeneisation des jumpers.
+
+3. Tests d'inversion HAL (composant `not`)
+   -> Piste exploree (modules supposes active LOW) puis abandonnee. Erreurs
+      rencontrees : `not.0.in` inexistant (le composant est charge avec
+      `names=...`, pas par index), puis `flood_not.in` inexistant (ligne
+      `loadrt not` incomplete). Finalement retour au HAL direct.
+
+4. MIST/FLOOD OK mais AUX a 2V puis 0V
+   -> Mesure decisive : borne + AUX0 = 0V alors que MIST = 24V. Le rail AUX
+      n'etait pas alimente.
+
+5. CAUSE RACINE : le jumper P17 ne faisait pas contact.
+   -> Jumper remplace. Le rail AUX recoit enfin 24V, les sorties sortent le bon
+      niveau, les relais reagissent correctement.
+
+Conclusion : la configuration HAL et le cablage etaient corrects ; le seul vrai
+defaut materiel etait un jumper P17 defectueux.
+
+---
+
+## A verifier / faire ensuite
+
+- [ ] Etendre la config aux 6 relais si besoin (les AUX physiques se limitent a
+      4 : AUX0–AUX3 ; les 2 relais restants peuvent passer par COOLANT/MIST ou
+      d'autres sorties).
+- [ ] Verifier le sens de chaque sortie (M64 = ON, M65 = OFF) apres cablage final.
+- [ ] Mesurer la resistance de bobine de chaque relais (>= 150 Ohm) et confirmer
+      le total sous 1000 mA.
+- [ ] Ajouter la page "Auxiliaires" + boutons ON/OFF dans QtDragon_hd
+      (maquette deja realisee).
+
+---
+
+## Notes annexes
+
+- OPT STOP : active/desactive l'arret optionnel sur M1.
+- OPT BLOCK : active/desactive le saut des lignes commencant par `/` (block delete).
+
+**Date :** 6 juin 2026
+**Machine :** PrintNC — FlexiHAL (Expatria / Remora) — LinuxCNC 2.9.8 — QtDragon_hd
+
+---
+
+## Objectif
+
+Piloter 6 relais (charges : lumiere, arrosage, aspiration, etc.) via les sorties
+auxiliaires de la FlexiHAL, commandables depuis QtDragon et le G-code (M64/M65,
+M7/M8/M9).
+
+---
+
+## Configuration HAL retenue (AUX0–AUX3)
+
+Connexion directe, sans inversion (modules cables en active HIGH) :
+
+```hal
+# Sorties auxiliaires (pilotables par M64/M65)
+    net aux0-sig motion.digital-out-00 => flexi.output.AUX0
+    net aux1-sig motion.digital-out-01 => flexi.output.AUX1
+    net aux2-sig motion.digital-out-02 => flexi.output.AUX2
+    net aux3-sig motion.digital-out-03 => flexi.output.AUX3
+```
+
+Prerequis INI (sinon M64/M65 sont ignores silencieusement) :
+
+```ini
+[EMCMOT]
+NUM_DIO = 4
+```
+
+Flood / Mist (inchanges, sorties dediees du firmware) :
+
+```hal
+# Flood and mist outputs
+    net flood flexi.output.COOLANT <= iocontrol.0.coolant-flood
+    net mist  flexi.output.MIST    <= iocontrol.0.coolant-mist
+```
+
+---
+
+## Cablage materiel valide
+
+L'alimentation ET le signal sont pris directement sur le bornier AUX 2 fils
+(borne + et borne -) de la FlexiHAL. Sur le module relais, un petit pont relie
+DC+ et IN.
+
+```
+Bornier AUX n  (+)  -> DC+ du module, ponte directement vers IN
+                       (le + commute fournit a la fois l'alim et le signal)
+Bornier AUX n  (+)  -> IN  (via le pont DC+ <-> IN sur le module)
+Bornier AUX n  (-)  -> DC- du module (masse, c'est le - de la prise du bornier)
+```
+
+Soit, par module :
+- Borne + du bornier AUX -> DC+
+- Pont court DC+ <-> IN sur le module
+- Borne - du bornier AUX -> DC-
+
+Regles importantes :
+- Chaque relais est alimente et commande par sa propre prise AUX 2 fils.
+- Le pont DC+ <-> IN est ce qui declenche le relais (module active HIGH :
+  IN au + = relais actif).
+- Le rail AUX doit etre alimente (voir section jumper P17 ci-dessous), sinon la
+  borne + sort 0V et rien ne se passe.
+
+---
+
+## Alimentation du rail AUX (point cle)
+
+Les 4 sorties AUX partagent un rail d'alimentation high-side, selectionne par le
+jumper P17. C'est ce rail qui fournit le + present sur chaque bornier AUX 2 fils
+(et donc, dans notre cablage, l'alim DC+ et le signal IN du module) :
+- MAIN  : alim de la carte principale (24V dans notre cas)
+- 12V / 5V : max 20 mA, signalisation TTL uniquement — JAMAIS pour charge inductive
+- P17 retire : alim via l'entree dediee (fusible + protection polarite)
+
+Ne jamais peupler P17 ET l'alim externe en meme temps.
+
+Limites : 1000 mA combines pour les 4 AUX, resistance de bobine >= 150 Ohm.
+
+---
+
+## Journal de resolution (causes successives ecartees)
+
+1. M64/M65 sans effet
+   -> `NUM_DIO` absent du fichier INI. Ajout de `NUM_DIO = 4`. Les pins
+      `motion.digital-out-0x` passent writable et changent bien d'etat.
+
+2. Plusieurs relais actifs au demarrage
+   -> Sorties AUX a TRUE par defaut + jumpers de modules incoherents (un sur L,
+      les autres sur H). Homogeneisation des jumpers.
+
+3. Tests d'inversion HAL (composant `not`)
+   -> Piste exploree (modules supposes active LOW) puis abandonnee. Erreurs
+      rencontrees : `not.0.in` inexistant (le composant est charge avec
+      `names=...`, pas par index), puis `flood_not.in` inexistant (ligne
+      `loadrt not` incomplete). Finalement retour au HAL direct.
+
+4. MIST/FLOOD OK mais AUX a 2V puis 0V
+   -> Mesure decisive : borne + AUX0 = 0V alors que MIST = 24V. Le rail AUX
+      n'etait pas alimente.
+
+5. CAUSE RACINE : le jumper P17 ne faisait pas contact.
+   -> Jumper remplace. Le rail AUX recoit enfin 24V, les sorties sortent le bon
+      niveau, les relais reagissent correctement.
+
+Conclusion : la configuration HAL et le cablage etaient corrects ; le seul vrai
+defaut materiel etait un jumper P17 defectueux.
+
+---
+
+## A verifier / faire ensuite
+
+- [ ] Etendre la config aux 6 relais si besoin (les AUX physiques se limitent a
+      4 : AUX0–AUX3 ; les 2 relais restants peuvent passer par COOLANT/MIST ou
+      d'autres sorties).
+- [ ] Verifier le sens de chaque sortie (M64 = ON, M65 = OFF) apres cablage final.
+- [ ] Mesurer la resistance de bobine de chaque relais (>= 150 Ohm) et confirmer
+      le total sous 1000 mA.
+- [ ] Ajouter la page "Auxiliaires" + boutons ON/OFF dans QtDragon_hd
+      (maquette deja realisee).
+
+---
+
+## Notes annexes
+
+- OPT STOP : active/desactive l'arret optionnel sur M1.
+- OPT BLOCK : active/desactive le saut des lignes commencant par `/` (block delete).
+— Sorties auxiliaires (relais) FlexiHAL
+
+**Date :** 6 juin 2026
+**Machine :** PrintNC — FlexiHAL (Expatria / Remora) — LinuxCNC 2.9.8 — QtDragon_hd
+
+---
+
+## Objectif
+
+Piloter 6 relais (charges : lumiere, arrosage, aspiration, etc.) via les sorties
+auxiliaires de la FlexiHAL, commandables depuis QtDragon et le G-code (M64/M65,
+M7/M8/M9).
+
+---
+
+## Configuration HAL retenue (AUX0–AUX3)
+
+Connexion directe, sans inversion (modules cables en active HIGH) :
+
+```hal
+# Sorties auxiliaires (pilotables par M64/M65)
+    net aux0-sig motion.digital-out-00 => flexi.output.AUX0
+    net aux1-sig motion.digital-out-01 => flexi.output.AUX1
+    net aux2-sig motion.digital-out-02 => flexi.output.AUX2
+    net aux3-sig motion.digital-out-03 => flexi.output.AUX3
+```
+
+Prerequis INI (sinon M64/M65 sont ignores silencieusement) :
+
+```ini
+[EMCMOT]
+NUM_DIO = 4
+```
+
+Flood / Mist (inchanges, sorties dediees du firmware) :
+
+```hal
+# Flood and mist outputs
+    net flood flexi.output.COOLANT <= iocontrol.0.coolant-flood
+    net mist  flexi.output.MIST    <= iocontrol.0.coolant-mist
+```
+
+---
+
+## Cablage materiel valide
+
+L'alimentation ET le signal sont pris directement sur le bornier AUX 2 fils
+(borne + et borne -) de la FlexiHAL. Sur le module relais, un petit pont relie
+DC+ et IN.
+
+```
+Bornier AUX n  (+)  -> DC+ du module, ponte directement vers IN
+                       (le + commute fournit a la fois l'alim et le signal)
+Bornier AUX n  (+)  -> IN  (via le pont DC+ <-> IN sur le module)
+Bornier AUX n  (-)  -> DC- du module (masse, c'est le - de la prise du bornier)
+```
+
+Soit, par module :
+- Borne + du bornier AUX -> DC+
+- Pont court DC+ <-> IN sur le module
+- Borne - du bornier AUX -> DC-
+
+Regles importantes :
+- Chaque relais est alimente et commande par sa propre prise AUX 2 fils.
+- Le pont DC+ <-> IN est ce qui declenche le relais (module active HIGH :
+  IN au + = relais actif).
+- Le rail AUX doit etre alimente (voir section jumper P17 ci-dessous), sinon la
+  borne + sort 0V et rien ne se passe.
+
+---
+
+## Alimentation du rail AUX (point cle)
+
+Les 4 sorties AUX partagent un rail d'alimentation high-side, selectionne par le
+jumper P17. C'est ce rail qui fournit le + present sur chaque bornier AUX 2 fils
+(et donc, dans notre cablage, l'alim DC+ et le signal IN du module) :
+- MAIN  : alim de la carte principale (24V dans notre cas)
+- 12V / 5V : max 20 mA, signalisation TTL uniquement — JAMAIS pour charge inductive
+- P17 retire : alim via l'entree dediee (fusible + protection polarite)
+
+Ne jamais peupler P17 ET l'alim externe en meme temps.
+
+Limites : 1000 mA combines pour les 4 AUX, resistance de bobine >= 150 Ohm.
+
+---
+
+## Journal de resolution (causes successives ecartees)
+
+1. M64/M65 sans effet
+   -> `NUM_DIO` absent du fichier INI. Ajout de `NUM_DIO = 4`. Les pins
+      `motion.digital-out-0x` passent writable et changent bien d'etat.
+
+2. Plusieurs relais actifs au demarrage
+   -> Sorties AUX a TRUE par defaut + jumpers de modules incoherents (un sur L,
+      les autres sur H). Homogeneisation des jumpers.
+
+3. Tests d'inversion HAL (composant `not`)
+   -> Piste exploree (modules supposes active LOW) puis abandonnee. Erreurs
+      rencontrees : `not.0.in` inexistant (le composant est charge avec
+      `names=...`, pas par index), puis `flood_not.in` inexistant (ligne
+      `loadrt not` incomplete). Finalement retour au HAL direct.
+
+4. MIST/FLOOD OK mais AUX a 2V puis 0V
+   -> Mesure decisive : borne + AUX0 = 0V alors que MIST = 24V. Le rail AUX
+      n'etait pas alimente.
+
+5. CAUSE RACINE : le jumper P17 ne faisait pas contact.
+   -> Jumper remplace. Le rail AUX recoit enfin 24V, les sorties sortent le bon
+      niveau, les relais reagissent correctement.
+
+Conclusion : la configuration HAL et le cablage etaient corrects ; le seul vrai
+defaut materiel etait un jumper P17 defectueux.
+
+---
+
+## A verifier / faire ensuite
+
+- [ ] Etendre la config aux 6 relais si besoin (les AUX physiques se limitent a
+      4 : AUX0–AUX3 ; les 2 relais restants peuvent passer par COOLANT/MIST ou
+      d'autres sorties).
+- [ ] Verifier le sens de chaque sortie (M64 = ON, M65 = OFF) apres cablage final.
+- [ ] Mesurer la resistance de bobine de chaque relais (>= 150 Ohm) et confirmer
+      le total sous 1000 mA.
+- [ ] Ajouter la page "Auxiliaires" + boutons ON/OFF dans QtDragon_hd
+      (maquette deja realisee).
+
+---
+
+## Notes annexes
+
+- OPT STOP : active/desactive l'arret optionnel sur M1.
+- OPT BLOCK : active/desactive le saut des lignes commencant par `/` (block delete).
+
+
+## Objectif
+
+Piloter 6 relais (charges : lumiere, arrosage, aspiration, etc.) via les sorties
+auxiliaires de la FlexiHAL, commandables depuis QtDragon et le G-code (M64/M65,
+M7/M8/M9).
+
+---
+
+## Configuration HAL retenue (AUX0–AUX3)
+
+Connexion directe, sans inversion (modules cables en active HIGH) :
+
+```hal
+# Sorties auxiliaires (pilotables par M64/M65)
+    net aux0-sig motion.digital-out-00 => flexi.output.AUX0
+    net aux1-sig motion.digital-out-01 => flexi.output.AUX1
+    net aux2-sig motion.digital-out-02 => flexi.output.AUX2
+    net aux3-sig motion.digital-out-03 => flexi.output.AUX3
+```
+
+Prerequis INI (sinon M64/M65 sont ignores silencieusement) :
+
+```ini
+[EMCMOT]
+NUM_DIO = 4
+```
+
+Flood / Mist (inchanges, sorties dediees du firmware) :
+
+```hal
+# Flood and mist outputs
+    net flood flexi.output.COOLANT <= iocontrol.0.coolant-flood
+    net mist  flexi.output.MIST    <= iocontrol.0.coolant-mist
+```
+
+---
+
+## Cablage materiel valide
+
+L'alimentation ET le signal sont pris directement sur le bornier AUX 2 fils
+(borne + et borne -) de la FlexiHAL. Sur le module relais, un petit pont relie
+DC+ et IN.
+
+```
+Bornier AUX n  (+)  -> DC+ du module, ponte directement vers IN
+                       (le + commute fournit a la fois l'alim et le signal)
+Bornier AUX n  (+)  -> IN  (via le pont DC+ <-> IN sur le module)
+Bornier AUX n  (-)  -> DC- du module (masse, c'est le - de la prise du bornier)
+```
+
+Soit, par module :
+- Borne + du bornier AUX -> DC+
+- Pont court DC+ <-> IN sur le module
+- Borne - du bornier AUX -> DC-
+
+Regles importantes :
+- Chaque relais est alimente et commande par sa propre prise AUX 2 fils.
+- Le pont DC+ <-> IN est ce qui declenche le relais (module active HIGH :
+  IN au + = relais actif).
+- Le rail AUX doit etre alimente (voir section jumper P17 ci-dessous), sinon la
+  borne + sort 0V et rien ne se passe.
+
+---
+
+## Alimentation du rail AUX (point cle)
+
+Les 4 sorties AUX partagent un rail d'alimentation high-side, selectionne par le
+jumper P17. C'est ce rail qui fournit le + present sur chaque bornier AUX 2 fils
+(et donc, dans notre cablage, l'alim DC+ et le signal IN du module) :
+- MAIN  : alim de la carte principale (24V dans notre cas)
+- 12V / 5V : max 20 mA, signalisation TTL uniquement — JAMAIS pour charge inductive
+- P17 retire : alim via l'entree dediee (fusible + protection polarite)
+
+Ne jamais peupler P17 ET l'alim externe en meme temps.
+
+Limites : 1000 mA combines pour les 4 AUX, resistance de bobine >= 150 Ohm.
+
+---
+
+## Journal de resolution (causes successives ecartees)
+
+1. M64/M65 sans effet
+   -> `NUM_DIO` absent du fichier INI. Ajout de `NUM_DIO = 4`. Les pins
+      `motion.digital-out-0x` passent writable et changent bien d'etat.
+
+2. Plusieurs relais actifs au demarrage
+   -> Sorties AUX a TRUE par defaut + jumpers de modules incoherents (un sur L,
+      les autres sur H). Homogeneisation des jumpers.
+
+3. Tests d'inversion HAL (composant `not`)
+   -> Piste exploree (modules supposes active LOW) puis abandonnee. Erreurs
+      rencontrees : `not.0.in` inexistant (le composant est charge avec
+      `names=...`, pas par index), puis `flood_not.in` inexistant (ligne
+      `loadrt not` incomplete). Finalement retour au HAL direct.
+
+4. MIST/FLOOD OK mais AUX a 2V puis 0V
+   -> Mesure decisive : borne + AUX0 = 0V alors que MIST = 24V. Le rail AUX
+      n'etait pas alimente.
+
+5. CAUSE RACINE : le jumper P17 ne faisait pas contact.
+   -> Jumper remplace. Le rail AUX recoit enfin 24V, les sorties sortent le bon
+      niveau, les relais reagissent correctement.
+
+Conclusion : la configuration HAL et le cablage etaient corrects ; le seul vrai
+defaut materiel etait un jumper P17 defectueux.
+
+---
+
+## A verifier / faire ensuite
+
+- [ ] Etendre la config aux 6 relais si besoin (les AUX physiques se limitent a
+      4 : AUX0–AUX3 ; les 2 relais restants peuvent passer par COOLANT/MIST ou
+      d'autres sorties).
+- [ ] Verifier le sens de chaque sortie (M64 = ON, M65 = OFF) apres cablage final.
+- [ ] Mesurer la resistance de bobine de chaque relais (>= 150 Ohm) et confirmer
+      le total sous 1000 mA.
+- [ ] Ajouter la page "Auxiliaires" + boutons ON/OFF dans QtDragon_hd
+      (maquette deja realisee).
+
+---
+
+## Notes annexes
+
+- OPT STOP : active/desactive l'arret optionnel sur M1.
+- OPT BLOCK : active/desactive le saut des lignes commencant par `/` (block delete).
+
 ---
 
 ## [2026-06-05] — Session de debug intensive
