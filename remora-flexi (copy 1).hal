@@ -10,7 +10,6 @@
 	loadrt and2 names=run_and,step_and
 	loadrt toggle names=hold_button_toggle
 	loadrt toggle2nist names=hold_toggle,paused_toggle
-	loadrt or2 names=aux0_or,aux1_or,aux2_or,aux3_or
 
 
 # add the remora and motion functions to threads
@@ -33,10 +32,6 @@
 	addf step_and servo-thread
 	addf hold_toggle servo-thread
 	addf hold_button_toggle servo-thread
-	addf aux0_or servo-thread
-	addf aux1_or servo-thread
-	addf aux2_or servo-thread
-	addf aux3_or servo-thread
 
 
 #toggle2nist states & mux selectors
@@ -184,13 +179,11 @@
 	net flood flexi.output.COOLANT <= iocontrol.0.coolant-flood
 	net mist flexi.output.MIST <= iocontrol.0.coolant-mist
 	
-# Sorties auxiliaires : entree G-code (M64/M65) vers les or2.
-# Les boutons QtDragon et la sortie vers flexi.output.AUX sont dans
-# custom_postgui.hal (les pins des boutons n'existent qu'apres chargement du GUI).
-	net aux0-gcode motion.digital-out-00 => aux0_or.in0
-	net aux1-gcode motion.digital-out-01 => aux1_or.in0
-	net aux2-gcode motion.digital-out-02 => aux2_or.in0
-	net aux3-gcode motion.digital-out-03 => aux3_or.in0
+# Sorties auxiliaires (pilotables par M64/M65)
+	net aux0-sig motion.digital-out-00 => flexi.output.AUX0
+	net aux1-sig motion.digital-out-01 => flexi.output.AUX1
+	net aux2-sig motion.digital-out-02 => flexi.output.AUX2
+	net aux3-sig motion.digital-out-03 => flexi.output.AUX3
 
 # User buttons
 	#Halt is shared with motor alarms and is up in the estop loop.

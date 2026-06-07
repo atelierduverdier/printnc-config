@@ -1,1 +1,16 @@
-# Include your custom_postgui HAL commands here
+# custom_postgui.hal
+# Charge APRES le GUI : les pins des boutons QtVCP existent ici.
+
+# Boutons AUX : lignes desactivees temporairement.
+# A reactiver une fois les boutons aux0..aux3 recrees dans le .ui.
+# Verifier le nom reel avec :  halcmd show pin | grep -i aux
+	net aux0-btn qtdragon.aux0 => aux0_or.in1
+	net aux1-btn qtdragon.aux1 => aux1_or.in1
+	net aux2-btn qtdragon.aux2 => aux2_or.in1
+	net aux3-btn qtdragon.aux3 => aux3_or.in1
+
+# Sortie combinee (bouton OU G-code) vers les relais.
+	net aux0-out aux0_or.out => flexi.output.AUX0
+	net aux1-out aux1_or.out => flexi.output.AUX1
+	net aux2-out aux2_or.out => flexi.output.AUX2
+	net aux3-out aux3_or.out => flexi.output.AUX3
