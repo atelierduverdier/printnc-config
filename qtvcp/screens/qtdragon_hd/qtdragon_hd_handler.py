@@ -177,6 +177,18 @@ class HandlerClass:
         self.w.page_buttonGroup.buttonClicked.connect(self.main_tab_changed)
         self.w.filemanager_usb.showMediaDir(quiet = True)
 
+    # Boutons lanceurs d'applications externes (terminal, editeur, navigateur, fichiers)
+    # Chaque connexion n'est faite que si le bouton existe dans le .ui (hasattr),
+    # ce qui evite toute erreur si un bouton n'a pas encore ete cree dans Designer.
+        if hasattr(self.w, 'btn_terminal'):
+            self.w.btn_terminal.clicked.connect(self.launch_terminal)
+        if hasattr(self.w, 'btn_geany'):
+            self.w.btn_geany.clicked.connect(self.launch_geany)
+        if hasattr(self.w, 'btn_navigateur'):
+            self.w.btn_navigateur.clicked.connect(self.launch_navigateur)
+        if hasattr(self.w, 'btn_fichiers'):
+            self.w.btn_fichiers.clicked.connect(self.launch_fichiers)
+
     # hide or initiate 4th/5th AXIS dro/jog
         flag = False
         flag4 = True
@@ -243,6 +255,42 @@ class HandlerClass:
         message = "--- QtDragon_hd Version {} on Linuxcnc {} ---".format(
             VERSION, STATUS.get_linuxcnc_version())
         STATUS.emit('update-machine-log', message, None)
+
+    #############################
+    # LANCEURS APPLICATIONS      #
+    #############################
+    # Lancent un programme externe sans bloquer l'interface (Popen).
+    # En cas d'echec (programme absent), on logue sans planter QtDragon.
+    def launch_terminal(self):
+        import subprocess
+        for term in ('xfce4-terminal', 'x-terminal-emulator', 'xterm', 'lxterminal', 'gnome-terminal'):
+            try:
+                subprocess.Popen([term])
+                return
+            except FileNotFoundError:
+                continue
+        LOG.warning('Aucun emulateur de terminal trouve')
+
+    def launch_geany(self):
+        import subprocess
+        try:
+            subprocess.Popen(['geany'])
+        except FileNotFoundError:
+            LOG.warning('geany introuvable')
+
+    def launch_navigateur(self):
+        import subprocess
+        try:
+            subprocess.Popen(['xdg-open', 'https://forum.linuxcnc.org'])
+        except FileNotFoundError:
+            LOG.warning('xdg-open introuvable')
+
+    def launch_fichiers(self):
+        import subprocess
+        try:
+            subprocess.Popen(['xdg-open', os.path.expanduser('~')])
+        except FileNotFoundError:
+            LOG.warning('xdg-open introuvable')
 
     #############################
     # SPECIAL FUNCTIONS SECTION #
@@ -1555,7 +1603,7 @@ class HandlerClass:
             self.w.btn_main.setChecked(True)
     
     # calc wait time for mdi move based on dist and rapid speed, return seconds to wait
-    def calc_mdi_move_wait_time(self, dest_x, dest_y, wait_buffer_secs=1):
+    def calc_mdi_move_wait_time(self, dest_x, dest_y, wait_buffer_secs=4):
         move_speed = (STATUS.stat.rapidrate * STATUS.get_max_velocity()) / 60
         pos_cur,pos_rel,dtg, = STATUS.get_position()
         move_dist = sqrt((dest_x - pos_cur[0]) ** 2 + (dest_y - pos_cur[1]) ** 2)

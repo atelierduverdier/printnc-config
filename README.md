@@ -94,7 +94,7 @@ COOLANT et MIST, M9 coupe les deux.
   * Y : `-2.0` a `1286.0` mm (HOME a `1275.0`)
   * Z : `-185.0` a `5.0` mm (HOME de securite a `0.0`)
 * **Vitesses maximales :**
-  * X & Y : 100 mm/s (STEPGEN_MAXVEL 86)
+  * X & Y : 166,67 mm/s (10 000 mm/min), STEPGEN_MAXVEL 200
   * Z : 33.33 mm/s (STEPGEN_MAXVEL 100, prudence face a la gravite)
 * **Timings impulsions :** STEPLEN = STEPSPACE = 2500 ns sur **tous** les axes (voir encadre ci-dessous).
 * **Homing :** Z monte en premier (sequence 0), puis X et Y ensemble (sequence -1).
@@ -109,6 +109,16 @@ Deux modes de zero Z (parametre `#1001`) :
 * `#1001 = 1` : zero Z sur le dessus de la piece (manuel)
 
 Bouton "Reset Ref" dans QtDragon pour preparer un nouveau job.
+
+### Note : boutons de deplacement et vitesse elevee
+
+Les boutons de l'interface qui declenchent un deplacement via CALL_MDI_WAIT
+(ex : GO HOME) calculent un delai d'attente = distance / vitesse + marge.
+Ce calcul ignore le temps d'acceleration/deceleration. A vitesse elevee
+(10 000 mm/min), une marge trop courte fait expirer le WAIT avant la fin du
+mouvement -> message "EMC_TASK_PLAN_PAUSE cannot be executed".
+Corrige en portant `wait_buffer_secs` de 1 a 4 s dans la fonction
+`calc_mdi_move_wait_time` du handler QtDragon.
 
 ---
 
