@@ -1,52 +1,142 @@
-# Configuration PrintNC - Atelier du Verdier - 21 mai 2026
+# Configuration PrintNC - Atelier du Verdier
 
-Ce dépôt rassemble les fichiers de configuration LinuxCNC (`.ini` et `.hal`) utilisés pour piloter ma fraiseuse CNC **PrintNC (Format standard avec surface de travail utile d'environ 1275x1275mm)**.
+Ce depot rassemble les fichiers de configuration LinuxCNC (`.ini`, `.hal`,
+macros G-code et interface QtDragon) utilises pour piloter ma fraiseuse CNC
+**PrintNC** (surface de travail utile d'environ 1275x1275 mm).
 
-La machine est contrôlée via l'architecture **Flexi-HAL** (firmware Remora) sur base Raspberry Pi 5 et l'interface graphique modernisée **QtDragon HD**.
+La machine est controlee via l'architecture **Flexi-HAL** (firmware Remora) sur
+base Raspberry Pi, avec l'interface graphique **QtDragon HD** (LinuxCNC 2.9.8).
 
 ---
 
-## 🛠️ Nomenclature & Matériel Utilisé (BOM)
+## Environnement de developpement (2 machines)
+
+Le depot est synchronise entre deux machines via git :
+
+* **Raspberry Pi (production)** : pilote la machine reelle avec le materiel
+  Flexi-HAL et le VFD. Config lancee : `remora-flexi.ini`.
+* **PC (developpement)** : sert a modifier l'interface QtDragon en simulation,
+  sans materiel. Config lancee : `remora-flexi-sim.ini`.
+
+Le fichier d'interface (`qtdragon_hd.ui`) est partage entre les deux : on edite
+sur PC, on teste en simulation, puis on pousse sur git et on recupere sur le Pi.
+
+Fichiers de simulation (PC uniquement) : `remora-flexi-sim.ini`,
+`remora-flexi-sim.hal`, `postgui_call_list_sim.hal`, `qtdragon_hd_sim.hal`,
+`custom_postgui_sim.hal`. Ils remplacent le composant Flexi-HAL (SPI) et le VFD
+serie par des equivalents simules.
+
+---
+
+## Sorties auxiliaires (relais)
+
+Quatre sorties AUX de la Flexi-HAL pilotent des relais 24V, commandables a la
+fois par le G-code (M64/M65) ET par des boutons dans QtDragon. Les deux sources
+sont combinees par des composants `or2` (relais actif si bouton OU G-code).
+
+| Sortie | Pin G-code            | Bouton        | Affectation        |
+|--------|-----------------------|---------------|--------------------|
+| AUX0   | motion.digital-out-00 | qtdragon.aux0 | Aspirateur         |
+| AUX1   | motion.digital-out-01 | qtdragon.aux1 | Lumiere            |
+| AUX2   | motion.digital-out-02 | qtdragon.aux2 | Pompe a eau        |
+| AUX3   | motion.digital-out-03 | qtdragon.aux3 | Libre (reserve)    |
+
+Cablage : modules relais en active HIGH (jumper sur H), alimentes via le bornier
+AUX 2 fils (jumper P17 sur MAIN = 24V) avec un pont DC+ <-> IN sur chaque module.
+Prerequis : `NUM_DIO = 4` dans la section `[EMCMOT]` de l'INI.
+
+Flood/Mist : M8 (arrosage) et M7 (brouillard) cables sur les sorties dediees
+COOLANT et MIST, M9 coupe les deux.
+
+---
+
+## Nomenclature & Materiel (BOM)
 
 ### 1. Motorisation & Alimentation (OMC-StepperOnline)
-* **Moteurs (Axes X, Y1, Y2, Z) :** 4x Moteurs pas à pas en boucle fermée Nema 23 (3.00 Nm / 424.83 oz.in) avec encodeur magnétique 1000 PPR (4000 CPR).
-  * *Référence :* `23HS40-5004-ME1K`
-* **Drivers :** 4x Pilotes pas à pas en boucle fermée V4.1 (0-8.0A, 24-48VDC) adaptés pour Nema 17/23/24.
-  * *Référence :* `CL57T-V41`
-* **Câblage :** Kit de câbles d'extension de puissance et d'encodeur blindés AWG20 de 4.7m.
-  * *Référence :* `CE5-M5-20`
-* **Alimentations Moteurs :** Alimentations à découpage 350W 48V 7.3A (Sélectionnables 115/230V).
-  * *Référence :* `LE-350-48`
+* **Moteurs (X, Y1, Y2, Z) :** 4x Nema 23 boucle fermee (3.00 Nm / 424.83 oz.in),
+  encodeur magnetique 1000 PPR (4000 CPR). Ref : `23HS40-5004-ME1K`
+* **Drivers :** 4x pilotes boucle fermee V4.1 (0-8.0A, 24-48VDC). Ref : `CL57T-V41`
+* **Cablage :** kit cables puissance + encodeur blindes AWG20, 4.7m. Ref : `CE5-M5-20`
+* **Alimentations moteurs :** 350W 48V 7.3A (115/230V). Ref : `LE-350-48`
 
-### 2. Broche & Refroidissement (Aliexpress / G-Penny)
-* **Broche :** Moteur de broche G-Penny Original 2.2kW ER20 refroidi par eau (Dimensions 80x230mm, 220V). Équipée de 4 roulements céramiques de la série 7 pour une déviation max de 0.01mm (Modèle long).
-* **Variateur (VFD) :** Onduleur / Inverter HuangYang (HY) 2.2kW 220VAC classique.
-* **Refroidissement :** Pompe à eau 220V 75W (Débit max 3200 L/H) avec 5 mètres de tuyau. Le circuit fonctionne en circuit fermé avec du **liquide de refroidissement automobile** pour prévenir l'oxydation interne et la prolifération d'algues.
+### 2. Broche & Refroidissement
+* **Broche :** G-Penny 2.2kW ER20 refroidie par eau (80x230mm, 220V),
+  4 roulements ceramiques serie 7, deviation max 0.01mm.
+* **Variateur (VFD) :** HuangYang (HY) 2.2kW 220VAC.
+* **Refroidissement :** pompe 220V 75W (max 3200 L/H), circuit ferme au liquide
+  de refroidissement automobile (anti-oxydation / anti-algues).
 
-### 3. Contrôle, Électronique & Sécurité
-* **Calculateur :** Raspberry Pi 5 exécutant LinuxCNC (Version 2.9.8).
-* **Carte d'interface (Interface Board) :** Expatria Flexi-HAL exploitant le firmware Remora pour la génération hardware des impulsions.
-* **Gestion de la Puissance :** Contacteur ABB AF09-30-10-11 avec bobine basse tension en 24V (pour la sécurité générale de l'armoire électrique).
-* **Capteurs de limites (Homing) :** Capteurs de proximité inductifs de type **NPN NC (Normalement Fermé)** câblés et alimentés en 5V.
-* **Palpage :** Sonde mobile et/ou fixe (Tool Setter) gérée via l'interface de précision **VersaProbe**.
+### 3. Controle, Electronique & Securite
+* **Calculateur :** Raspberry Pi executant LinuxCNC 2.9.8.
+* **Carte d'interface :** Expatria Flexi-HAL (firmware Remora).
+* **Puissance :** contacteur ABB AF09-30-10-11, bobine 24V.
+* **Capteurs de limites (Homing) :** proximite inductifs NPN NC, alimentes 5V.
+* **Palpage :** sonde mobile et/ou fixe (Tool Setter) via VersaProbe.
 
-### 4. Structure Mécanique & Transmission
-* **Châssis :** Profilés en tubes d'acier rectangulaires massifs de **100x50mm avec une épaisseur de 4mm** (Spécificité apportant une masse et une rigidité accrues par rapport aux recommandations standard du wiki). 
-* **Transmission Axes X & Y :** Vis à billes SFU1610 (Pas de 10mm par tour) montées sur rails de guidage linéaires HGR20.
-* **Transmission Axe Z :** Vis à billes fine SFU1204 (Pas de 4mm par tour) pour contrer l'effet de la gravité et optimiser le couple de maintien vertical de la broche.
+### 4. Structure Mecanique & Transmission
+* **Chassis :** tubes acier rectangulaires 100x50mm ep. 4mm (masse et rigidite
+  accrues vs recommandations standard du wiki).
+* **Transmission X & Y :** vis a billes SFU1610 (pas 10mm) sur rails HGR20.
+* **Transmission Z :** vis a billes SFU1204 (pas 4mm) pour contrer la gravite.
 
 ---
 
-## 📐 Paramètres de Configuration Clés (`.ini`)
+## Parametres de configuration cles (`.ini`)
 
-* **Résolution des Pas (Scale) :**
-  * Axe X : `-160.0` (Basé sur des drivers réglés à 1600 pas/tour, vis au pas de 10mm, direction inversée matériellement).
-  * Axe Y1 (Maître) : `160.0` & Axe Y2 (Esclave/Tandem) : `-160.0` (Montage des moteurs face à face en effet miroir).
-  * Axe Z : `400.0` (Basé sur un réglage à 1600 pas/tour et une vis fine au pas de 4mm).
-* **Limites de Courses Logicielles :**
-  * X : de `-5.0mm` à `1285.0mm` (Dégagement final à `5.0mm`).
-  * Y : de `-2.0mm` à `1286.0mm` (Position de repli finale `HOME` établie à `1275.0mm`).
-  * Z : de `-185.0mm` (Descente max) à `5.0mm` (Dégagement haut, `HOME` de sécurité à `0.0mm`).
-* **Vitesses maximales (Max Velocity) :** * Axes X & Y : 250 mm/s ($15\ 000\text{ mm/min}$) avec un plafond `STEPGEN_MAXVEL` à 280 mm/s.
-  * Axe Z : 33.33 mm/s ($2\ 000\text{ mm/min}$) avec une limite électrique `STEPGEN_MAXVEL` fixée à 100.0 mm/s face à la gravité.
-* **Timings des impulsions (Stepgen) :** `STEPLEN = 2500` et `STEPSPACE = 2500` pour une stabilité électrique optimale avec les drivers CL57T sur la Flexi-HAL.
+* **Cinematique :** JOINTS = 4 (X, Y1, Z, Y2), Y en tandem (2 moteurs),
+  `trivkins coordinates=XYZY`.
+* **Resolution des pas (Scale) :**
+  * X : `-160.0` (1600 pas/tour, vis 10mm, direction inversee)
+  * Y1 : `160.0` / Y2 : `-160.0` (moteurs en miroir, tandem)
+  * Z : `400.0` (1600 pas/tour, vis fine 4mm)
+* **Limites de courses logicielles :**
+  * X : `-50.0` a `1240.0` mm
+  * Y : `-2.0` a `1286.0` mm (HOME a `1275.0`)
+  * Z : `-185.0` a `5.0` mm (HOME de securite a `0.0`)
+* **Vitesses maximales :**
+  * X & Y : 100 mm/s (STEPGEN_MAXVEL 86)
+  * Z : 33.33 mm/s (STEPGEN_MAXVEL 100, prudence face a la gravite)
+* **Timings impulsions :** STEPLEN = STEPSPACE = 2500 ns sur **tous** les axes (voir encadre ci-dessous).
+* **Homing :** Z monte en premier (sequence 0), puis X et Y ensemble (sequence -1).
+
+---
+
+## Changement d'outil
+
+Script manuel `toolchange.ngc` via REMAP M6, avec palpeur fixe en G53 X-50 Y60.
+Deux modes de zero Z (parametre `#1001`) :
+* `#1001 = 0` : zero Z sur le martyre (automatique)
+* `#1001 = 1` : zero Z sur le dessus de la piece (manuel)
+
+Bouton "Reset Ref" dans QtDragon pour preparer un nouveau job.
+
+---
+
+## A propos des timings d'impulsion (STEPLEN / STEPSPACE)
+
+Pour faire avancer un moteur d'un pas, LinuxCNC envoie une impulsion electrique
+au driver. Deux parametres, exprimes en nanosecondes, en definissent le rythme :
+
+* **STEPLEN** : duree pendant laquelle l'impulsion reste "haute" (le pas lui-meme).
+  2500 ns = 2,5 microsecondes.
+* **STEPSPACE** : temps de repos minimum "bas" entre deux impulsions consecutives.
+
+Analogie : un metronome ou STEPLEN est la duree du "tic" et STEPSPACE le silence
+minimum avant le "tic" suivant.
+
+**Pourquoi c'est important :** chaque driver a besoin d'un temps minimum pour
+lire et traiter l'impulsion. Trop courtes ou trop rapprochees -> le driver rate
+des pas (positions fausses, bruits, vibrations). Trop larges -> on bride
+inutilement la vitesse maximale.
+
+**Pourquoi 2500 ns :** c'est une valeur sure et confortable pour les drivers
+CL57T, assez large pour une lecture fiable sans limiter les vitesses a cet usage.
+
+**Pourquoi identique sur tous les axes :** les 4 moteurs sont des CL57T
+identiques, donc memes besoins. C'est particulierement vrai pour Y1/Y2 qui
+forment un portique en tandem et doivent reagir de facon parfaitement synchrone.
+
+Note historique : le moteur Y2 (JOINT_3) avait ete regle a 5000 ns lors de la
+recherche d'un bruit moteur. Le vrai coupable etait un mauvais reglage des DIP
+switches du driver, pas les timings -> tous les axes sont desormais harmonises
+a 2500 ns.
