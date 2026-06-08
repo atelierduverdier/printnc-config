@@ -835,7 +835,11 @@ TOOLSET_X = -25.0  →  TOOLSET_X = -50.0
 
 ---
 
-## [2026-05-xx] — Mise en service ATC semi-automatique
+## [2026-05-xx] — Mise en service changement d'outil manuel avec palpage auto
+
+> Note : un OpenATC (changement semi-automatique) avait ete tente puis abandonne.
+> La solution retenue est un changement d'outil MANUEL avec palpage AUTOMATIQUE
+> de la longueur d'outil au palpeur fixe.
 
 ### Ajouté — `toolchange.ngc`
 Script de changement d'outil via `REMAP=M6` :
@@ -876,13 +880,13 @@ Script de changement d'outil via `REMAP=M6` :
 | LinuxCNC | 2.9.8 uspace |
 | Interface | QtDragon_hd 1.5 |
 | Carte | Flexi-HAL firmware Remora |
-| ATC | RapidChange Solo — X-50 Y160 |
+| Changement d'outil | Manuel avec palpage auto (toolchange.ngc) |
 | Palpeur fixe | X-50 Y60 |
 | dist_palpeur_table | 50.525 mm |
 
 ---
 
-## Architecture des variables ATC
+## Architecture des variables (changement d'outil + palpage)
 
 ```
 #1000   -> Position Z de reference (premier outil de la session)
