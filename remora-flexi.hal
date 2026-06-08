@@ -196,7 +196,7 @@
 	#Halt is shared with motor alarms and is up in the estop loop.
 
 	#Hold logic
-	net hold_button flexi.input.FEED_HOLD => hold_button_toggle.in
+	net hold_button flexi.input.FEED_HOLD.not => hold_button_toggle.in
 	net hold_toggle_latch hold_button_toggle.out => hold_toggle.in
 	net hold_on halui.program.pause <= hold_toggle.on
 	net hold_off halui.program.resume <= hold_toggle.off

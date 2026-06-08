@@ -993,7 +993,7 @@
                  <enum>QFrame::Raised</enum>
                 </property>
                 <property name="currentIndex">
-                 <number>9</number>
+                 <number>7</number>
                 </property>
                 <widget class="QWidget" name="stackedWidget_mainTabPage1">
                  <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -3193,25 +3193,6 @@ LOG</string>
                       <property name="currentIndex">
                        <number>0</number>
                       </property>
-                      <widget class="QWidget" name="tabHTML">
-                       <attribute name="title">
-                        <string>HTML</string>
-                       </attribute>
-                       <layout class="QVBoxLayout" name="layout_HTML">
-                        <property name="leftMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="topMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="rightMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="bottomMargin">
-                         <number>0</number>
-                        </property>
-                       </layout>
-                      </widget>
                       <widget class="QWidget" name="tabPDF">
                        <attribute name="title">
                         <string>PDF</string>
@@ -16891,7 +16872,7 @@ ANGULAR</string>
          <number>2</number>
         </property>
         <property name="text">
-         <string>07:12:21 AM</string>
+         <string>03:20:01 PM</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>

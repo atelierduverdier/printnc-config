@@ -52,8 +52,9 @@ Latence du Pi verifiee avec latency-test : excellente (max jitter servo
 
 Facteur limitant theorique a surveiller pour aller plus haut : vitesse critique
 de fouettement des vis SFU1610 sur ~1,3 m (a 10 000 mm/min, ~1000 tr/min).
-Test de perte de pas recommande (allers-retours G0 pleine course, verifier
-le retour exact a la position de depart).
+
+VALIDATION : test de perte de pas effectue a 10 000 mm/min -> aucune perte de
+pas. Vitesse fiable et adoptee pour l'usage courant.
 
 ## 6. Bug bouton GO HOME a haute vitesse (RESOLU)
 
@@ -82,9 +83,47 @@ Note : les numeros de ligne sont indicatifs (le meme fichier contient aussi
 les boutons lanceurs d'applications ajoutes le meme jour, ce qui peut decaler
 la numerotation).
 
-Note : les erreurs "page_allocator ... Invalid argument" au demarrage
-(liees a QtWebEngine / page web de QtDragon, non utilisee) sont presentes
-mais sans rapport avec ce bug ; non traitees.
+## 6bis. Widget web (QtWebEngine) supprime — erreurs page_allocator (RESOLU)
+
+Symptome : au demarrage, terminal affichant deux lignes
+"[...FATAL:page_allocator_internals_posix.h] Check failed: Invalid argument (22)"
+suivies d'un gel de la boucle (task: main loop took ~0.18 s).
+
+Diagnostic : la page HTML de l'onglet SETUP de QtDragon utilise un widget
+QtWebEngine (moteur Chromium) qui plante au demarrage sur ce systeme. Page non
+utilisee.
+
+Correction :
+- Widget web_view supprime dans Qt Designer (onglet HTML du SETUP ; les onglets
+  PDF et PROPERTIES sont conserves).
+- Handler protege : le bloc d'init du web_view est conditionne par
+  hasattr(self.w,'web_view') and hasattr(self.w,'layout_HTML'), sinon exception
+  "VCPWindow object has no attribute layout_HTML" + gel au demarrage.
+Resultat : plus d'erreur page_allocator, plus de gel, demarrage propre.
+
+## 6ter. Message EMC_TASK_PLAN_PAUSE au demarrage (RESOLU)
+
+Symptome : popup "command (EMC_TASK_PLAN_PAUSE) cannot be executed until the
+machine is out of E-stop and turned on" apres deverrouillage E-stop. Present
+"depuis toujours", independant des modifs du jour.
+
+Diagnostic : la carte lit ses entrees en logique active basse
+(flexi.input.FEED_HOLD = TRUE au repos). La logique Hold du HAL utilisait
+FEED_HOLD directement -> halui.program.pause force a TRUE en permanence ->
+pause demandee au demarrage alors que la machine n'est pas prete.
+Verifie : halcmd show pin halui.program.pause = TRUE.
+
+Correction (remora-flexi.hal, bloc "Hold logic") :
+    avant : net hold_button flexi.input.FEED_HOLD     => hold_button_toggle.in
+    apres  : net hold_button flexi.input.FEED_HOLD.not => hold_button_toggle.in
+FEED_HOLD.not est FALSE au repos -> plus de pause parasite. Coherent avec
+CYCLE_START qui utilisait deja .not. Apres correction :
+halui.program.pause = FALSE, message disparu.
+
+Sujet connexe NON resolu : la telecommande 3 boutons (RJ45)
+CYCLE_START / HOLD / HALT ne repond physiquement que sur HALT ; CYCLE_START et
+HOLD ne changent pas d'etat a l'appui. Probleme de cablage / brochage RJ45 a
+traiter separement.
 
 ## 7. Maintenance git
 
@@ -100,11 +139,14 @@ mais sans rapport avec ce bug ; non traitees.
 
 ## A faire ensuite
 
-- [ ] Test de perte de pas a 10 000 (validation finale de la vitesse).
+- [x] Test de perte de pas a 10 000 : VALIDE, aucune perte de pas. Vitesse
+      adoptee pour l'usage courant.
 - [ ] Eventuellement tenter 12 000 mm/min par paliers, en surveillant le
-      fouettement des vis.
+      fouettement des vis SFU1610 (~1200 tr/min a 12 000).
 - [ ] Travailler MAX_ACCELERATION (actuellement 200) si l'accel est le facteur
       limitant ressenti sur trajets courts.
+- [ ] Telecommande 3 boutons (RJ45) : faire fonctionner CYCLE_START et HOLD
+      (seul HALT repond) — cablage / brochage a verifier.
 - [ ] Retirer 0_tmp du suivi git.
 - [ ] Projet de documentation complete de la machine (a partir des reels
       Instagram, export JSON).

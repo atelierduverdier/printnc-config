@@ -428,8 +428,11 @@ class HandlerClass:
 
         # check for default setup html file
         try:
-            # web view widget for SETUP page
-            if self.w.web_view:
+            # web view widget pour la page SETUP : SUPPRIME de l'interface
+            # (QtWebEngine/Chromium provoquait des erreurs page_allocator et un
+            # gel au demarrage). On verifie l'existence du widget avant tout
+            # acces : si absent, on saute proprement sans lever d'exception.
+            if hasattr(self.w, 'web_view') and hasattr(self.w, 'layout_HTML') and self.w.web_view:
                 self.toolBar = QtWidgets.QToolBar(self.w)
                 self.w.tabWidget_setup.setCornerWidget(self.toolBar)
 
