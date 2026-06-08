@@ -1,0 +1,29 @@
+# =========================================================================
+# .gitignore - config LinuxCNC PrintNC Flexi-HAL (Atelier du Verdier)
+# Ignore les fichiers propres a chaque machine / generes a l'execution,
+# pour eviter les conflits entre le PC de dev et le Raspberry Pi.
+# =========================================================================
+
+# Variables machine (positions, offsets) regenerees a chaque session
+linuxcnc.var
+linuxcnc.var.bak
+
+# Preferences GUI (contiennent la geometrie de fenetre, differente PC/Pi)
+qtdragon.pref
+halshow.preferences
+
+# Captures halscope
+*.halscope
+
+# Sauvegardes automatiques
+autosave.halscope
+*.bak
+
+# Fichiers temporaires
+0_tmp/
+*~
+*.pyc
+__pycache__/
+
+# Historique MDI (propre a chaque machine)
+.axis_mdi_history
