@@ -1,0 +1,97 @@
+# =========================================================================
+# HAL DE SIMULATION - PrintNC Flexi-HAL (Atelier du Verdier)
+# Pour developper l'interface QtDragon sur PC, SANS le materiel reel.
+# Remplace le composant "flexi" (carte SPI) et le VFD serie par des
+# equivalents simules. NE PAS utiliser sur la machine reelle.
+# =========================================================================
+
+# ---- Composants temps reel ----
+	loadrt [KINS]KINEMATICS
+	loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS
+
+# Les composants logiques de la config reelle sont conserves a l'identique
+	loadrt not names=stepen_not,stepen_z_not,aux0_not,aux1_not,aux2_not,aux3_not,flood_not,mist_not
+	loadrt estop_latch names=estop_latch
+	loadrt and2 names=run_and,step_and
+	loadrt toggle names=hold_button_toggle
+	loadrt toggle2nist names=hold_toggle,paused_toggle
+	loadrt or2 names=aux0_or,aux1_or,aux2_or,aux3_or
+
+# ---- Fonctions dans le thread servo ----
+	addf motion-command-handler servo-thread
+	addf motion-controller servo-thread
+	addf stepen_not servo-thread
+	addf stepen_z_not servo-thread
+	addf aux0_not servo-thread
+	addf aux1_not servo-thread
+	addf aux2_not servo-thread
+	addf aux3_not servo-thread
+	addf flood_not servo-thread
+	addf mist_not servo-thread
+	addf estop_latch servo-thread
+	addf run_and servo-thread
+	addf step_and servo-thread
+	addf hold_toggle servo-thread
+	addf hold_button_toggle servo-thread
+	addf aux0_or servo-thread
+	addf aux1_or servo-thread
+	addf aux2_or servo-thread
+	addf aux3_or servo-thread
+
+# toggle2nist state
+	net program-is-paused hold_toggle.is-on <= halui.program.is-paused
+
+# ---- Estop simule (boucle simple) ----
+	net user-enable-out iocontrol.0.user-enable-out => estop_latch.reset
+	net estop-status estop_latch.ok-out => iocontrol.0.emc-enable-in
+	setp estop_latch.fault-in 0
+	setp estop_latch.ok-in 1
+
+# =========================================================================
+# SIMULATION DES JOINTS : on boucle commande -> feedback
+# (au lieu de passer par flexi.joint.N). La machine "bouge" virtuellement.
+# =========================================================================
+	net j0pos joint.0.motor-pos-cmd => joint.0.motor-pos-fb
+	net j1pos joint.1.motor-pos-cmd => joint.1.motor-pos-fb
+	net j2pos joint.2.motor-pos-cmd => joint.2.motor-pos-fb
+	net j3pos joint.3.motor-pos-cmd => joint.3.motor-pos-fb
+
+# Capteurs de home simules : a 0, jamais declenches (homing immediat possible)
+	setp joint.0.home-sw-in 0
+	setp joint.1.home-sw-in 0
+	setp joint.2.home-sw-in 0
+	setp joint.3.home-sw-in 0
+
+# Probe simule
+	setp motion.probe-input 0
+
+# =========================================================================
+# SIMULATION BROCHE (remplace le VFD hy_vfd)
+# =========================================================================
+	loadrt scale names=spindle_fb_scale
+	addf spindle_fb_scale servo-thread
+	setp spindle_fb_scale.gain 1.0
+	net spindle-speed-cmd spindle.0.speed-out => spindle_fb_scale.in
+	net spindle-speed-fb spindle_fb_scale.out => spindle.0.speed-in
+# La broche est "at speed" des qu'elle est commandee (simulation)
+	net spindle-on spindle.0.on => spindle.0.at-speed
+
+# =========================================================================
+# Flood and mist outputs (boucle, sorties simulees)
+# =========================================================================
+	net flood iocontrol.0.coolant-flood
+	net mist iocontrol.0.coolant-mist
+
+# =========================================================================
+# Sorties auxiliaires : entree G-code (M64/M65) vers les or2.
+# Les boutons QtDragon et la sortie sont dans custom_postgui.hal.
+# En simulation, la sortie des or2 n'alimente aucune carte : on cree des
+# signaux de sortie "en l'air" pour pouvoir les observer dans halshow.
+# =========================================================================
+	net aux0-gcode motion.digital-out-00 => aux0_or.in0
+	net aux1-gcode motion.digital-out-01 => aux1_or.in0
+	net aux2-gcode motion.digital-out-02 => aux2_or.in0
+	net aux3-gcode motion.digital-out-03 => aux3_or.in0
+
+# ---- Manual toolchange (identique a la config reelle, qtdragon_hd) ----
+	net tool-prepare-loopback iocontrol.0.tool-prepare => iocontrol.0.tool-prepared

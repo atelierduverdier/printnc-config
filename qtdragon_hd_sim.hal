@@ -1,0 +1,12 @@
+# qtdragon_hd_sim.hal
+# Version SIMULATION : pas de VFD, pas de hal_manualtoolchange charge en amont.
+
+# LED probe (le signal probe_input n'existe pas en sim car pas de flexi.
+# On cree donc une pin observable a zero pour la LED).
+	setp qtdragon.led-probe 0
+
+# Feedback broche : en simulation, valeurs fixes a zero pour eviter les
+# liens vers le VFD reel.
+	setp qtdragon.spindle-amps 0
+	setp qtdragon.spindle-volts 0
+	setp qtdragon.spindle-modbus-connection 0

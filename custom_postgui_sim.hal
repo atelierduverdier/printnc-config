@@ -1,0 +1,17 @@
+# custom_postgui_sim.hal
+# Version SIMULATION du postgui (PC sans carte FlexiHAL).
+# Les boutons aux0..aux3 du .ui pilotent les or2 comme en reel, mais la
+# sortie combinee ne va PAS vers flexi.output.AUX (absent) : elle est
+# laissee en signal libre, observable dans halshow / halmeter.
+
+# Boutons AUX (PushButton HAL QtDragon) vers la seconde entree des or2
+	net aux0-btn qtdragon.aux0 => aux0_or.in1
+	net aux1-btn qtdragon.aux1 => aux1_or.in1
+	net aux2-btn qtdragon.aux2 => aux2_or.in1
+	net aux3-btn qtdragon.aux3 => aux3_or.in1
+
+# Sortie combinee (bouton OU G-code). En simulation, signal libre.
+	net aux0-out aux0_or.out
+	net aux1-out aux1_or.out
+	net aux2-out aux2_or.out
+	net aux3-out aux3_or.out

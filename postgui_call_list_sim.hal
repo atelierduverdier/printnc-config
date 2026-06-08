@@ -1,0 +1,4 @@
+# postgui_call_list_sim.hal
+# Charge les postgui specifiques a la simulation.
+source qtdragon_hd_sim.hal
+source custom_postgui_sim.hal

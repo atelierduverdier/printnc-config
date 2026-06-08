@@ -6122,7 +6122,7 @@ LOG</string>
                        <bool>true</bool>
                       </property>
                      </widget>
-                     <widget class="PushButton" name="aux1">
+                     <widget class="PushButton" name="aux1_0">
                       <property name="geometry">
                        <rect>
                         <x>140</x>
@@ -6138,7 +6138,7 @@ LOG</string>
                        <bool>true</bool>
                       </property>
                      </widget>
-                     <widget class="PushButton" name="aux0">
+                     <widget class="PushButton" name="aux0_1">
                       <property name="geometry">
                        <rect>
                         <x>30</x>
@@ -10457,7 +10457,7 @@ HOME</string>
                   <number>4</number>
                  </property>
                  <item>
-                  <widget class="PushButton" name="btn_laser_on_2">
+                  <widget class="PushButton" name="aux0">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -10476,65 +10476,16 @@ HOME</string>
                      <height>48</height>
                     </size>
                    </property>
-                   <property name="toolTip">
-                    <string>Toggle laser crosshairs</string>
-                   </property>
                    <property name="text">
-                    <string>LASER
-OFF</string>
+                    <string>ASPIRATEUR</string>
                    </property>
                    <property name="checkable">
                     <bool>true</bool>
                    </property>
-                   <property name="checked">
-                    <bool>false</bool>
-                   </property>
-                   <property name="pin_name" stdset="0">
-                    <string>btn-laser-on</string>
-                   </property>
-                   <property name="indicator_option" stdset="0">
-                    <bool>false</bool>
-                   </property>
-                   <property name="checked_state_text_option" stdset="0">
-                    <bool>true</bool>
-                   </property>
-                   <property name="python_command_option" stdset="0">
-                    <bool>false</bool>
-                   </property>
-                   <property name="on_color" stdset="0">
-                    <color>
-                     <red>0</red>
-                     <green>255</green>
-                     <blue>0</blue>
-                    </color>
-                   </property>
-                   <property name="indicator_size" stdset="0">
-                    <double>0.200000000000000</double>
-                   </property>
-                   <property name="true_state_string" stdset="0">
-                    <string>LASER
-ON</string>
-                   </property>
-                   <property name="false_state_string" stdset="0">
-                    <string>LASER
-OFF</string>
-                   </property>
-                   <property name="true_python_cmd_string" stdset="0">
-                    <string>print&quot;Laser crosshair turned on&quot;</string>
-                   </property>
-                   <property name="false_python_cmd_string" stdset="0">
-                    <string>print&quot;Laser crosshair turned off&quot;</string>
-                   </property>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="btn_ref_laser_2">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
+                  <widget class="PushButton" name="aux1">
                    <property name="minimumSize">
                     <size>
                      <width>90</width>
@@ -10547,12 +10498,11 @@ OFF</string>
                      <height>48</height>
                     </size>
                    </property>
-                   <property name="toolTip">
-                    <string>Set laser crosshair reference</string>
-                   </property>
                    <property name="text">
-                    <string>REF
-LASER</string>
+                    <string>LUMIERE</string>
+                   </property>
+                   <property name="checkable">
+                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -16941,7 +16891,7 @@ ANGULAR</string>
          <number>2</number>
         </property>
         <property name="text">
-         <string>08:11:40 AM</string>
+         <string>07:12:21 AM</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
