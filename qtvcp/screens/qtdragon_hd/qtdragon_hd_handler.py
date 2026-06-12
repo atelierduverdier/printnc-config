@@ -428,8 +428,11 @@ class HandlerClass:
 
         # check for default setup html file
         try:
-            # web view widget for SETUP page
-            if self.w.web_view:
+            # web view widget pour la page SETUP : SUPPRIME de l'interface
+            # (QtWebEngine/Chromium provoquait des erreurs page_allocator et un
+            # gel au demarrage). On verifie l'existence du widget avant tout
+            # acces : si absent, on saute proprement sans lever d'exception.
+            if hasattr(self.w, 'web_view') and hasattr(self.w, 'layout_HTML') and self.w.web_view:
                 self.toolBar = QtWidgets.QToolBar(self.w)
                 self.w.tabWidget_setup.setCornerWidget(self.toolBar)
 
@@ -1603,7 +1606,7 @@ class HandlerClass:
             self.w.btn_main.setChecked(True)
     
     # calc wait time for mdi move based on dist and rapid speed, return seconds to wait
-    def calc_mdi_move_wait_time(self, dest_x, dest_y, wait_buffer_secs=1):
+    def calc_mdi_move_wait_time(self, dest_x, dest_y, wait_buffer_secs=4):
         move_speed = (STATUS.stat.rapidrate * STATUS.get_max_velocity()) / 60
         pos_cur,pos_rel,dtg, = STATUS.get_position()
         move_dist = sqrt((dest_x - pos_cur[0]) ** 2 + (dest_y - pos_cur[1]) ** 2)
