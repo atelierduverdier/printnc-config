@@ -6088,7 +6088,7 @@ LOG</string>
                     </widget>
                     <widget class="QWidget" name="Aux">
                      <attribute name="title">
-                      <string>AUX</string>
+                      <string>LANCEURS</string>
                      </attribute>
                      <widget class="PushButton" name="aux2">
                       <property name="geometry">
@@ -6122,36 +6122,56 @@ LOG</string>
                        <bool>true</bool>
                       </property>
                      </widget>
-                     <widget class="PushButton" name="aux1_0">
-                      <property name="geometry">
-                       <rect>
-                        <x>140</x>
-                        <y>30</y>
-                        <width>101</width>
-                        <height>71</height>
-                       </rect>
-                      </property>
-                      <property name="text">
-                       <string>AUX 1</string>
-                      </property>
-                      <property name="checkable">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                     <widget class="PushButton" name="aux0_1">
+                     <widget class="QPushButton" name="btn_terminal">
                       <property name="geometry">
                        <rect>
                         <x>30</x>
                         <y>30</y>
-                        <width>100</width>
+                        <width>121</width>
                         <height>71</height>
                        </rect>
                       </property>
                       <property name="text">
-                       <string>AUX 0</string>
+                       <string>Terminal</string>
                       </property>
-                      <property name="checkable">
-                       <bool>true</bool>
+                     </widget>
+                     <widget class="QPushButton" name="btn_geany">
+                      <property name="geometry">
+                       <rect>
+                        <x>30</x>
+                        <y>110</y>
+                        <width>121</width>
+                        <height>71</height>
+                       </rect>
+                      </property>
+                      <property name="text">
+                       <string>Geany</string>
+                      </property>
+                     </widget>
+                     <widget class="QPushButton" name="btn_fichiers">
+                      <property name="geometry">
+                       <rect>
+                        <x>30</x>
+                        <y>190</y>
+                        <width>121</width>
+                        <height>71</height>
+                       </rect>
+                      </property>
+                      <property name="text">
+                       <string>Fichiers</string>
+                      </property>
+                     </widget>
+                     <widget class="QPushButton" name="btn_navigateur">
+                      <property name="geometry">
+                       <rect>
+                        <x>30</x>
+                        <y>270</y>
+                        <width>121</width>
+                        <height>71</height>
+                       </rect>
+                      </property>
+                      <property name="text">
+                       <string>Mozilla</string>
                       </property>
                      </widget>
                     </widget>
@@ -16891,7 +16911,7 @@ ANGULAR</string>
          <number>2</number>
         </property>
         <property name="text">
-         <string>07:12:21 AM</string>
+         <string>04:59:41 PM</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -18062,7 +18082,7 @@ ANGULAR</string>
   <slot>btn_pause_clicked()</slot>
  </slots>
  <buttongroups>
-  <buttongroup name="page_buttonGroup"/>
   <buttongroup name="mode_buttonGroup"/>
+  <buttongroup name="page_buttonGroup"/>
  </buttongroups>
 </ui>
