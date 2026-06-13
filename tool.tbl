@@ -1,7 +1,7 @@
 T0   P0   ;Pas d'outil (obligatoire) 
 T1   P1   ;Outil 1 (manuel) 
 T2   P2   ;Fraise 6mm 
-T3   P3   ;Outil 3 (manuel) 
+T3   P3   Z+6.992500 ;Outil 3 (manuel) 
 T4   P4   ;Outil 4 (manuel) 
 T5   P5   ;Outil 5 (manuel) 
 T6   P6   ;Outil 6 (manuel) 

@@ -196,31 +196,28 @@
 	#Halt is shared with motor alarms and is up in the estop loop.
 
 	#Hold logic
-	net hold_button flexi.input.FEED_HOLD.not => hold_button_toggle.in
+	net hold_button flexi.input.FEED_HOLD => hold_button_toggle.in
 	net hold_toggle_latch hold_button_toggle.out => hold_toggle.in
 	net hold_on halui.program.pause <= hold_toggle.on
 	net hold_off halui.program.resume <= hold_toggle.off
 
-	#Cycle start logic. When not running, start the program. When in feed hold, single step through the program.
-	net run-step_button flexi.input.CYCLE_START.not => run_and.in0 step_and.in0
-	net program-is-idle halui.program.is-idle => run_and.in1 #if not running AND button pressed
-	net program-run run_and.out => halui.program.run #run program
-	net program-is-paused => step_and.in1 #if paused AND button pressed
-	net single-step step_and.out => halui.program.step #single step
-# ==================== CYCLE START simplifié (recommandé) ====================
-# Le bouton lance le programme UNIQUEMENT quand il est idle.
-# Il ne fait plus de single-step automatique → plus de boucle à la fin.
-
-#net cycle-start-button   flexi.input.CYCLE_START   => run_and.in0
-#net program-is-idle      halui.program.is-idle     => run_and.in1
-#net program-run          run_and.out              => halui.program.run
-
-# Optionnel : Garde le Hold (pause) séparé, c'est plus sûr
-#	net hold_button flexi.input.FEED_HOLD => hold_button_toggle.in
-#	net hold_toggle_latch hold_button_toggle.out => hold_toggle.in
-#	net hold_on  halui.program.pause  <= hold_toggle.on
-#	net hold_off halui.program.resume <= hold_toggle.off
-
+	#Cycle start logic. Lance le programme uniquement quand il est idle.
+	#CYCLE_START est actif HAUT (FALSE au repos, TRUE en appui) : pas de .not ici.
+	#Plus de single-step automatique => plus de redemarrage en boucle.
+	net cycle-start-button flexi.input.CYCLE_START => run_and.in0
+	net program-is-idle halui.program.is-idle => run_and.in1
+	net program-run run_and.out => halui.program.run
+# ==================== Ancienne logique CYCLE START (buggee, desactivee) =======
+# Cause du bug "le programme redemarre en boucle / Stop ne tient pas" :
+#   - CYCLE_START.not est TRUE au repos (car CYCLE_START est actif haut)
+#   - => run_and.in0 reste TRUE en permanence sauf pendant l'appui
+#   - => dès que program-is-idle redevient TRUE, le programme repart seul
+#
+#net run-step_button flexi.input.CYCLE_START.not => run_and.in0 step_and.in0
+#net program-is-idle halui.program.is-idle => run_and.in1 #if not running AND button pressed
+#net program-run run_and.out => halui.program.run #run program
+#net program-is-paused halui.program.is-paused => step_and.in1 #if paused AND button pressed
+#net single-step step_and.out => halui.program.step #single step
 
 # Probe
 	net probe_input motion.probe-input <= flexi.input.PROBE.not
