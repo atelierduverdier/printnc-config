@@ -10,7 +10,8 @@
 	loadrt and2 names=run_and,step_and
 	loadrt toggle names=hold_button_toggle
 	loadrt toggle2nist names=hold_toggle,paused_toggle
-	loadrt or2 names=aux0_or,aux1_or,aux2_or,aux3_or
+	loadrt or2 names=aux0_or,aux1_or,aux2_or,aux3_or,cool_or1,cool_or2
+	loadrt timedelay names=spindle_cooldown
 
 
 # add the remora and motion functions to threads
@@ -37,6 +38,9 @@
 	addf aux1_or servo-thread
 	addf aux2_or servo-thread
 	addf aux3_or servo-thread
+	addf cool_or1 servo-thread
+	addf cool_or2 servo-thread
+	addf spindle_cooldown servo-thread
 
 
 #toggle2nist states & mux selectors
@@ -57,6 +61,13 @@
 	net spindle-reverse vfd.spindle-reverse => spindle.0.reverse
 	net spindle-on vfd.spindle-on => spindle.0.on
 	net spindle-comm-ok <= vfd.hycomm-ok
+
+# Post-refroidissement : quand la broche tourne, spindle_cooldown.out est vrai.
+# Quand la broche s'arrete (M5), il reste vrai encore 30 s (off-delay).
+# on-delay 0 = pas de retard a l'allumage. off-delay 30 = 30 s apres l'arret.
+	setp spindle_cooldown.on-delay 0
+	setp spindle_cooldown.off-delay 30
+	net spindle-on => spindle_cooldown.in
 	
 # Analog spindle control - Uncomment if using PWM or analog. You will also need to comment out spindle_load.hal in postgui_call_list.hal.
 	#loadrt scale names=spindle_speed_scale
@@ -181,7 +192,11 @@
 
 
 # Flood and mist outputs
-	net flood flexi.output.COOLANT <= iocontrol.0.coolant-flood
+# Le flood (pompe) est actif si : M8 (coolant-flood) OU post-refroidissement broche.
+# cool_or1 combine la commande M8 et le cooldown de la broche.
+	net coolant-m8 iocontrol.0.coolant-flood => cool_or1.in0
+	net spindle-cooldown spindle_cooldown.out => cool_or1.in1
+	net cooling-active cool_or1.out => flexi.output.COOLANT
 	net mist flexi.output.MIST <= iocontrol.0.coolant-mist
 	
 # Sorties auxiliaires : entree G-code (M64/M65) vers les or2.
