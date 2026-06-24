@@ -324,9 +324,6 @@ class HandlerClass:
         dest_x = -cam_x
         dest_y = -cam_y
 
-<<<<<<< HEAD
-        self.add_status("Mise a zero G54 et deplacement camera...")
-=======
         self.add_status("Deplacement camera vers la position fraise")
         ACTION.CALL_MDI("G90")
         # remontee Z de securite avant tout deplacement XY
@@ -336,7 +333,6 @@ class HandlerClass:
         command = "G0 X{:3.4f} Y{:3.4f}".format(dest_x, dest_y)
         ACTION.CALL_MDI_WAIT(command, self.calc_mdi_move_wait_time(dest_x, dest_y))
         self.add_status("Camera positionnee - ajuste puis REF CAMERA")
->>>>>>> c6be6412b81e7d520104952d23c4da0af9be3b0c
 
         # --- LA CORRECTION ICI ---
         # 1. On applique le zéro G54 (G10 L20 P1 X0 Y0)
