@@ -335,6 +335,7 @@ class HandlerClass:
         # remontee Z de securite avant tout deplacement XY
         ACTION.CALL_MDI_WAIT("G53 G0 Z0")
         # deplacement XY dans le repere piece courant (G54...) -> la camera vise (0,0)
+        ACTION.CALL_MDI("G91")
         command = "G0 X{:3.4f} Y{:3.4f}".format(dest_x, dest_y)
         ACTION.CALL_MDI_WAIT(command, self.calc_mdi_move_wait_time(dest_x, dest_y))
         self.add_status("Camera positionnee - ajuste puis REF CAMERA")
