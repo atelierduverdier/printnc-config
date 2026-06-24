@@ -1,3 +1,110 @@
+# Changelog — 24 juin 2026 — Bouton CAM VERS OUTIL (decalage camera/broche)
+## PrintNC Flexi-HAL — Atelier du Verdier
+
+**Machine :** PrintNC — FlexiHAL (Expatria / Remora) — LinuxCNC 2.9.8 — QtDragon_hd
+
+---
+
+## 1. Objectif
+
+Ajouter un bouton "CAM VERS OUTIL" amenant la camera a la place de la fraise
+(decalage relatif de l'offset camera/broche), pour pointer un repere a l'ecran
+puis poser le zero piece via le bouton REF CAMERA.
+
+Workflow retenu :
+1. Positionner la fraise sur le point vise (position quelconque, ex. X240 Y500).
+2. Clic CAM VERS OUTIL -> decalage relatif G91 G0 X[-cam_x] Y[-cam_y] : la camera
+   vient au-dessus du point que la fraise visait.
+3. Ajustement fin au jog en regardant l'image camera.
+4. Clic REF CAMERA -> G10 L20 P0 avec les offsets camera : pose du zero piece.
+
+Avantage : le decalage et la compensation REF CAMERA lisent les MEMES champs
+(lineEdit_camera_x / lineEdit_camera_y), donc coherents par construction. Plus
+besoin de passer par X0 Y0 comme avant.
+
+## 2. CAUSE RACINE du bug (RESOLU)
+
+Symptome : en MDI manuel, "G91 G0 X-76 Y-85" fonctionne et va direct en 2 s.
+Lance depuis le bouton, la fraise traversait toute la table vers l'origine.
+Le handler Python etait pourtant correct (le status bar affichait bien la bonne
+commande "MDI envoye : G91 G0 X-10 Y-10").
+
+Diagnostic : le bouton btn_camera_to_tool avait ete cree dans Designer en
+REUTILISANT un bouton existant, qui conservait sa connexion d'origine dans le
+.ui vers le slot btn_goto_location_clicked(). Cette methode fait un
+"G53 G0 Z0" puis un "G53 G0 X.. Y.." en coordonnees MACHINE.
+
+Resultat : a chaque clic, DEUX actions partaient en parallele :
+  - la connexion Python ajoutee a la main (bon deplacement relatif G91)
+  - la connexion parasite du .ui (G53 absolu machine -> traversee vers origine)
+En MDI manuel ce parasite n'existe pas, d'ou la difference de comportement.
+
+Localisation du parasite (grep sur le .ui) :
+    <sender>btn_camera_to_tool</sender>
+    <signal>clicked()</signal>
+    <receiver>MainWindow</receiver>
+    <slot>btn_goto_location_clicked()</slot>
+
+## 3. Correction
+
+Suppression du bloc <connection> parasite dans le .ui (le bouton ne garde que
+la connexion Python definie dans initialized__).
+
+```bash
+# sauvegarde + suppression du bloc <connection> de btn_camera_to_tool
+sed -i.bak '17579,17594d' qtvcp/screens/qtdragon_hd/qtdragon_hd.ui
+# verification : ne doit rester que la definition du widget
+grep -n "btn_camera_to_tool" qtvcp/screens/qtdragon_hd/qtdragon_hd.ui
+#   -> une seule ligne : <widget class="QPushButton" name="btn_camera_to_tool">
+```
+
+Connexion conservee dans le handler (initialized__) :
+```python
+if hasattr(self.w, 'btn_camera_to_tool'):
+    self.w.btn_camera_to_tool.clicked.connect(self.btn_camera_to_tool_clicked)
+```
+
+Methode finale (qtdragon_hd_handler.py) :
+```python
+def btn_camera_to_tool_clicked(self):
+    if not STATUS.is_all_homed():
+        self.add_status("Machine non referencee (homing requis)", WARNING)
+        return
+    try:
+        cam_x = float(self.w.lineEdit_camera_x.text())
+        cam_y = float(self.w.lineEdit_camera_y.text())
+    except ValueError:
+        self.add_status("Erreur : valeurs d'offset camera invalides", WARNING)
+        return
+    if cam_x == 0 and cam_y == 0:
+        self.add_status("Offset camera = 0,0 : verifier les champs", WARNING)
+        return
+
+    cmd = "G91 G0 X{:.3f} Y{:.3f}".format(-cam_x, -cam_y)
+    self.add_status("MDI envoye : " + cmd)
+    ACTION.SET_MDI_MODE()
+    ACTION.CALL_MDI_WAIT(cmd, 30)
+    ACTION.CALL_MDI_WAIT("G90", 5)
+```
+
+## 4. Lecons
+
+- Reutiliser un bouton dans Designer conserve ses connexions signal/slot du .ui,
+  invisibles cote handler. Toujours verifier dans Designer (F4, Edit Signals/Slots)
+  ou par grep sur le .ui, et supprimer l'ancienne connexion avant d'en cabler une
+  nouvelle (ou tout gerer cote Python en laissant le bouton non connecte dans le .ui).
+- Quand un widget reagit "en double" alors que le Python semble correct, le
+  diagnostic est dans le .ui, pas dans le handler.
+- cam_to_tool.ngc (sous-programme externe) abandonne : tout passe par le handler,
+  fichier supprime.
+
+## 5. A faire ensuite
+
+- [ ] Confirmer le SENS du decalage sur plusieurs reperes (signes de cam_x/cam_y).
+- [ ] Renommer eventuellement la methode / le label si la fonction evolue.
+- [ ] Ajouter *.bak au .gitignore pour ne pas suivre les sauvegardes.
+
+---
 # Changelog — 16 juin 2026 — Refroidissement broche (pompe + ventilateurs)
 ## PrintNC Flexi-HAL — Atelier du Verdier
 
