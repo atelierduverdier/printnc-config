@@ -57,7 +57,7 @@
 	net j3pos joint.3.motor-pos-cmd => joint.3.motor-pos-fb
 
 # Capteurs de home simules : a 0, jamais declenches (homing immediat possible)
-	setp joint.0.home-sw-in 0
+	setp joint.0.home-sw-in 0	
 	setp joint.1.home-sw-in 0
 	setp joint.2.home-sw-in 0
 	setp joint.3.home-sw-in 0

@@ -17577,22 +17577,6 @@ ANGULAR</string>
    </hints>
   </connection>
   <connection>
-   <sender>btn_camera_to_tool</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>btn_goto_location_clicked()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>524</x>
-     <y>909</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>446</x>
-     <y>1091</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>btn_go_home</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>

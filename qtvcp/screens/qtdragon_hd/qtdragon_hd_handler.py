@@ -310,39 +310,21 @@ class HandlerClass:
         if not STATUS.is_all_homed():
             self.add_status("Machine non referencee (homing requis)", WARNING)
             return
+        try:
+            cam_x = float(self.w.lineEdit_camera_x.text())
+            cam_y = float(self.w.lineEdit_camera_y.text())
+        except ValueError:
+            self.add_status("Erreur : valeurs d'offset camera invalides", WARNING)
+            return
+        if cam_x == 0 and cam_y == 0:
+            self.add_status("Offset camera = 0,0 : verifier les champs", WARNING)
+            return
 
-        cam_x = float(self.w.lineEdit_camera_x.text())
-        cam_y = float(self.w.lineEdit_camera_y.text())
-
-        if STATUS.is_metric_mode():
-            cam_x = INFO.convert_machine_to_metric(cam_x)
-            cam_y = INFO.convert_machine_to_metric(cam_y)
-        else:
-            cam_x = INFO.convert_machine_to_imperial(cam_x)
-            cam_y = INFO.convert_machine_to_imperial(cam_y)
-
-        dest_x = -cam_x
-        dest_y = -cam_y
-
-        self.add_status("Deplacement camera vers la position fraise")
-        ACTION.CALL_MDI("G90")
-        # remontee Z de securite avant tout deplacement XY
-        ACTION.CALL_MDI_WAIT("G53 G0 Z0")
-        # deplacement XY dans le repere piece courant (G54...) -> la camera vise (0,0)
-        ACTION.CALL_MDI("G91")
-        command = "G0 X{:3.4f} Y{:3.4f}".format(dest_x, dest_y)
-        ACTION.CALL_MDI_WAIT(command, self.calc_mdi_move_wait_time(dest_x, dest_y))
-        self.add_status("Camera positionnee - ajuste puis REF CAMERA")
-
-        # --- LA CORRECTION ICI ---
-        # 1. On applique le zéro G54 (G10 L20 P1 X0 Y0)
-        # 2. G4 P0.1 : On force une pause de 100ms pour casser le "look-ahead" et valider le repère
-        # 3. G90 G54 G0 X... Y... : On lance le déplacement basé sur le repère tout neuf
-        command = "G10 L20 P1 X0 Y0 G4 P0.1 G90 G54 G0 X{:3.4f} Y{:3.4f}".format(dest_x, dest_y)
-        
-        ACTION.CALL_MDI(command)
-        
-        self.add_status("Camera positionnee - ajuste puis REF CAMERA")
+        cmd = "G91 G0 X{:.3f} Y{:.3f}".format(-cam_x, -cam_y)
+        self.add_status("MDI envoye : " + cmd)
+        ACTION.SET_MDI_MODE()
+        ACTION.CALL_MDI_WAIT(cmd, 30)
+        ACTION.CALL_MDI_WAIT("G90", 5)
         
     #############################
     # SPECIAL FUNCTIONS SECTION #
