@@ -1,0 +1,56 @@
+[CUSTOM_FORM_ENTRIES]
+Tool to load = 0
+Laser X = 100.0
+Laser Y = -20.0
+Sensor X = 10.0
+Sensor Y = 10.0
+Camera X = -76.849
+Camera Y = -85.684
+Work Height = 20.0
+Touch Height = 40.0
+Sensor Height = 40.0
+Search Velocity = 40.0
+Probe Velocity = 10.0
+Max Probe = 10.0
+Retract Distance = 10.0
+Z Safe Travel = 10.0
+Eoffset count = 0
+External offsets = False
+Reload program = False
+Reload tool = False
+Use keyboard = False
+Use tool sensor = False
+Use tool touchplate = False
+Run from line = False
+Use virtual keyboard = False
+Use camera = True
+Use alpha display mode = False
+Inhibit display mouse selection = True
+camview-CDiam = 30
+Camview xscale = 155
+Camview yscale = 100
+Camview cam number = 0
+Camview cam api = V4L2
+Camview cam resolution = 1280,720
+
+[VERSA_PROBE_OPTIONS]
+ps_searchvel = 300.0
+ps_probevel = 10.0
+ps_z_clearance = 3.0
+ps_probe_max = 1.0
+ps_probe_max_z_travel = 1.0
+ps_probe_latch = 0.5
+ps_probe_diam = 2.0
+ps_xy_clearance = 5.0
+ps_side_edge_length = 5.0
+ps_probe_height = 20.0
+ps_block_height = 20.0
+ps_offs_x = 0.0
+ps_offs_y = 0.0
+ps_offs_z = 0.0
+ps_offs_angle = 0.0
+ps_probe_rapid_vel = 60.0
+use_tool_measurement = True
+use_auto_zero = True
+use_auto_skew = True
+
