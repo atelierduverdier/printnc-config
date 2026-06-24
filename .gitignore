@@ -27,4 +27,6 @@ __pycache__/
 
 # Historique MDI (propre a chaque machine)
 .axis_mdi_history
+<<<<<<< HEAD
 remora-flexi-sim.old/
+!qtdragon.pref.reference

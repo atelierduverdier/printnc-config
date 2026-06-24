@@ -9,8 +9,14 @@
 	net aux2-btn qtdragon.aux2 => aux2_or.in1
 	net aux3-btn qtdragon.aux3 => aux3_or.in1
 
-# Sortie combinee (bouton OU G-code) vers les relais.
+# Sortie combinee vers les relais.
 	net aux0-out aux0_or.out => flexi.output.AUX0
 	net aux1-out aux1_or.out => flexi.output.AUX1
-	net aux2-out aux2_or.out => flexi.output.AUX2
+# AUX2 (ventilateurs) : actif si (bouton OU M64) OU refroidissement actif.
+# 'cooling-active' = M8 OU post-refroidissement broche (defini dans remora-flexi.hal).
+# Ainsi flood (pompe) et ventilateurs demarrent et s'arretent ensemble,
+# avec le meme post-refroidissement de 30 s apres l'arret de la broche.
+	net aux2-or-out aux2_or.out => cool_or2.in0
+	net cooling-active => cool_or2.in1
+	net aux2-out cool_or2.out => flexi.output.AUX2
 	net aux3-out aux3_or.out => flexi.output.AUX3

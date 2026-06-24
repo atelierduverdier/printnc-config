@@ -1,9 +1,76 @@
-# Changelog — 8 juin 2026
+# Changelog — 16 juin 2026 — Refroidissement broche (pompe + ventilateurs)
 ## PrintNC Flexi-HAL — Atelier du Verdier
 
 Machine : PrintNC — FlexiHAL (Expatria / Remora) — LinuxCNC 2.9.8 — QtDragon_hd
 
 ---
+
+## 1. Pompe et ventilateurs lies, avec post-refroidissement
+
+La pompe a eau (sortie FLOOD / COOLANT, M8) et les ventilateurs (AUX2) sont
+desormais pilotes ensemble par un signal commun "cooling-active". Objectif :
+refroidir la broche pendant l'usinage ET continuer un moment apres, pour
+evacuer la chaleur residuelle et menager la broche.
+
+Comportement obtenu :
+- M3 (broche ON) ou M8 -> pompe + ventilateurs demarrent immediatement.
+- M5 (broche OFF) ou M9 -> pompe + ventilateurs restent actifs encore 30 s,
+  puis s'arretent ensemble (post-refroidissement).
+- Bouton AUX2 et M64 P2 / M65 P2 -> commande manuelle des ventilateurs (inchange).
+
+## 2. Composants HAL ajoutes
+
+remora-flexi.hal :
+- 2 or2 supplementaires (cool_or1, cool_or2) et 1 timedelay (spindle_cooldown)
+  ajoutes aux lignes loadrt / addf.
+- timedelay configure : on-delay 0 (demarrage immediat), off-delay 30
+  (post-refroidissement de 30 s, ajustable).
+- La sortie FLOOD n'est plus pilotee directement par iocontrol.0.coolant-flood :
+  elle passe par cool_or1 = (M8) OU (cooldown broche). Le signal resultant
+  "cooling-active" pilote flexi.output.COOLANT.
+
+```hal
+loadrt or2 names=aux0_or,aux1_or,aux2_or,aux3_or,cool_or1,cool_or2
+loadrt timedelay names=spindle_cooldown
+addf cool_or1 servo-thread
+addf cool_or2 servo-thread
+addf spindle_cooldown servo-thread
+
+setp spindle_cooldown.on-delay 0
+setp spindle_cooldown.off-delay 30
+net spindle-on => spindle_cooldown.in
+
+# FLOOD = M8 OU post-refroidissement broche
+net coolant-m8 iocontrol.0.coolant-flood => cool_or1.in0
+net spindle-cooldown spindle_cooldown.out => cool_or1.in1
+net cooling-active cool_or1.out => flexi.output.COOLANT
+```
+
+custom_postgui.hal :
+- AUX2 (ventilateurs) passe par cool_or2 = (bouton OU M64 P2) OU cooling-active.
+  Ainsi les ventilateurs suivent exactement la pompe.
+
+```hal
+# AUX2 (ventilateurs) = (bouton OU M64) OU refroidissement actif
+net aux2-or-out aux2_or.out => cool_or2.in0
+net cooling-active => cool_or2.in1
+net aux2-out cool_or2.out => flexi.output.AUX2
+```
+
+## 3. Reglage du delai
+
+Le post-refroidissement se regle avec une seule ligne dans remora-flexi.hal :
+`setp spindle_cooldown.off-delay 30` (valeur en secondes).
+
+## 4. Correction affectation AUX
+
+Le document AFFECTATION_AUX.md indiquait AUX2 = pompe a eau. Correction : AUX2
+= ventilateurs broche. La pompe a eau est sur la sortie FLOOD (COOLANT), pas
+sur une AUX.
+
+---
+
+
 
 ## 1. Environnement de developpement PC + simulation
 

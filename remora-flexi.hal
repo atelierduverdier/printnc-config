@@ -10,7 +10,8 @@
 	loadrt and2 names=run_and,step_and
 	loadrt toggle names=hold_button_toggle
 	loadrt toggle2nist names=hold_toggle,paused_toggle
-	loadrt or2 names=aux0_or,aux1_or,aux2_or,aux3_or
+	loadrt or2 names=aux0_or,aux1_or,aux2_or,aux3_or,cool_or1,cool_or2
+	loadrt timedelay names=spindle_cooldown
 
 
 # add the remora and motion functions to threads
@@ -37,6 +38,9 @@
 	addf aux1_or servo-thread
 	addf aux2_or servo-thread
 	addf aux3_or servo-thread
+	addf cool_or1 servo-thread
+	addf cool_or2 servo-thread
+	addf spindle_cooldown servo-thread
 
 
 #toggle2nist states & mux selectors
@@ -57,6 +61,13 @@
 	net spindle-reverse vfd.spindle-reverse => spindle.0.reverse
 	net spindle-on vfd.spindle-on => spindle.0.on
 	net spindle-comm-ok <= vfd.hycomm-ok
+
+# Post-refroidissement : quand la broche tourne, spindle_cooldown.out est vrai.
+# Quand la broche s'arrete (M5), il reste vrai encore 30 s (off-delay).
+# on-delay 0 = pas de retard a l'allumage. off-delay 30 = 30 s apres l'arret.
+	setp spindle_cooldown.on-delay 0
+	setp spindle_cooldown.off-delay 30
+	net spindle-on => spindle_cooldown.in
 	
 # Analog spindle control - Uncomment if using PWM or analog. You will also need to comment out spindle_load.hal in postgui_call_list.hal.
 	#loadrt scale names=spindle_speed_scale
@@ -181,7 +192,11 @@
 
 
 # Flood and mist outputs
-	net flood flexi.output.COOLANT <= iocontrol.0.coolant-flood
+# Le flood (pompe) est actif si : M8 (coolant-flood) OU post-refroidissement broche.
+# cool_or1 combine la commande M8 et le cooldown de la broche.
+	net coolant-m8 iocontrol.0.coolant-flood => cool_or1.in0
+	net spindle-cooldown spindle_cooldown.out => cool_or1.in1
+	net cooling-active cool_or1.out => flexi.output.COOLANT
 	net mist flexi.output.MIST <= iocontrol.0.coolant-mist
 	
 # Sorties auxiliaires : entree G-code (M64/M65) vers les or2.
@@ -196,31 +211,28 @@
 	#Halt is shared with motor alarms and is up in the estop loop.
 
 	#Hold logic
-	net hold_button flexi.input.FEED_HOLD.not => hold_button_toggle.in
+	net hold_button flexi.input.FEED_HOLD => hold_button_toggle.in
 	net hold_toggle_latch hold_button_toggle.out => hold_toggle.in
 	net hold_on halui.program.pause <= hold_toggle.on
 	net hold_off halui.program.resume <= hold_toggle.off
 
-	#Cycle start logic. When not running, start the program. When in feed hold, single step through the program.
-	net run-step_button flexi.input.CYCLE_START.not => run_and.in0 step_and.in0
-	net program-is-idle halui.program.is-idle => run_and.in1 #if not running AND button pressed
-	net program-run run_and.out => halui.program.run #run program
-	net program-is-paused => step_and.in1 #if paused AND button pressed
-	net single-step step_and.out => halui.program.step #single step
-# ==================== CYCLE START simplifié (recommandé) ====================
-# Le bouton lance le programme UNIQUEMENT quand il est idle.
-# Il ne fait plus de single-step automatique → plus de boucle à la fin.
-
-#net cycle-start-button   flexi.input.CYCLE_START   => run_and.in0
-#net program-is-idle      halui.program.is-idle     => run_and.in1
-#net program-run          run_and.out              => halui.program.run
-
-# Optionnel : Garde le Hold (pause) séparé, c'est plus sûr
-#	net hold_button flexi.input.FEED_HOLD => hold_button_toggle.in
-#	net hold_toggle_latch hold_button_toggle.out => hold_toggle.in
-#	net hold_on  halui.program.pause  <= hold_toggle.on
-#	net hold_off halui.program.resume <= hold_toggle.off
-
+	#Cycle start logic. Lance le programme uniquement quand il est idle.
+	#CYCLE_START est actif HAUT (FALSE au repos, TRUE en appui) : pas de .not ici.
+	#Plus de single-step automatique => plus de redemarrage en boucle.
+	net cycle-start-button flexi.input.CYCLE_START => run_and.in0
+	net program-is-idle halui.program.is-idle => run_and.in1
+	net program-run run_and.out => halui.program.run
+# ==================== Ancienne logique CYCLE START (buggee, desactivee) =======
+# Cause du bug "le programme redemarre en boucle / Stop ne tient pas" :
+#   - CYCLE_START.not est TRUE au repos (car CYCLE_START est actif haut)
+#   - => run_and.in0 reste TRUE en permanence sauf pendant l'appui
+#   - => dès que program-is-idle redevient TRUE, le programme repart seul
+#
+#net run-step_button flexi.input.CYCLE_START.not => run_and.in0 step_and.in0
+#net program-is-idle halui.program.is-idle => run_and.in1 #if not running AND button pressed
+#net program-run run_and.out => halui.program.run #run program
+#net program-is-paused halui.program.is-paused => step_and.in1 #if paused AND button pressed
+#net single-step step_and.out => halui.program.step #single step
 
 # Probe
 	net probe_input motion.probe-input <= flexi.input.PROBE.not

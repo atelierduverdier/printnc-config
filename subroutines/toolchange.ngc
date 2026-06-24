@@ -166,7 +166,7 @@ O100 ENDIF
 ; =====================================================================
 G53 G0 Z0                      ; Remontee max AVANT activation G43
 G43 H#<tool_num>               ; Active compensation longueur outil
-G0 X#5420 Y#5421               ; Retour XY au-dessus du zero piece
+G0 X0 Y0                   	   ; Degagement XY machine - loin du palpeur
 (MSG, Toolchange termine)
 
 O<toolchange> endsub
