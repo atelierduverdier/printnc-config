@@ -188,6 +188,10 @@ class HandlerClass:
             self.w.btn_navigateur.clicked.connect(self.launch_navigateur)
         if hasattr(self.w, 'btn_fichiers'):
             self.w.btn_fichiers.clicked.connect(self.launch_fichiers)
+        if hasattr(self.w, 'btn_bureau'):
+            self.w.btn_bureau.clicked.connect(self.show_desktop)
+        if hasattr(self.w, 'btn_camera_to_tool'):
+            self.w.btn_camera_to_tool.clicked.connect(self.btn_camera_to_tool_clicked)
 
     # hide or initiate 4th/5th AXIS dro/jog
         flag = False
@@ -291,6 +295,49 @@ class HandlerClass:
             subprocess.Popen(['xdg-open', os.path.expanduser('~')])
         except FileNotFoundError:
             LOG.warning('xdg-open introuvable')
+            
+    # Affiche le bureau (masque toutes les fenetres) via wmctrl.
+    # Necessite le paquet wmctrl (sudo apt install wmctrl). XFCE/X11.
+    def show_desktop(self):
+        import subprocess
+        try:
+            subprocess.Popen(['wmctrl', '-k', 'on'])
+        except FileNotFoundError:
+            LOG.warning('wmctrl introuvable (sudo apt install wmctrl)')
+            self.add_status("wmctrl introuvable : sudo apt install wmctrl", WARNING)
+
+    # Amene la CAMERA au-dessus du point actuellement sous la fraise.
+    # Usage : 1) positionner la fraise, 2) zero X et Y, 3) ce bouton.
+    # La machine se deplace de l'OPPOSE de l'offset camera (-camera_x, -camera_y)
+    # pour que la camera prenne la place de la fraise. Remontee Z de securite
+    # d'abord (G53 G0 Z0), comme dans btn_goto_location, pour eviter toute collision.
+    def btn_camera_to_tool_clicked(self):
+        if not STATUS.is_all_homed():
+            self.add_status("Machine non referencee (homing requis)", WARNING)
+            return
+        # offset camera lu dans les champs (coordonnees machine), comme btn_ref_camera
+        cam_x = float(self.w.lineEdit_camera_x.text())
+        cam_y = float(self.w.lineEdit_camera_y.text())
+
+        if STATUS.is_metric_mode():
+            cam_x = INFO.convert_machine_to_metric(cam_x)
+            cam_y = INFO.convert_machine_to_metric(cam_y)
+        else:
+            cam_x = INFO.convert_machine_to_imperial(cam_x)
+            cam_y = INFO.convert_machine_to_imperial(cam_y)
+
+        # pour amener la camera sur le point sous la fraise : aller a l'oppose de l'offset
+        dest_x = -cam_x
+        dest_y = -cam_y
+
+        self.add_status("Deplacement camera vers la position fraise")
+        ACTION.CALL_MDI("G90")
+        # remontee Z de securite avant tout deplacement XY
+        ACTION.CALL_MDI_WAIT("G53 G0 Z0")
+        # deplacement XY dans le repere piece courant (G54...) -> la camera vise (0,0)
+        command = "G0 X{:3.4f} Y{:3.4f}".format(dest_x, dest_y)
+        ACTION.CALL_MDI_WAIT(command, self.calc_mdi_move_wait_time(dest_x, dest_y))
+        self.add_status("Camera positionnee - ajuste puis REF CAMERA")
 
     #############################
     # SPECIAL FUNCTIONS SECTION #

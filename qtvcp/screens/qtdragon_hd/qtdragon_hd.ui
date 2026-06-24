@@ -993,7 +993,7 @@
                  <enum>QFrame::Raised</enum>
                 </property>
                 <property name="currentIndex">
-                 <number>7</number>
+                 <number>9</number>
                 </property>
                 <widget class="QWidget" name="stackedWidget_mainTabPage1">
                  <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -6155,6 +6155,19 @@ LOG</string>
                        <string>Mozilla</string>
                       </property>
                      </widget>
+                     <widget class="QPushButton" name="btn_bureau">
+                      <property name="geometry">
+                       <rect>
+                        <x>30</x>
+                        <y>350</y>
+                        <width>121</width>
+                        <height>71</height>
+                       </rect>
+                      </property>
+                      <property name="text">
+                       <string>Bureau</string>
+                      </property>
+                     </widget>
                     </widget>
                    </widget>
                   </item>
@@ -10586,7 +10599,7 @@ PLATE</string>
                   <number>4</number>
                  </property>
                  <item>
-                  <widget class="QPushButton" name="btn_goto_sensor">
+                  <widget class="QPushButton" name="btn_camera_to_tool">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -10609,8 +10622,8 @@ PLATE</string>
                     <string>Go to Tool Sensor location</string>
                    </property>
                    <property name="text">
-                    <string>GO TO
-SENSOR</string>
+                    <string>CAM VERS
+OUTIL</string>
                    </property>
                    <property name="location" stdset="0">
                     <string>sensor</string>
@@ -16892,7 +16905,7 @@ ANGULAR</string>
          <number>2</number>
         </property>
         <property name="text">
-         <string>04:59:41 PM</string>
+         <string>01:15:08 PM</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -17564,7 +17577,7 @@ ANGULAR</string>
    </hints>
   </connection>
   <connection>
-   <sender>btn_goto_sensor</sender>
+   <sender>btn_camera_to_tool</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
    <slot>btn_goto_location_clicked()</slot>
@@ -18063,7 +18076,7 @@ ANGULAR</string>
   <slot>btn_pause_clicked()</slot>
  </slots>
  <buttongroups>
-  <buttongroup name="mode_buttonGroup"/>
   <buttongroup name="page_buttonGroup"/>
+  <buttongroup name="mode_buttonGroup"/>
  </buttongroups>
 </ui>
