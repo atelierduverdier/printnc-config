@@ -320,7 +320,7 @@ class HandlerClass:
             self.add_status("Offset camera = 0,0 : verifier les champs", WARNING)
             return
 
-        cmd = "G91 G0 X{:.3f} Y{:.3f}".format(-cam_x, -cam_y)
+        cmd = "G91 G0 X{:.3f} Y{:.3f}".format(cam_x, cam_y)
         self.add_status("MDI envoye : " + cmd)
         ACTION.SET_MDI_MODE()
         ACTION.CALL_MDI_WAIT(cmd, 30)
