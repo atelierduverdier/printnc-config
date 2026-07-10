@@ -2,7 +2,7 @@
 # load the realtime components
 
 	loadrt [KINS]KINEMATICS
-	loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS
+	loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS num_spindles=[TRAJ]SPINDLES
 
 	loadrt flexi PRU_base_freq=120000
 	loadrt not names=stepen_not,stepen_z_not,aux0_not,aux1_not,aux2_not,aux3_not,flood_not,mist_not
@@ -76,6 +76,42 @@
 	#net spindle-scale-in spindle.0.speed-out => spindle_speed_scale.in
 	#net spindle-speed-scaled spindle_speed_scale.out => flexi.SP.SPINDLE_PWM
 	#net spindle-enable spindle.0.on => flexi.output.SPINDLE_EN
+
+# ============================================================
+# LASER (LaserTree LT-80W-AA-PRO) - pilote comme spindle.1
+# Puissance : S0..1000 (spindle.1) -> flexi.SP.SPINDLE_PWM -> PA8 -> 0-10V
+#             -> convertisseur externe 0-10V vers PWM -> fil jaune laser
+# Interlock  : spindle.1.on -> flexi.output.AUX3 -> relais 24V actif-bas
+#             -> contact NO ferme le +24V vers VCC laser (fil rouge)
+# Commande   : M3 $1 S<puissance>  /  M5 $1
+#
+# AUX3 est desormais dedie au laser (voir plus bas section AUX, le
+# net aux3-gcode a ete commente pour eviter tout conflit).
+#
+# ATTENTION avant premier chargement : verifier qu'aucun net existant
+# (custom_postgui.hal ou fichier source par postgui_call_list.hal) ne
+# relie encore aux3_or.out ou un bouton QtDragon a flexi.output.AUX3.
+# Sinon HAL refuse de charger (pin deja connectee). Verification :
+#   grep -rn "flexi.output.AUX3" ~/linuxcnc/configs/flexi-hal/
+# ============================================================
+
+	loadrt scale names=laser_scale
+	addf   laser_scale servo-thread
+	setp   laser_scale.gain   0.1
+	setp   laser_scale.offset 0
+# gain 0.1 : flexi.SP.SPINDLE_PWM attend une consigne 0-100 (100 = pleine
+# echelle = 10V), PAS 0.0-1.0. Preuve dans le fichier de reference Expatria
+# (spindle_speed_scale.gain 0.004167 = (10/24000)*10 ; a 24000rpm cela
+# donne 24000*0.004167=100, pas 1.0). Donc S1000*0.1=100 vise juste le
+# plafond attendu.
+# CELA RESTE A CONFIRMER PAR LA MESURE avant de brancher le laser :
+# M3 $1 S1000 puis mesurer la tension sur la pin S (ANALOG OUT, connecteur
+# SPINDLE). Si ~10V, gain correct, ne rien changer. Sinon, recalculer le
+# gain a partir de la valeur mesuree (ne pas deviner un autre chiffre).
+
+	net laser-spd  spindle.1.speed-out => laser_scale.in
+	net laser-pwm  laser_scale.out     => flexi.SP.SPINDLE_PWM
+	net laser-arm  spindle.1.on        => flexi.output.AUX3
 
 # estop loopback, SPI comms enable and feedback
 	net user-enable-out iocontrol.0.user-enable-out => flexi.SPI-enable
@@ -205,7 +241,9 @@
 	net aux0-gcode motion.digital-out-00 => aux0_or.in0
 	net aux1-gcode motion.digital-out-01 => aux1_or.in0
 	net aux2-gcode motion.digital-out-02 => aux2_or.in0
-	net aux3-gcode motion.digital-out-03 => aux3_or.in0
+# AUX3 reserve au laser (interlock spindle.1, voir section LASER plus haut).
+# M64 P3 / M65 P3 et le bouton QtDragon AUX3 n'ont plus d'effet.
+#	net aux3-gcode motion.digital-out-03 => aux3_or.in0
 
 # User buttons
 	#Halt is shared with motor alarms and is up in the estop loop.

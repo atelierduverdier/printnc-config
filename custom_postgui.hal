@@ -7,7 +7,9 @@
 	net aux0-btn qtdragon.aux0 => aux0_or.in1
 	net aux1-btn qtdragon.aux1 => aux1_or.in1
 	net aux2-btn qtdragon.aux2 => aux2_or.in1
-	net aux3-btn qtdragon.aux3 => aux3_or.in1
+# AUX3 reserve au laser (interlock spindle.1, voir remora-flexi.hal,
+# section LASER). Le bouton QtDragon AUX3 n'a plus d'effet.
+#	net aux3-btn qtdragon.aux3 => aux3_or.in1
 
 # Sortie combinee vers les relais.
 	net aux0-out aux0_or.out => flexi.output.AUX0
@@ -19,4 +21,7 @@
 	net aux2-or-out aux2_or.out => cool_or2.in0
 	net cooling-active => cool_or2.in1
 	net aux2-out cool_or2.out => flexi.output.AUX2
-	net aux3-out aux3_or.out => flexi.output.AUX3
+# AUX3 -> laser : la net flexi.output.AUX3 <= spindle.1.on est dans
+# remora-flexi.hal (net laser-arm). NE PAS reconnecter aux3_or.out ici,
+# sinon conflit "pin already connected" au chargement de HAL.
+#	net aux3-out aux3_or.out => flexi.output.AUX3
