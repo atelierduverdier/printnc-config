@@ -1,7 +1,7 @@
 # Affectation des sorties auxiliaires (AUX) — PrintNC Flexi-HAL
 ## Atelier du Verdier
 
-Mise a jour : 16 juin 2026
+Mise a jour : 16 juillet 2026
 
 ---
 
@@ -12,10 +12,27 @@ Mise a jour : 16 juin 2026
 | AUX0   | motion.digital-out-00 | qtdragon.aux0 | Aspirateur               | Cable      |
 | AUX1   | motion.digital-out-01 | qtdragon.aux1 | Lumiere                  | Cable      |
 | AUX2   | motion.digital-out-02 | qtdragon.aux2 | Ventilateurs broche      | Cable      |
-| AUX3   | motion.digital-out-03 | qtdragon.aux3 | LIBRE (reserve)          | Disponible |
+| AUX3   | (deconnecte)          | (deconnecte)  | Interlock laser          | Cable      |
 
 Note : la pompe a eau n'est PAS sur une sortie AUX. Elle est branchee sur la
 sortie FLOOD (flexi.output.COOLANT), commandee par M8 / M9.
+
+---
+
+## Interlock laser (AUX3)
+
+Depuis juillet 2026, AUX3 est dediee a l'interlock du laser (LaserTree
+LT-80W-AA-PRO pilote comme spindle.1) :
+
+- Pilotage direct par `spindle.1.on` : `M3 $1` ferme le relais et alimente
+  le +24V du laser (fil rouge), `M5 $1` le coupe. Pas de composant or2 :
+  ni M64 P3 ni le bouton QtDragon aux3 ne commandent plus cette sortie
+  (nets commentes dans remora-flexi.hal pour eviter un double pilotage).
+- Le relais coupe le VCC du laser, PAS celui du convertisseur 0-10V vers
+  PWM : l'alimentation du convertisseur doit rester permanente (un module
+  a grille en juin 2026 a cause d'un VCC passe par le relais).
+- Rappel securite : S0 laisse un plancher de tension materiel en sortie
+  de chaine PWM. La vraie coupure du faisceau, c'est ce relais AUX3.
 
 ---
 
@@ -38,13 +55,14 @@ Le delai de 30 s se regle dans remora-flexi.hal :
 
 ## Commandes
 
-- G-code : M64 P0..P3 (activer), M65 P0..P3 (desactiver)
+- G-code : M64 P0..P2 (activer), M65 P0..P2 (desactiver)
   - M64 P0 -> aspirateur ON,    M65 P0 -> aspirateur OFF
   - M64 P1 -> lumiere ON,       M65 P1 -> lumiere OFF
   - M64 P2 -> ventilateurs ON,  M65 P2 -> ventilateurs OFF
+  - AUX3 : plus de M64/M65 ni bouton -> pilotee par M3 $1 / M5 $1 (laser)
 - M8 -> pompe a eau ON (flood),  M9 -> pompe a eau OFF
-- Boutons QtDragon : combines avec le G-code via les composants or2
-  (relais actif si bouton OU G-code le demande).
+- Boutons QtDragon (AUX0 a AUX2) : combines avec le G-code via les
+  composants or2 (relais actif si bouton OU G-code le demande).
 - Refroidissement : M8 et la rotation broche activent pompe ET ventilateurs
   ensemble, avec 30 s de post-refroidissement apres l'arret (voir section
   dediee ci-dessus).
@@ -53,10 +71,10 @@ Le delai de 30 s se regle dans remora-flexi.hal :
 
 ## Notes
 
-- AUX3 est laissee libre volontairement (porte ouverte pour un futur
-  accessoire : eclairage zone, signal fin de programme, electrovanne air
-  comprime, etc.). Cablage propre et disponible, rien a modifier pour
-  l'activer le moment venu.
+- AUX3 est desormais affectee a l'interlock laser (voir section dediee).
+  Plus aucune sortie AUX libre : pour un futur accessoire (eclairage zone,
+  signal fin de programme, electrovanne air comprime...), prevoir un module
+  d'extension ou une reaffectation.
 - La pompe a eau utilise la sortie FLOOD (COOLANT), pas une AUX : cela permet
   de la commander avec M8/M9 et de la lier au refroidissement de la broche.
 - Rappel materiel : modules relais cables en active HIGH (jumper sur H).

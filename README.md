@@ -2,7 +2,8 @@
 
 Ce depot rassemble les fichiers de configuration LinuxCNC (`.ini`, `.hal`,
 macros G-code et interface QtDragon) utilises pour piloter ma fraiseuse CNC
-**PrintNC** (surface de travail utile d'environ 1275x1275 mm).
+**PrintNC** (surface de travail utile d'environ 1275x1275 mm), equipee
+d'une broche 2.2 kW et d'un module laser amovible (voir section Laser).
 
 La machine est controlee via l'architecture **Flexi-HAL** (firmware Remora) sur
 base Raspberry Pi, avec l'interface graphique **QtDragon HD** (LinuxCNC 2.9.8).
@@ -38,15 +39,17 @@ sont combinees par des composants `or2` (relais actif si bouton OU G-code).
 |--------|-----------------------|---------------|--------------------|
 | AUX0   | motion.digital-out-00 | qtdragon.aux0 | Aspirateur         |
 | AUX1   | motion.digital-out-01 | qtdragon.aux1 | Lumiere            |
-| AUX2   | motion.digital-out-02 | qtdragon.aux2 | Pompe a eau        |
-| AUX3   | motion.digital-out-03 | qtdragon.aux3 | Libre (reserve)    |
+| AUX2   | motion.digital-out-02 | qtdragon.aux2 | Ventilateurs broche |
+| AUX3   | (deconnecte)          | (deconnecte)  | Interlock laser     |
 
 Cablage : modules relais en active HIGH (jumper sur H), alimentes via le bornier
 AUX 2 fils (jumper P17 sur MAIN = 24V) avec un pont DC+ <-> IN sur chaque module.
 Prerequis : `NUM_DIO = 4` dans la section `[EMCMOT]` de l'INI.
 
 Flood/Mist : M8 (arrosage) et M7 (brouillard) cables sur les sorties dediees
-COOLANT et MIST, M9 coupe les deux.
+COOLANT et MIST, M9 coupe les deux. La pompe a eau du circuit broche est sur
+FLOOD (pas sur une AUX). AUX3 est pilotee directement par `spindle.1.on`
+(interlock laser) : plus de M64 P3 ni de bouton. Detail : AFFECTATION_AUX.md.
 
 ---
 
@@ -59,10 +62,13 @@ COOLANT et MIST, M9 coupe les deux.
 * **Cablage :** kit cables puissance + encodeur blindes AWG20, 4.7m. Ref : `CE5-M5-20`
 * **Alimentations moteurs :** 350W 48V 7.3A (115/230V). Ref : `LE-350-48`
 
-### 2. Broche & Refroidissement
+### 2. Broche, Laser & Refroidissement
 * **Broche :** G-Penny 2.2kW ER20 refroidie par eau (80x230mm, 220V),
   4 roulements ceramiques serie 7, deviation max 0.01mm.
 * **Variateur (VFD) :** HuangYang (HY) 2.2kW 220VAC.
+* **Laser :** LaserTree LT-80W-AA-PRO (10W optique, 450 nm, 24V natif) sur
+  glissiere amovible a l'avant du porte-broche. Pilote comme spindle.1,
+  interlock via relais AUX3 (voir section Laser).
 * **Refroidissement :** pompe 220V 75W (max 3200 L/H), circuit ferme au liquide
   de refroidissement automobile (anti-oxydation / anti-algues).
 
@@ -85,6 +91,9 @@ COOLANT et MIST, M9 coupe les deux.
 
 * **Cinematique :** JOINTS = 4 (X, Y1, Z, Y2), Y en tandem (2 moteurs),
   `trivkins coordinates=XYZY`.
+* **Broches :** SPINDLES = 2 dans `[TRAJ]` (broche VFD = spindle.0,
+  laser = spindle.1), repris par `num_spindles` sur la ligne loadrt de
+  motmod dans le HAL (aucun parametre motmod n'est implicite).
 * **Resolution des pas (Scale) :**
   * X : `-160.0` (1600 pas/tour, vis 10mm, direction inversee)
   * Y1 : `160.0` / Y2 : `-160.0` (moteurs en miroir, tandem)
@@ -110,6 +119,25 @@ Deux modes de zero Z (parametre `#1001`) :
 
 Bouton "Reset Ref" dans QtDragon pour preparer un nouveau job.
 
+### Cas particulier : outil laser (T100)
+
+Les numeros d'outil >= 100 sont reserves aux lasers. Pour eux,
+`toolchange.ngc` applique deux comportements specifiques :
+
+* **Palpage decale :** la broche vise une position decalee de l'inverse de
+  l'offset laser (nez laser = broche X +2 / Y -90) pour que le cone du
+  laser touche la pastille du VersaProbe. Si la position calculee sort de
+  la course machine, elle est plafonnee a X -49.5 : la pastille de 20 mm
+  de diametre absorbe le decalage residuel sans fausser le Z.
+* **Garde-fou reference :** si aucun outil n'a defini la reference de la
+  session, `T100 M6` avertit et marque une pause (M1). STOP pour palper
+  d'abord une fraise (job mixte), RESUME pour un job 100% laser : la
+  distance palpeur->martyre etant mecanique, le laser peut legitimement
+  definir le zero seul.
+
+En tete d'un G-code laser : `T100 M6` puis `G43 H100` (offsets X/Y saisis
+une fois dans tool.tbl, offset Z palpe a chaque changement).
+
 ### Note : boutons de deplacement et vitesse elevee
 
 Les boutons de l'interface qui declenchent un deplacement via CALL_MDI_WAIT
@@ -119,6 +147,43 @@ Ce calcul ignore le temps d'acceleration/deceleration. A vitesse elevee
 mouvement -> message "EMC_TASK_PLAN_PAUSE cannot be executed".
 Corrige en portant `wait_buffer_secs` de 1 a 4 s dans la fonction
 `calc_mdi_move_wait_time` du handler QtDragon.
+
+---
+
+## Laser (spindle.1)
+
+Module **LaserTree LT-80W-AA-PRO** pilote comme deuxieme broche LinuxCNC.
+Le S-word est une consigne de puissance 0-1000, pas une vitesse :
+`M3 $1 S500` = 50%, `M5 $1` = arret, `S0` = eteint (sur les G0).
+
+* **Chaine de puissance :** spindle.1 -> composant `laser_scale` -> sortie
+  SPINDLE_PWM (0-10V) -> convertisseur externe 0-10V vers PWM -> fil jaune
+  du laser. Alimentation du convertisseur permanente (ne JAMAIS la passer
+  par le relais : un module a grille ainsi en juin 2026).
+* **Interlock :** relais AUX3 pilote par `spindle.1.on`, coupe le +24V du
+  laser. C'est la seule vraie coupure du faisceau : un plancher de tension
+  materiel subsiste a S0 (clamp firmware, non corrigeable en HAL).
+
+### Piege multi-broche : attente "spindle at speed"
+
+Symptome : un job laser seul (spindle.1 uniquement) gele au premier G1,
+laser allume, aucun message d'erreur. Cause : apres un demarrage ou un
+changement de vitesse de broche, le planificateur attend
+`spindle.0.at-speed` meme si seule spindle.1 a ete commandee, et `hy_vfd`
+rapporte FALSE tant que le VFD est a l'arret. Correctif
+(remora-flexi.hal, juillet 2026) :
+
+    spindle.0.at-speed = (VFD a vitesse) OU (broche 0 arretee)
+
+via les composants `atspeed_or` + `s0_on_not`. La securite fraisage est
+conservee : broche 0 commandee mais pas encore a vitesse -> LinuxCNC
+attend toujours le spin-up du VFD avant le premier mouvement d'avance.
+
+### Securite laser
+
+Une pause programme (feed hold, M1) ne coupe PAS les broches : un job
+laser en pause continue d'emettre au point fixe (risque d'inflammation
+sur bois). Ne jamais laisser une gravure laser sans surveillance.
 
 ---
 

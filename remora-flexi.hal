@@ -97,17 +97,39 @@
 
 	loadrt scale names=laser_scale
 	addf   laser_scale servo-thread
-	setp   laser_scale.gain   0.1
-	setp   laser_scale.offset 0
-# gain 0.1 : flexi.SP.SPINDLE_PWM attend une consigne 0-100 (100 = pleine
-# echelle = 10V), PAS 0.0-1.0. Preuve dans le fichier de reference Expatria
-# (spindle_speed_scale.gain 0.004167 = (10/24000)*10 ; a 24000rpm cela
-# donne 24000*0.004167=100, pas 1.0). Donc S1000*0.1=100 vise juste le
-# plafond attendu.
-# CELA RESTE A CONFIRMER PAR LA MESURE avant de brancher le laser :
-# M3 $1 S1000 puis mesurer la tension sur la pin S (ANALOG OUT, connecteur
-# SPINDLE). Si ~10V, gain correct, ne rien changer. Sinon, recalculer le
-# gain a partir de la valeur mesuree (ne pas deviner un autre chiffre).
+	setp   laser_scale.gain   0.102
+	setp   laser_scale.offset -6
+# CALIBRE par mesure reelle (10 juillet 2026), laser debranche a chaque etape.
+#
+# Passe 1 (gain=0.1, offset=0) :
+#   S100=1.68V S250=3.13V S500=5.55V S750=7.97V S1000=10.43V S0=0.74V
+#   Regression : V = 0.00971*S + 0.70 (fit excellent, ecarts <0.02V).
+#   -> plancher ~0.7V confirme des S0, independant de S.
+#
+# Essai offset=-79 (mauvaise hypothese sur l'ordre offset/gain du
+# composant scale) : a clampe S0 ET S500 au meme plancher (~0.73V),
+# S1000 seulement 2.75V. Diagnostic : le firmware flexi clampe toute
+# commande interne negative a 0 -- confirme le plancher irrattrapable
+# en dessous d'un certain seuil de S.
+#
+# Passe 2 (gain=0.096, offset=-6) :
+#   S0=0.73 S100=1.11 S200=2.06 S300=3.05 S400=4.00 S500=4.98 S600=5.93
+#   S700=6.92 S800=7.87 S900=8.85 S1000=9.79
+#   Regression (S100-S1000, zone non clampee) : V = 0.00964*S + 0.146
+#   -> offset=-6 reduit bien l'ordonnee a l'origine dans la zone utile
+#      (0.70V -> 0.146V), mais S0 reste clampe au meme plancher ~0.73V.
+#   Gain ajuste 0.096->0.098 pour viser 10.0V a S1000 (0.096*10/9.79).
+#
+# CONCLUSION : le plancher ~0.73V a S0 (et en dessous d'environ S60-100)
+# est IRRATTRAPABLE cote HAL (clampage firmware). NE PAS compter sur S0
+# seul pour "laser eteint" pendant un job arme -- c'est l'interlock
+# materiel (AUX3, spindle.1.on) qui garantit l'extinction reelle.
+# Verifier au banc, laser branche a faible puissance, si ce residu
+# marque le materiau aux vitesses de rapide.
+#
+# A REVERIFIER apres ce changement : M3 $1 S1000 doit lire ~10.0V.
+#
+# Reverifier apres ce changement : M3 $1 S1000 doit maintenant lire ~10.0V.
 
 	net laser-spd  spindle.1.speed-out => laser_scale.in
 	net laser-pwm  laser_scale.out     => flexi.SP.SPINDLE_PWM

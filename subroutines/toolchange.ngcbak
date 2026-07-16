@@ -41,15 +41,6 @@ O<toolchange> sub
 #<dist_palpeur_table> = 50.525  ; Distance haut palpeur -> martyre (mm)
 
 ; =====================================================================
-; OFFSET LASER (mesure manuellement, glissiere sur porte-broche)
-; Position du nez du laser par rapport a l'axe de la broche.
-; SIGNE A VERIFIER PAR ESSAI : faire un T100 M6 controle, verifier au
-; palpeur/visuellement que c'est bien le laser qui touche, pas la fraise.
-; =====================================================================
-#<laser_x_offset>     =   2.0   ; Laser = broche + 2.0 en X
-#<laser_y_offset>     = -90.0   ; Laser = broche - 90.0 en Y
-
-; =====================================================================
 ; CAPTURE DE L'OUTIL DEMANDE
 ; #<_selected_tool> est passe par LinuxCNC au moment du REMAP M6
 ; On le copie dans une variable locale pour clarte
@@ -101,53 +92,10 @@ O105 IF [#1002 EQ 0]
 O105 ENDIF
 
 ; =====================================================================
-; GARDE-FOU : LE LASER NE DOIT JAMAIS DEFINIR LE ZERO MARTYRE
-; Les outils "laser" sont numerotes >= 100 par convention (voir T100).
-; Si aucune reference n'est encore definie cette session (#1000 EQ 0)
-; et que l'outil demande est un laser, on avertit et on marque une
-; pause. L'operateur doit soit :
-;   - appuyer sur STOP puis faire d'abord T<fraise> M6 pour etablir
-;     la reference martyre normalement,
-;   - soit RESUME s'il sait ce qu'il fait (cas rare, a eviter).
-; =====================================================================
-O110 IF [[#1000 EQ 0] AND [#<tool_num> GE 100]]
-    (MSG, ATTENTION - Pas de reference Z cette session. Continuer definira le zero martyre avec le LASER T[#<tool_num>]. Faites d abord T<fraise> M6, ou RESUME si voulu.)
-    M1                         ; Pause - laisse le choix a l operateur
-O110 ENDIF
-
-; =====================================================================
-; CALCUL DE LA POSITION DE PALPAGE EFFECTIVE
-; Pour un outil normal, on vise le palpeur directement (axe broche).
-; Pour le laser (tool_num >= 100), la broche doit se decaler de
-; l'INVERSE de l'offset laser, pour que ce soit le NEZ DU LASER qui
-; se retrouve au-dessus du palpeur (et pas l'axe broche/fraise en
-; place). Sans ce decalage, on palpe la fraise et pas le laser.
-; =====================================================================
-#<eff_probe_x> = #<probe_x>
-#<eff_probe_y> = #<probe_y>
-O130 IF [#<tool_num> GE 100]
-    #<eff_probe_x> = [#<probe_x> - #<laser_x_offset>]
-    #<eff_probe_y> = [#<probe_y> - #<laser_y_offset>]
-    (MSG, Laser detecte - decalage palpage applique)
-    ; =================================================================
-    ; GARDE-FOU LIMITE MACHINE (branche laser UNIQUEMENT)
-    ; La pastille (diametre 20mm) est au ras de la limite X (-50.0).
-    ; L'offset laser (+2mm) donne -52, hors course : on plafonne a
-    ; -49.5. Le nez du laser touche alors a 2.5mm du centre de la
-    ; pastille, largement dans son rayon de 10mm. Les outils normaux
-    ; ne passent jamais ici et palpent a -50.0 comme avant.
-    ; =================================================================
-    O135 IF [#<eff_probe_x> LT -49.5]
-        (MSG, Decalage laser hors course X - palpage plafonne a -49.5)
-        #<eff_probe_x> = -49.5
-    O135 ENDIF
-O130 ENDIF
-
-; =====================================================================
 ; DEPLACEMENT VERS LE PALPEUR FIXE
 ; =====================================================================
 G53 G0 Z0                      ; Toujours remonter avant deplacement XY
-G53 G0 X#<eff_probe_x> Y#<eff_probe_y> ; Position au-dessus du palpeur
+G53 G0 X#<probe_x> Y#<probe_y> ; Position au-dessus du palpeur
 
 ; =====================================================================
 ; PALPAGE EN DEUX PASSES
