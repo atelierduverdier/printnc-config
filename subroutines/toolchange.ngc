@@ -101,18 +101,20 @@ O105 IF [#1002 EQ 0]
 O105 ENDIF
 
 ; =====================================================================
-; GARDE-FOU : LE LASER NE DOIT JAMAIS DEFINIR LE ZERO MARTYRE
+; INFO : LE LASER DEFINIT LA REFERENCE DE CETTE SESSION
 ; Les outils "laser" sont numerotes >= 100 par convention (voir T100).
-; Si aucune reference n'est encore definie cette session (#1000 EQ 0)
-; et que l'outil demande est un laser, on avertit et on marque une
-; pause. L'operateur doit soit :
-;   - appuyer sur STOP puis faire d'abord T<fraise> M6 pour etablir
-;     la reference martyre normalement,
-;   - soit RESUME s'il sait ce qu'il fait (cas rare, a eviter).
+; Si aucune reference n'existe encore (#1000 EQ 0), c'est le laser qui
+; va la creer. C'est LEGITIME pour un job 100% laser : la distance
+; palpeur->martyre est mecanique, elle ne depend pas de l'outil.
+; Pour un job MIXTE (fraisage + gravure), palper une fraise d'abord.
+;
+; Simple message, PAS de pause : un M1 ici s'enchainait avec celui du
+; montage d'outil (voir plus haut) et bloquait la reprise dans QtDragon
+; -- meme famille de probleme que les blocs IF...M2...ENDIF signales en
+; tete de script. Corrige le 17 juillet 2026.
 ; =====================================================================
 O110 IF [[#1000 EQ 0] AND [#<tool_num> GE 100]]
-    (MSG, ATTENTION - Pas de reference Z cette session. Continuer definira le zero martyre avec le LASER T[#<tool_num>]. Faites d abord T<fraise> M6, ou RESUME si voulu.)
-    M1                         ; Pause - laisse le choix a l operateur
+    (MSG, Info - Le LASER T[#<tool_num>] va definir la reference de cette session. Normal pour un job laser seul. Pour un job mixte, palper une fraise d abord.)
 O110 ENDIF
 
 ; =====================================================================

@@ -67,8 +67,9 @@ FLOOD (pas sur une AUX). AUX3 est pilotee directement par `spindle.1.on`
   4 roulements ceramiques serie 7, deviation max 0.01mm.
 * **Variateur (VFD) :** HuangYang (HY) 2.2kW 220VAC.
 * **Laser :** LaserTree LT-80W-AA-PRO (10W optique, 450 nm, 24V natif) sur
-  glissiere amovible a l'avant du porte-broche. Pilote comme spindle.1,
-  interlock via relais AUX3 (voir section Laser).
+  glissiere amovible a l'avant du porte-broche (offset X +2 / Y -90 par
+  rapport a l'axe broche). Pilote comme spindle.1 en PWM direct depuis la
+  Flexi-HAL, interlock via relais AUX3 (voir section Laser).
 * **Refroidissement :** pompe 220V 75W (max 3200 L/H), circuit ferme au liquide
   de refroidissement automobile (anti-oxydation / anti-algues).
 
@@ -129,11 +130,15 @@ Les numeros d'outil >= 100 sont reserves aux lasers. Pour eux,
   laser touche la pastille du VersaProbe. Si la position calculee sort de
   la course machine, elle est plafonnee a X -49.5 : la pastille de 20 mm
   de diametre absorbe le decalage residuel sans fausser le Z.
-* **Garde-fou reference :** si aucun outil n'a defini la reference de la
-  session, `T100 M6` avertit et marque une pause (M1). STOP pour palper
-  d'abord une fraise (job mixte), RESUME pour un job 100% laser : la
-  distance palpeur->martyre etant mecanique, le laser peut legitimement
-  definir le zero seul.
+* **Info reference :** si aucun outil n'a defini la reference de la
+  session, `T100 M6` affiche un simple message : c'est le laser qui va la
+  creer. Legitime pour un job 100% laser (la distance palpeur->martyre est
+  mecanique, elle ne depend pas de l'outil). Pour un job MIXTE, palper une
+  fraise d'abord.
+  Note : ce message etait un `M1` a l'origine. Il s'enchainait avec le M1
+  du montage d'outil et bloquait la reprise dans QtDragon -- meme famille
+  de probleme que les blocs `IF ... M2 ... ENDIF` casse-preview. Rendu
+  non bloquant le 17 juillet 2026.
 
 En tete d'un G-code laser : `T100 M6` puis `G43 H100` (offsets X/Y saisis
 une fois dans tool.tbl, offset Z palpe a chaque changement).
@@ -156,13 +161,71 @@ Module **LaserTree LT-80W-AA-PRO** pilote comme deuxieme broche LinuxCNC.
 Le S-word est une consigne de puissance 0-1000, pas une vitesse :
 `M3 $1 S500` = 50%, `M5 $1` = arret, `S0` = eteint (sur les G0).
 
-* **Chaine de puissance :** spindle.1 -> composant `laser_scale` -> sortie
-  SPINDLE_PWM (0-10V) -> convertisseur externe 0-10V vers PWM -> fil jaune
-  du laser. Alimentation du convertisseur permanente (ne JAMAIS la passer
-  par le relais : un module a grille ainsi en juin 2026).
+* **Chaine de puissance (depuis le 17 juillet 2026) :** spindle.1 ->
+  composant `laser_scale` (gain 0.1, offset 0) -> `flexi.SP.SPINDLE_PWM`
+  -> optocoupleur U7 -> LM358 (U6) -> jumper P7 -> fil jaune du laser.
+  **PWM direct, plus aucun convertisseur externe.**
 * **Interlock :** relais AUX3 pilote par `spindle.1.on`, coupe le +24V du
-  laser. C'est la seule vraie coupure du faisceau : un plancher de tension
-  materiel subsiste a S0 (clamp firmware, non corrigeable en HAL).
+  laser (fil rouge). Reste la coupure de reference du faisceau.
+* **Focale :** `#<z_focus> = 7` mm au-dessus du zero piece.
+* **Offsets T100 (tool.tbl) :** X = 2.0, Y = -90.0. Z palpe a chaque M6.
+
+### Jumpers Flexi-HAL : P6 et P7 (CRITIQUE)
+
+La carte offre deux modes de sortie spindle, selectionnes par jumpers
+(serigraphie "SPINDLE PWM CONFIG" pres du bornier 24V) :
+
+| Jumper | Reglage laser | Role |
+|--------|---------------|------|
+| **P6** | **5V** (PAS 12V) | Alimente le LM358 (U6 pin 8) via `SPINDLE_PWR_12V` |
+| **P7** | **vertical** | Mode PWM : bypasse le filtre RC (horizontal = 0-10V) |
+
+**NE JAMAIS mettre P6 sur 12V en mode PWM.** P6 fixe l'alimentation de
+l'ampli op, donc l'amplitude du carre en sortie. Sur 12V, le PWM
+swinguerait a ~10.5V droit dans l'entree TTL 5V du LaserTree. P6 sur 5V
+est ce qui protege le laser.
+
+### Niveaux mesures et limite du LM358
+
+Mesures au multimetre (17 juillet 2026), `laser_scale` gain 0.1 offset 0,
+P6 sur 5V, P7 vertical :
+
+| S | duty | tension moyenne |
+|------|------|--------|
+| 0    | 0%   | 0.67 V (niveau bas statique) |
+| 250  | 25%  | 1.37 V |
+| 500  | 50%  | 2.08 V |
+| 750  | 75%  | 2.73 V |
+| 1000 | 100% | 3.44 V (niveau haut statique) |
+
+Linearite parfaite (ecarts < 0.02V sur la droite 0.67 -> 3.44) : le
+rapport cyclique est fidele. Aux deux extremes il n'y a aucune
+commutation, donc ces valeurs sont les VRAIS niveaux logiques.
+
+Le plafond a 3.44V n'est pas un defaut : le LM358 n'est pas rail-to-rail,
+sa sortie haute plafonne a environ **V+ moins 1.5V**. Avec P6 sur 5V :
+5 - 1.5 = 3.5V. Suffisant pour le seuil TTL du laser (~2.5V).
+
+**Correction d'un diagnostic errone de juillet :** le plancher de ~0.73V
+a S0 avait ete documente comme un "clampage firmware irrattrapable". Faux.
+C'etait la limite basse de sortie du LM358. Preuve : en passant P6 de 12V
+a 5V, le plafond suit V+ (10.43 -> 3.44) mais le plancher ne bouge quasi
+pas (0.73 -> 0.67). Signature typique du LM358 (`V_OH = V+ - 1.5V`,
+`V_OL` independant de V+). Aucun gain/offset HAL n'aurait pu le corriger.
+
+Et en PWM ce plancher n'est plus un probleme : sur la chaine 0-10V,
+0.73V etait une vraie consigne analogique (~7% de puissance, le laser
+emettait a S0). En PWM, 0.67V est un niveau logique bas que l'entree TTL
+lit comme "eteint".
+
+### Historique : deux convertisseurs grilles
+
+Avant la bascule en PWM direct, la chaine passait par un module externe
+0-10V vers PWM. Deux exemplaires ont grille (juin, puis 16 juillet), le
+second au niveau d'une broche du microcontroleur Nuvoton, a la mise sous
+tension, avec seuls l'alim 24V et le fil jaune connectes. La cause exacte
+n'a jamais ete formellement etablie. L'architecture PWM directe supprime
+le maillon fragile : c'est la vraie correction.
 
 ### Piege multi-broche : attente "spindle at speed"
 
@@ -184,6 +247,9 @@ attend toujours le spin-up du VFD avant le premier mouvement d'avance.
 Une pause programme (feed hold, M1) ne coupe PAS les broches : un job
 laser en pause continue d'emettre au point fixe (risque d'inflammation
 sur bois). Ne jamais laisser une gravure laser sans surveillance.
+
+Seul `M5 $1` ouvre le relais AUX3 et coupe reellement le faisceau. Un
+`S0 $1` met la puissance a zero mais laisse le laser arme.
 
 ---
 

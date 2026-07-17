@@ -79,11 +79,21 @@
 
 # ============================================================
 # LASER (LaserTree LT-80W-AA-PRO) - pilote comme spindle.1
-# Puissance : S0..1000 (spindle.1) -> flexi.SP.SPINDLE_PWM -> PA8 -> 0-10V
-#             -> convertisseur externe 0-10V vers PWM -> fil jaune laser
+# Puissance : S0..1000 (spindle.1) -> laser_scale -> flexi.SP.SPINDLE_PWM
+#             -> PA8 -> optocoupleur U7 -> LM358 (U6) -> jumper P7
+#             -> fil jaune du laser.  PWM DIRECT, plus de convertisseur.
 # Interlock  : spindle.1.on -> flexi.output.AUX3 -> relais 24V actif-bas
 #             -> contact NO ferme le +24V vers VCC laser (fil rouge)
 # Commande   : M3 $1 S<puissance>  /  M5 $1
+# Outil      : T100 (offsets X+2 Y-90 dans tool.tbl), focale Z +7mm
+#
+# JUMPERS FLEXI-HAL - CRITIQUE (serigraphie "SPINDLE PWM CONFIG") :
+#   P6 = 5V       -> alimente le LM358 (U6 pin 8) via SPINDLE_PWR_12V
+#   P7 = VERTICAL -> mode PWM (bypasse le filtre RC ; horizontal = 0-10V)
+#
+# NE JAMAIS mettre P6 sur 12V en mode PWM : P6 fixe l'alimentation de
+# l'ampli op, donc l'amplitude du carre en sortie. Sur 12V le PWM
+# swinguerait a ~10.5V droit dans l'entree TTL 5V du laser.
 #
 # AUX3 est desormais dedie au laser (voir plus bas section AUX, le
 # net aux3-gcode a ete commente pour eviter tout conflit).
@@ -97,39 +107,40 @@
 
 	loadrt scale names=laser_scale
 	addf   laser_scale servo-thread
-	setp   laser_scale.gain   0.102
-	setp   laser_scale.offset -6
-# CALIBRE par mesure reelle (10 juillet 2026), laser debranche a chaque etape.
+# flexi.SP.SPINDLE_PWM attend un rapport cyclique en pourcent (0-100).
+# En PWM direct la conversion est triviale : duty = S / 10.
+# S0 -> 0%, S500 -> 50%, S1000 -> 100%. Rien a calibrer.
+	setp   laser_scale.gain   0.1
+	setp   laser_scale.offset 0
 #
-# Passe 1 (gain=0.1, offset=0) :
-#   S100=1.68V S250=3.13V S500=5.55V S750=7.97V S1000=10.43V S0=0.74V
-#   Regression : V = 0.00971*S + 0.70 (fit excellent, ecarts <0.02V).
-#   -> plancher ~0.7V confirme des S0, independant de S.
+# MESURES DE VALIDATION (17 juillet 2026, P6=5V, P7=vertical) :
+#   S0=0.67V  S250=1.37V  S500=2.08V  S750=2.73V  S1000=3.44V
+#   Linearite parfaite sur la droite 0.67 -> 3.44 (ecarts < 0.02V) :
+#   le rapport cyclique est fidele. A S0 (0%) et S1000 (100%) il n'y a
+#   aucune commutation : ce sont donc les VRAIS niveaux logiques.
 #
-# Essai offset=-79 (mauvaise hypothese sur l'ordre offset/gain du
-# composant scale) : a clampe S0 ET S500 au meme plancher (~0.73V),
-# S1000 seulement 2.75V. Diagnostic : le firmware flexi clampe toute
-# commande interne negative a 0 -- confirme le plancher irrattrapable
-# en dessous d'un certain seuil de S.
+# Le plafond a 3.44V n'est pas un defaut : le LM358 n'est pas
+# rail-to-rail, sa sortie haute plafonne a V+ - 1.5V (5 - 1.5 = 3.5V).
+# Suffisant pour le seuil TTL du laser (~2.5V).
 #
-# Passe 2 (gain=0.096, offset=-6) :
-#   S0=0.73 S100=1.11 S200=2.06 S300=3.05 S400=4.00 S500=4.98 S600=5.93
-#   S700=6.92 S800=7.87 S900=8.85 S1000=9.79
-#   Regression (S100-S1000, zone non clampee) : V = 0.00964*S + 0.146
-#   -> offset=-6 reduit bien l'ordonnee a l'origine dans la zone utile
-#      (0.70V -> 0.146V), mais S0 reste clampe au meme plancher ~0.73V.
-#   Gain ajuste 0.096->0.098 pour viser 10.0V a S1000 (0.096*10/9.79).
+# CORRECTION D'UN DIAGNOSTIC ERRONE (voir historique git du 10 juillet) :
+# le plancher de ~0.73V a S0 avait ete documente ici comme un "clampage
+# firmware irrattrapable". C'etait FAUX. C'est la limite basse de sortie
+# du LM358. Preuve : en passant P6 de 12V a 5V, le plafond suit V+
+# (10.43 -> 3.44) mais le plancher ne bouge quasi pas (0.73 -> 0.67).
+# Signature typique du LM358 : V_OH = V+ - 1.5V, V_OL independant de V+.
+# Aucun gain/offset HAL n'aurait jamais pu le corriger -- toute la
+# calibration analogique de juillet (gain 0.102 / offset -6) partait
+# d'une hypothese fausse et n'a plus lieu d'etre.
 #
-# CONCLUSION : le plancher ~0.73V a S0 (et en dessous d'environ S60-100)
-# est IRRATTRAPABLE cote HAL (clampage firmware). NE PAS compter sur S0
-# seul pour "laser eteint" pendant un job arme -- c'est l'interlock
-# materiel (AUX3, spindle.1.on) qui garantit l'extinction reelle.
-# Verifier au banc, laser branche a faible puissance, si ce residu
-# marque le materiau aux vitesses de rapide.
+# Et en PWM ce plancher n'est plus un probleme : sur la chaine 0-10V,
+# 0.73V etait une vraie consigne analogique (~7% de puissance, le laser
+# emettait a S0). En PWM, 0.67V est un niveau logique bas que l'entree
+# TTL lit comme "eteint". AUX3 reste malgre tout la coupure de reference.
 #
-# A REVERIFIER apres ce changement : M3 $1 S1000 doit lire ~10.0V.
-#
-# Reverifier apres ce changement : M3 $1 S1000 doit maintenant lire ~10.0V.
+# HISTORIQUE : la chaine passait avant par un module externe 0-10V vers
+# PWM. Deux exemplaires ont grille (juin, puis 16 juillet). Le PWM direct
+# supprime le maillon fragile.
 
 	net laser-spd  spindle.1.speed-out => laser_scale.in
 	net laser-pwm  laser_scale.out     => flexi.SP.SPINDLE_PWM

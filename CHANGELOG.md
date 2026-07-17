@@ -1,3 +1,222 @@
+# Changelog — 16-17 juillet 2026 — Integration laser : outil T100, PWM direct, at-speed multi-broche
+## PrintNC Flexi-HAL — Atelier du Verdier
+
+Machine : PrintNC — FlexiHAL (Expatria / Remora) — LinuxCNC 2.9.8 — QtDragon_hd
+
+---
+
+## 1. Objectif
+
+Rendre le laser (LaserTree LT-80W-AA-PRO, spindle.1) utilisable comme un outil
+ordinaire : palpage automatique, offsets, et lancement d'un G-code laser sans
+manipulation particuliere. Trois problemes distincts se sont enchaines.
+
+## 2. Le laser devient l'outil T100
+
+Le laser est monte sur une glissiere amovible a l'avant du porte-broche, decale
+de **X +2 / Y -90** par rapport a l'axe de la broche. Son nez conique peut
+palper le VersaProbe comme une fraise : pas besoin de mecanisme separe.
+
+Convention : **tout outil numerote >= 100 est un laser**.
+
+`tool.tbl`, ligne T100 : X = 2.0, Y = -90.0, Z = 0 (recalcule a chaque palpage).
+Le script ne fait que `G10 L1 P<n> Z<offset>` : les colonnes X/Y saisies a la
+main ne sont jamais ecrasees.
+
+En tete d'un G-code laser : `T100 M6` puis `G43 H100`.
+
+### 2.1 Palpage decale (toolchange.ngc)
+
+Sans correction, `G53 G0 X-50 Y60` amene l'AXE BROCHE au-dessus du palpeur :
+c'est la fraise en place qui touche, pas le laser. Pour les outils >= 100, la
+cible est decalee de l'INVERSE de l'offset laser :
+
+```gcode
+#<laser_x_offset> =   2.0
+#<laser_y_offset> = -90.0
+
+#<eff_probe_x> = #<probe_x>
+#<eff_probe_y> = #<probe_y>
+O130 IF [#<tool_num> GE 100]
+    #<eff_probe_x> = [#<probe_x> - #<laser_x_offset>]
+    #<eff_probe_y> = [#<probe_y> - #<laser_y_offset>]
+    O135 IF [#<eff_probe_x> LT -49.5]
+        #<eff_probe_x> = -49.5
+    O135 ENDIF
+O130 ENDIF
+```
+
+Le clamp a -49.5 est necessaire : le palpeur est au ras de la limite X (-50.0,
+= HOME_OFFSET de JOINT_0), donc -50 - 2 = -52 est hors course et LinuxCNC
+refuse le mouvement ("would exceed X's negative limit"). La pastille faisant
+20 mm de diametre (rayon 10 mm), toucher a 2.5 mm du centre ne fausse rien.
+
+Le clamp est A L'INTERIEUR de la branche laser : place a l'exterieur, il
+s'appliquait aussi aux fraises et polluait chaque changement d'outil.
+
+### 2.2 Garde-fou de reference : d'abord M1, puis MSG
+
+Premiere version : si aucune reference n'existait (`#1000 EQ 0`) et que l'outil
+etait un laser, message + `M1`. **Mauvaise idee, retiree le 17 juillet.**
+
+Deux raisons :
+- Ce `M1` s'enchainait avec celui du montage d'outil et bloquait la reprise
+  dans QtDragon (bouton pause allume, aucun effet). Meme famille de probleme
+  que les blocs `IF ... M2 ... ENDIF` casse-preview deja signales en tete du
+  script. Symptome caracteristique : ca passait si on palpait une fraise avant.
+- Sur le fond, il protegeait d'un faux danger. La distance palpeur->martyre est
+  MECANIQUE (`#<dist_palpeur_table>` = 50.525) : elle ne depend pas de quel
+  outil touche. Un job 100% laser peut donc legitimement definir le zero seul.
+
+Devenu un simple `(MSG, ...)` informatif, non bloquant.
+
+## 3. CAUSE RACINE : gel au premier G1 des jobs laser
+
+Symptome : le laser va en position (G0 OK), s'allume, puis **plus rien ne bouge**.
+Aucun message d'erreur. Un fichier de fraisage passait sans probleme.
+
+Fausses pistes eliminees en cours de route (toutes verifiees par `halcmd`) :
+`spindle.1.at-speed` (TRUE, non connecte), bouton FEED_HOLD physique
+(`halui.program.is-paused` = FALSE), feed override (= 1).
+
+Diagnostic reel : **l'attente "spindle at speed" du planificateur de trajectoire
+n'est pas cloisonnee par numero de broche.** Apres un demarrage ou un changement
+de vitesse, motion attend `spindle.0.at-speed` AVANT le premier mouvement en
+avance travail (les G0 ne sont pas concernes) -- meme si seule spindle.1 a ete
+commandee par `M3 $1`. Or `hy_vfd` rapporte FALSE tant que le VFD est a l'arret.
+Un job laser seul attendait donc un evenement qui n'arriverait jamais.
+
+Confirmation a chaud, pendant un gel :
+
+```bash
+halcmd unlinkp spindle.0.at-speed
+halcmd setp spindle.0.at-speed 1
+# -> le mouvement repart instantanement
+```
+
+### Correctif (remora-flexi.hal)
+
+`spindle.0.at-speed` = (VFD a vitesse) OU (broche 0 arretee) :
+
+```hal
+loadrt not names=...,s0_on_not
+loadrt or2 names=...,atspeed_or
+addf s0_on_not servo-thread
+addf atspeed_or servo-thread
+
+net spindle-at-speed vfd.spindle-at-speed => atspeed_or.in0
+net spindle-on => s0_on_not.in
+net s0-off s0_on_not.out => atspeed_or.in1
+net s0-at-speed atspeed_or.out => spindle.0.at-speed
+```
+
+La securite fraisage est conservee : broche 0 commandee mais pas encore a
+vitesse -> FALSE -> LinuxCNC attend toujours le spin-up du VFD avant de plonger.
+Verification au repos : `halcmd getp spindle.0.at-speed` doit valoir TRUE.
+
+## 4. Bascule en PWM direct (suppression du convertisseur)
+
+La chaine passait par un module externe 0-10V vers PWM. **Deux exemplaires ont
+grille** (juin, puis 16 juillet). Le second est mort a la mise sous tension,
+broche du microcontroleur Nuvoton brulee, avec seuls l'alim 24V (bonne polarite,
+meme alim que la Flexi) et le fil jaune connectes. Cause exacte jamais
+formellement etablie.
+
+Decision : **supprimer le maillon fragile** plutot que d'en racheter un
+troisieme. La Flexi-HAL sait sortir du PWM nativement.
+
+### 4.1 Jumpers (serigraphie "SPINDLE PWM CONFIG")
+
+| Jumper | Reglage laser | Role |
+|--------|---------------|------|
+| P6 | **5V** | Alimente le LM358 (U6 pin 8) via le net `SPINDLE_PWR_12V` |
+| P7 | **vertical** | Mode PWM : bypasse le filtre RC (horizontal = 0-10V) |
+
+**NE JAMAIS mettre P6 sur 12V en mode PWM.** P6 ne choisit pas un "niveau de
+signal" : il fixe l'alimentation de l'ampli op, donc l'amplitude du carre en
+sortie. Sur 12V le PWM swinguerait a ~10.5V droit dans l'entree TTL 5V du laser.
+
+Point cle du schema (page 5, FLEXI_HAL_2000) : **P7 ne bypasse pas l'ampli op,
+seulement le filtre RC**. Le signal traverse le LM358 dans les deux modes :
+
+```
+SPINDLE_PWM -> R9 -> optocoupleur U7 -> R12 (pull-up vers le rail P6)
+            -> LM358 U6A -> P7 -> [filtre RC U6B/R32/C2  ou  bypass] -> sortie
+```
+
+### 4.2 laser_scale simplifie
+
+`flexi.SP.SPINDLE_PWM` attend un rapport cyclique en pourcent :
+
+```hal
+setp laser_scale.gain   0.1     # duty = S / 10
+setp laser_scale.offset 0
+```
+
+L'ancien `gain 0.102 / offset -6` compensait le plancher de la chaine
+analogique. Il n'a plus aucune raison d'etre.
+
+### 4.3 Mesures de validation (17 juillet)
+
+| S | duty | tension |
+|------|------|---------|
+| 0    | 0%   | 0.67 V (niveau bas statique) |
+| 250  | 25%  | 1.37 V |
+| 500  | 50%  | 2.08 V |
+| 750  | 75%  | 2.73 V |
+| 1000 | 100% | 3.44 V (niveau haut statique) |
+
+Linearite parfaite (ecarts < 0.02V). A 0% et 100% il n'y a aucune commutation :
+ces valeurs sont les VRAIS niveaux logiques, pas des moyennes. Un oscilloscope
+n'a donc pas ete necessaire.
+
+## 5. Correction d'un diagnostic errone du 10 juillet
+
+Le bloc de calibration de `laser_scale` documentait le plancher de ~0.73V a S0
+comme un **"clampage firmware irrattrapable"**. C'etait faux.
+
+C'est la limite basse de sortie du **LM358**. Preuve : en passant P6 de 12V a
+5V, le plafond suit V+ (10.43 -> 3.44V) mais le plancher ne bouge quasiment pas
+(0.73 -> 0.67V). Signature typique du LM358, qui n'est pas rail-to-rail :
+`V_OH = V+ - 1.5V` (5 - 1.5 = 3.5V, mesure 3.44), `V_OL` independant de V+.
+Aucun gain/offset HAL n'aurait jamais pu le corriger.
+
+**Consequence heureuse** : en PWM, ce plancher n'est plus un probleme. Sur la
+chaine 0-10V, 0.73V etait une vraie consigne analogique (~7% de puissance : le
+laser emettait a S0). En PWM, 0.67V est un niveau logique bas que l'entree TTL
+lit comme "eteint". AUX3 reste malgre tout la coupure de reference.
+
+## 6. Autres corrections
+
+- **README.md** : le tableau AUX indiquait AUX2 = pompe a eau. Corrige en
+  ventilateurs broche (la pompe est sur FLOOD), conformement a AFFECTATION_AUX.md.
+- **Origine piece et courses** : un job dont le parcours s'etend de X-243 a
+  X+243 autour du zero exige une origine a X machine >= +193.5 (limite X a -50).
+  Sinon "would exceed X's negative limit" en pleine passe.
+
+## 7. Fichiers touches
+
+- `toolchange.ngc` : offsets laser, palpage decale, clamp X, garde-fou -> MSG
+- `remora-flexi.hal` : `atspeed_or` + `s0_on_not`, section LASER reecrite,
+  `laser_scale` gain 0.1 / offset 0
+- `remora-flexi.ini` : en-tete [SPINDLE_1] (jumpers, PWM direct, T100)
+- `README.md`, `AFFECTATION_AUX.md` : section Laser, tableau AUX, BOM
+- `tool.tbl` : ligne T100 (X 2.0, Y -90.0)
+
+## 8. Reste a faire
+
+- Determiner proprement la distance focale (valeur de travail : `#<z_focus> = 7`).
+- Verifier la reponse en puissance par une bande de test S100->S1000 : lignes
+  separees a S constant (un `G1` unique par ligne), pas une bande continue --
+  avec G64 le planificateur fusionne les segments colinearies et les changements
+  de S ne tombent plus forcement aux frontieres. Pour de la vraie gravure
+  modulee, la voie propre est `M67 E0 Q<valeur>` (sortie synchronisee).
+- Surveiller le niveau bas a 0.67V : le seuil V_IL typique est vers 0.8V, la
+  marge est correcte mais pas confortable. Si un residu marque a S0, prevoir un
+  pull-down cote laser.
+
+---
+
 # Changelog — 24 juin 2026 — Bouton CAM VERS OUTIL (decalage camera/broche)
 ## PrintNC Flexi-HAL — Atelier du Verdier
 

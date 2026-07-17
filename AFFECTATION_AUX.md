@@ -1,7 +1,7 @@
 # Affectation des sorties auxiliaires (AUX) — PrintNC Flexi-HAL
 ## Atelier du Verdier
 
-Mise a jour : 16 juillet 2026
+Mise a jour : 17 juillet 2026
 
 ---
 
@@ -28,11 +28,16 @@ LT-80W-AA-PRO pilote comme spindle.1) :
   le +24V du laser (fil rouge), `M5 $1` le coupe. Pas de composant or2 :
   ni M64 P3 ni le bouton QtDragon aux3 ne commandent plus cette sortie
   (nets commentes dans remora-flexi.hal pour eviter un double pilotage).
-- Le relais coupe le VCC du laser, PAS celui du convertisseur 0-10V vers
-  PWM : l'alimentation du convertisseur doit rester permanente (un module
-  a grille en juin 2026 a cause d'un VCC passe par le relais).
-- Rappel securite : S0 laisse un plancher de tension materiel en sortie
-  de chaine PWM. La vraie coupure du faisceau, c'est ce relais AUX3.
+- Le relais coupe uniquement le VCC du laser. Il n'y a plus de
+  convertisseur externe 0-10V vers PWM dans la chaine depuis le
+  17 juillet 2026 : le PWM sort directement de la Flexi-HAL sur le fil
+  jaune (voir README.md, section Laser). Deux convertisseurs ont grille
+  avant cette bascule, le maillon a ete supprime.
+- Securite : en PWM direct, S0 met la sortie au niveau bas statique
+  (~0.67V), lu comme "eteint" par l'entree TTL du laser. Le plancher de
+  ~0.73V de l'ancienne chaine 0-10V (qui etait une vraie consigne de
+  puissance) n'existe plus. AUX3 reste malgre tout la coupure de
+  reference : ceinture ET bretelles.
 
 ---
 
