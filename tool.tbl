@@ -1,8 +1,8 @@
 T0   P0   ;Pas d'outil (obligatoire) 
-T1   P1   Z-5.437500 ;Outil 1 (manuel) 
+T1   P1   ;Outil 1 (manuel) 
 T2   P2   Z-0.004583 ;Fraise 6mm 
 T3   P3   Z-0.017500 ;Outil 3 (manuel) 
 T4   P4   Z+0.020000 ;Outil 4 (manuel) 
 T5   P5   ;Outil 5 (manuel) 
 T6   P6   ;Outil 6 (manuel) 
-T100 P100 X-3.000000 Y-90.000000 Z+0.027500 ;LASER LT-80W (manuel, glissière) 
+T100 P100 X-3.000000 Y-90.000000 Z+27.774065 ;LASER LT-80W (manuel, glissière) 
