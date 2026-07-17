@@ -230,9 +230,25 @@ lit comme "eteint".
 Avant la bascule en PWM direct, la chaine passait par un module externe
 0-10V vers PWM. Deux exemplaires ont grille (juin, puis 16 juillet), le
 second au niveau d'une broche du microcontroleur Nuvoton, a la mise sous
-tension, avec seuls l'alim 24V et le fil jaune connectes. La cause exacte
-n'a jamais ete formellement etablie. L'architecture PWM directe supprime
-le maillon fragile : c'est la vraie correction.
+tension, avec seuls l'alim 24V (mesuree correcte, meme alim que la
+Flexi-HAL) et le fil jaune connectes.
+
+**Cause probable : un defaut du module, pas le cablage.** D'autres
+acheteurs rapportent la meme panne, et un commentaire documente un
+court-circuit visible sur le PCB en zoomant. Non verifie de nos yeux,
+mais coherent avec les faits observes : deux morts instantanees a la
+mise sous tension, avec deux schemas d'alimentation DIFFERENTS (via
+relais AUX3 pour le premier, 24V direct pour le second). Un defaut de
+cablage aurait du changer avec le cablage ; la panne, elle, n'a pas
+bouge.
+
+A noter : la consigne "ne jamais passer le VCC du module par le relais",
+tiree du premier incident, reposait donc sur une fausse piste. Elle reste
+une bonne pratique, mais ce n'est probablement pas ce qui a tue le
+module 1.
+
+L'architecture PWM directe supprime le maillon fragile : c'est la vraie
+correction.
 
 ### Piege multi-broche : attente "spindle at speed"
 
