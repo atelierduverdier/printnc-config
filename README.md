@@ -175,6 +175,10 @@ Corrige en portant `wait_buffer_secs` de 1 a 4 s dans la fonction
 
 ## Laser (spindle.1)
 
+**Workflows de gravure pas-a-pas : voir [WORKFLOW_LASER.md](WORKFLOW_LASER.md)**
+(laser seul sur martyre, laser seul sur piece, job mixte, zero XY au
+laser, calibrations).
+
 Module **LaserTree LT-80W-AA-PRO** pilote comme deuxieme broche LinuxCNC.
 Le S-word est une consigne de puissance 0-1000, pas une vitesse :
 `M3 $1 S500` = 50%, `M5 $1` = arret, `S0` = eteint (sur les G0).
