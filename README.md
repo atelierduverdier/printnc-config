@@ -150,6 +150,17 @@ Les numeros d'outil >= 100 sont reserves aux lasers. Pour eux,
 En tete d'un G-code laser : `T100 M6` puis `G43 H100` (offsets X/Y saisis
 une fois dans tool.tbl, offset Z palpe a chaque changement).
 
+**Regle des modes avec le laser :**
+* **Mode martyre (`#1001=0`)** : n'importe quel outil peut creer la
+  reference, y compris le laser (la distance palpeur->martyre est
+  mecanique). `T100 M6` seul suffit pour un job laser, et une fraise
+  palpee ensuite retrouve le bon zero meme si le laser est demonte.
+* **Mode piece (`#1001=1`)** : l'outil de reference DOIT etre celui qui
+  a physiquement pris le zero sur la piece. Le laser ne touche pas la
+  piece, donc pour graver le dessus d'une piece : monter une fraise,
+  `T_n M6`, zero Z au papier a cigarette sur la piece, puis `T100 M6`
+  -- le laser herite du zero piece via son offset relatif.
+
 ### Note : boutons de deplacement et vitesse elevee
 
 Les boutons de l'interface qui declenchent un deplacement via CALL_MDI_WAIT
@@ -174,8 +185,25 @@ Le S-word est une consigne de puissance 0-1000, pas une vitesse :
   **PWM direct, plus aucun convertisseur externe.**
 * **Interlock :** relais AUX3 pilote par `spindle.1.on`, coupe le +24V du
   laser (fil rouge). Reste la coupure de reference du faisceau.
-* **Focale :** `#<z_focus> = 7` mm au-dessus du zero piece.
-* **Offsets T100 (tool.tbl) :** X = 2.0, Y = -90.0. Z palpe a chaque M6.
+* **Focale :** `#<z_focus> = 7` mm au-dessus du zero piece (valeur
+  PROVISOIRE, a mesurer avec `gcode_tests/test_focale_laser.ngc`).
+* **Offsets T100 (tool.tbl) :** Z palpe a chaque M6. X/Y : la table
+  contient `X-3 Y-90`, mais la convention LinuxCNC (coord travail =
+  machine - G5x - offset outil) donnerait `X-2 Y+90` pour un nez a
+  broche +2/-90 -- le signe du Y est suspect. A valider avec
+  `gcode_tests/test_offset_laser_xy.ngc` avant tout job mixte.
+
+### Tests de calibration (gcode_tests/)
+
+Deux programmes autonomes a copier dans `~/linuxcnc/nc_files` sur le
+Pi (instructions detaillees en tete de chaque fichier) :
+
+* `test_focale_laser.ngc` : rampe de traits a Z croissant (3 -> 10 mm
+  par pas de 0.5), puissance/vitesse constantes. Le trait le plus fin
+  donne la focale -> reporter dans `z_focus` et le post CAM.
+* `test_offset_laser_xy.ngc` : job mixte minimal, croix fraisee puis
+  croix laser au meme X0 Y0. L'ecart entre les croix corrige les
+  offsets X/Y de T100 dans tool.tbl (formules en tete de fichier).
 
 ### Jumpers Flexi-HAL : P6 et P7 (CRITIQUE)
 

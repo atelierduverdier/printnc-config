@@ -1,0 +1,66 @@
+; =====================================================================
+; TEST DE FOCALE LASER (T100) - rampe de hauteurs Z
+; PrintNC Flexi-HAL - Atelier du Verdier
+; =====================================================================
+; PRINCIPE : grave une serie de traits paralleles a puissance et
+; vitesse constantes, en variant uniquement la hauteur Z au-dessus
+; de la surface. Le trait LE PLUS FIN indique la distance focale.
+;
+; PREPARATION (avant de lancer ce fichier) :
+;   1. Chute de bois PLANE posee sur le martyre (mini 40 x 60 mm)
+;   2. Reset Ref + Mode Martyre, puis en MDI :  T100 M6
+;      (le laser palpe sur le palpeur fixe et definit le zero martyre)
+;   3. Zero X/Y : coin bas-gauche de la zone de test. Pour viser,
+;      tir a faible puissance en MDI :  M3 $1 S20  ... jog ...  M5 $1
+;   4. Mesurer l'epaisseur de la chute au pied a coulisse et la
+;      renseigner dans #<surface_z> ci-dessous (zero Z = martyre,
+;      donc le dessus de la chute est a Z = epaisseur)
+;
+; LECTURE DU RESULTAT :
+;   Le trait 0 (le plus long, c'est le repere) est grave a
+;   Z = #<z_start> au-dessus de la surface. Chaque trait suivant
+;   monte de #<z_step>. Focale = z_start + [rang du trait le plus
+;   fin] * z_step. Reporter la valeur dans le post CAM et dans le
+;   README (z_focus).
+;
+; SECURITE : lunettes laser OBLIGATOIRES, ne jamais laisser la
+; machine sans surveillance, extincteur a portee de main.
+; =====================================================================
+
+#<power>     = 250    ; puissance S (0-1000), 250 = 25%
+#<feed>      = 1200   ; vitesse de gravure (mm/min)
+#<z_start>   = 3.0    ; premiere hauteur testee (mm au-dessus surface)
+#<z_end>     = 10.0   ; derniere hauteur testee
+#<z_step>    = 0.5    ; increment de hauteur entre traits
+#<line_len>  = 15.0   ; longueur des traits (mm)
+#<line_gap>  = 3.0    ; espacement Y entre traits (mm)
+#<surface_z> = 0.0    ; Z du dessus de la chute dans le WCS courant
+                      ; (= epaisseur de la chute si zero Z = martyre)
+
+G21 G90 G94
+M5 $1                          ; securite : laser coupe au depart
+G43 H100                       ; compensation laser (T100 deja palpe)
+G0 Z[#<surface_z> + #<z_end> + 5.0]
+
+M3 $1 S0                       ; arme le laser (relais AUX3), faisceau a 0
+
+#<i> = 0
+#<z> = #<z_start>
+O101 WHILE [#<z> LE [#<z_end> + 0.001]]
+    #<len> = #<line_len>
+    O102 IF [#<i> EQ 0]
+        #<len> = [#<line_len> + 5.0]   ; trait 0 plus long = repere
+    O102 ENDIF
+    G0 X0 Y[#<i> * #<line_gap>]
+    G0 Z[#<surface_z> + #<z>]
+    S#<power> $1
+    G1 X#<len> F#<feed>
+    S0 $1
+    #<i> = [#<i> + 1]
+    #<z> = [#<z_start> + #<i> * #<z_step>]
+O101 ENDWHILE
+
+M5 $1                          ; coupe reellement le faisceau (AUX3)
+G53 G0 Z0
+(MSG, Test focale termine - le trait le plus fin donne la focale)
+M2
