@@ -156,10 +156,11 @@ une fois dans tool.tbl, offset Z palpe a chaque changement).
   mecanique). `T100 M6` seul suffit pour un job laser, et une fraise
   palpee ensuite retrouve le bon zero meme si le laser est demonte.
 * **Mode piece (`#1001=1`)** : l'outil de reference DOIT etre celui qui
-  a physiquement pris le zero sur la piece. Le laser ne touche pas la
-  piece, donc pour graver le dessus d'une piece : monter une fraise,
-  `T_n M6`, zero Z au papier a cigarette sur la piece, puis `T100 M6`
-  -- le laser herite du zero piece via son offset relatif.
+  a physiquement pris le zero sur la piece. Le laser qualifie : son
+  nez alu touche la piece (papier a cigarette), exactement comme il
+  touche la pastille du palpeur au M6. Donc `T100 M6` puis zero au nez
+  sur la piece, et graver a Z = focale (comptee depuis le nez).
+  Alternative : zero avec une fraise, puis `T100 M6` (offset relatif).
 
 ### Note : boutons de deplacement et vitesse elevee
 

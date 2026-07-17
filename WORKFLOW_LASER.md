@@ -16,10 +16,16 @@ change entre les deux modes, c'est ou vit le zero Z :
 | | Mode martyre (`#1001=0`) | Mode piece (`#1001=1`) |
 |---|---|---|
 | Zero Z | Sur le martyre, defini AUTOMATIQUEMENT par le premier palpage (distance palpeur->martyre = 50.525 mm, mecanique) | Sur le dessus de la piece, pris MANUELLEMENT (papier a cigarette) |
-| Qui peut etre la reference ? | N'importe quel outil, **y compris le laser** | UNIQUEMENT l'outil qui a physiquement pris le zero sur la piece — donc **jamais le laser** (il ne touche pas la piece) |
+| Qui peut etre la reference ? | N'importe quel outil, **y compris le laser** | UNIQUEMENT l'outil qui a physiquement pris le zero sur la piece — le laser y compris, en touchant avec le **nez alu** |
 
-Consequence : `T100 M6` seul suffit en mode martyre. En mode piece, il
-faut d'abord une fraise qui touche la piece.
+Le zero au nez du laser est parfaitement coherent avec la chaine
+d'offsets : le palpage `T100 M6` se fait deja par contact mecanique du
+nez sur la pastille du palpeur fixe. Nez sur la piece = Z0, point
+focal a Z = focale (la focale se compte donc DEPUIS LE NEZ).
+
+Consequence : le laser se suffit a lui-meme dans les deux modes.
+`T100 M6` seul en mode martyre ; `T100 M6` + zero au nez sur la piece
+en mode piece.
 
 Le laser etant monte sur glissiere a position repetable, on peut le
 demonter/remonter librement : chaque `T100 M6` re-palpe son nez sur la
@@ -48,18 +54,23 @@ dont l'epaisseur est connue/mesurable au pied a coulisse.
 ## Workflow 2 — Gravure seule, zero sur le dessus de la piece
 
 Cas : graver le dessus d'une piece d'epaisseur quelconque, sans
-usinage prevu. Il faut une fraise (n'importe laquelle) pour toucher.
+usinage prevu. Pas besoin de fraise : le nez alu du laser touche.
 
 1. **Reset Ref** puis **Mode Piece**.
-2. Monter une fraise, MDI : `T2 M6` (adapter le numero) — elle se
-   palpe et devient la reference de session.
-3. Zero Z au **papier a cigarette** entre le bas de la fraise et le
-   dessus de la piece -> touch off Z0 dans QtDragon (epaisseur du
-   papier ~0.03 mm, negligeable pour du laser).
-4. Zero XY dans la foulee (avec la fraise, ou plus tard au laser).
-5. MDI : `T100 M6` — monter la glissiere pendant la pause, RESUME.
-   Le laser se palpe et herite du zero piece via son offset relatif.
-6. Lancer la gravure : le point focal est a Z = focale (ex. `G1 Z7`).
+2. MDI : `T100 M6` — le laser se palpe sur le palpeur fixe et devient
+   la reference de session.
+3. Zero Z au **papier a cigarette** entre le nez alu du laser et le
+   dessus de la piece -> touch off Z0 dans QtDragon. Approche douce
+   au petit increment : ne pas forcer sur le nez (lentille/air
+   assist derriere).
+4. Zero XY au tir faible puissance (voir plus bas).
+5. Lancer la gravure : le point focal est a Z = focale (ex. `G1 Z7`),
+   la focale etant la distance nez -> point focal (a mesurer avec
+   `gcode_tests/test_focale_laser.ngc`).
+
+Variante avec une fraise (si elle est deja montee) : `T2 M6`, zero
+papier avec la fraise, zero XY, puis `T100 M6` — le laser herite du
+zero piece via son offset relatif.
 
 ## Workflow 3 — Job mixte : usinage puis gravure
 
@@ -77,9 +88,10 @@ zero. C'est le flux naturel du systeme, rien de special a faire.
    `gcode_tests/test_offset_laser_xy.ngc` (signe du Y suspect, voir
    README).
 
-Ordre inverse (graver puis usiner) : possible en mode martyre
-uniquement (le laser peut etre la reference, la fraise palpee ensuite
-retrouve le bon zero). Impossible en mode piece.
+Ordre inverse (graver puis usiner) : possible dans les deux modes —
+en mode martyre directement, en mode piece a condition que le zero
+piece ait ete pris au nez du laser (workflow 2). La fraise palpee
+ensuite herite du meme zero.
 
 ---
 
@@ -126,7 +138,7 @@ gravure sans surveillance.
 
 La plaque de contact (pince crocodile) pas encore cablee permettrait,
 en mode piece, de remplacer le papier a cigarette par un `G38.2` +
-`G10 L20 P1 Z<epaisseur plaque>`. Et si le cone metallique du laser
-est conducteur (a verifier au multimetre, l'anodisation isole), pincer
-le crocodile dessus permettrait de palper la piece directement avec le
-nez du laser -> plus besoin de fraise du tout en mode piece.
+`G10 L20 P1 Z<epaisseur plaque>` — plus rapide et plus repetable que
+le papier, y compris avec le nez du laser si celui-ci est conducteur
+(a verifier au multimetre, l'anodisation isole ; pincer le crocodile
+sur le nez).
