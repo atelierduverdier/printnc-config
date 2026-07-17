@@ -12,7 +12,11 @@ Mise a jour : 17 juillet 2026
 | AUX0   | motion.digital-out-00 | qtdragon.aux0 | Aspirateur               | Cable      |
 | AUX1   | motion.digital-out-01 | qtdragon.aux1 | Lumiere                  | Cable      |
 | AUX2   | motion.digital-out-02 | qtdragon.aux2 | Ventilateurs broche      | Cable      |
-| AUX3   | (deconnecte)          | (deconnecte)  | Interlock laser          | Cable      |
+| AUX3   | aucun (M3 $1 / M5 $1) | aucun         | Interlock laser          | Cable      |
+
+Lecture du tableau : AUX3 est bien **cablee et active** (elle alimente le +24V
+du laser). Les colonnes "aucun" signifient seulement qu'elle n'a plus de
+pilotage par M64/M65 ni par bouton : c'est `spindle.1.on` qui la commande.
 
 Note : la pompe a eau n'est PAS sur une sortie AUX. Elle est branchee sur la
 sortie FLOOD (flexi.output.COOLANT), commandee par M8 / M9.

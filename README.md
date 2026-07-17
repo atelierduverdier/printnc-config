@@ -31,16 +31,23 @@ serie par des equivalents simules.
 
 ## Sorties auxiliaires (relais)
 
-Quatre sorties AUX de la Flexi-HAL pilotent des relais 24V, commandables a la
-fois par le G-code (M64/M65) ET par des boutons dans QtDragon. Les deux sources
-sont combinees par des composants `or2` (relais actif si bouton OU G-code).
+Quatre sorties AUX de la Flexi-HAL pilotent des relais 24V. Les trois
+premieres sont commandables a la fois par le G-code (M64/M65) ET par des
+boutons dans QtDragon, les deux sources etant combinees par des composants
+`or2` (relais actif si bouton OU G-code). AUX3 fait exception : elle est
+pilotee directement par `spindle.1.on` (interlock laser), sans or2.
 
 | Sortie | Pin G-code            | Bouton        | Affectation        |
 |--------|-----------------------|---------------|--------------------|
 | AUX0   | motion.digital-out-00 | qtdragon.aux0 | Aspirateur         |
 | AUX1   | motion.digital-out-01 | qtdragon.aux1 | Lumiere            |
 | AUX2   | motion.digital-out-02 | qtdragon.aux2 | Ventilateurs broche |
-| AUX3   | (deconnecte)          | (deconnecte)  | Interlock laser     |
+| AUX3   | aucun (M3 $1 / M5 $1) | aucun         | Interlock laser     |
+
+Le relais AUX3 est bien cable et actif : c'est lui qui alimente le +24V du
+laser. Seul son pilotage par M64 P3 et par le bouton QtDragon aux3 a ete
+retire, pour eviter un double pilotage de la meme pin (HAL refuserait de
+charger). Voir AFFECTATION_AUX.md.
 
 Cablage : modules relais en active HIGH (jumper sur H), alimentes via le bornier
 AUX 2 fils (jumper P17 sur MAIN = 24V) avec un pont DC+ <-> IN sur chaque module.
