@@ -117,8 +117,15 @@
 #   grep -rn "flexi.output.AUX3" ~/linuxcnc/configs/flexi-hal/
 # ============================================================
 
-	loadrt scale names=laser_scale
-	addf   laser_scale servo-thread
+	loadrt limit1 names=laser_reqvel_floor,laser_ratio_clamp
+	loadrt div2   names=laser_velratio
+	loadrt mult2  names=laser_dyn
+	loadrt scale  names=laser_scale
+	addf   laser_reqvel_floor servo-thread
+	addf   laser_velratio      servo-thread
+	addf   laser_ratio_clamp   servo-thread
+	addf   laser_dyn           servo-thread
+	addf   laser_scale         servo-thread
 # flexi.SP.SPINDLE_PWM attend un rapport cyclique en pourcent (0-100).
 # En PWM direct la conversion est triviale : duty = S / 10.
 # S0 -> 0%, S500 -> 50%, S1000 -> 100%. Rien a calibrer.
@@ -154,7 +161,31 @@
 # PWM. Deux exemplaires ont grille (juin, puis 16 juillet). Le PWM direct
 # supprime le maillon fragile.
 
-	net laser-spd  spindle.1.speed-out => laser_scale.in
+# --- Puissance asservie a la vitesse reelle ---------------------------
+# La Flexi sort un PWM a puissance FIXE (M3 = pas de mode dynamique).
+# Quand la machine ralentit (acceleration en debut de trait, coins), elle
+# brule plus longtemps au meme endroit a puissance S constante -> debut de
+# trait plus epais. On multiplie ici la consigne S par le rapport
+#   vitesse_reelle / vitesse_demandee   (0 a l'arret -> 1 a pleine vitesse)
+# AVANT laser_scale, pour une energie deposee constante par mm.
+#
+#   duty(%) = ( S * current-vel / requested-vel ) / 10
+#
+# NB : ca baisse la puissance MOYENNE (surtout sur les traits courts) ->
+# gravures plus claires qu'avant, re-regler la puissance a la hausse.
+# Si les tout debuts de trait sont trop pales, monter laser_ratio_clamp.min
+# a ~0.15 (la puissance ne descend alors jamais sous 15% pendant un trait).
+	setp laser_reqvel_floor.min 0.1     # plancher : evite la division par zero a l'arret
+	setp laser_reqvel_floor.max 1e9
+	setp laser_ratio_clamp.min  0
+	setp laser_ratio_clamp.max  1
+	net laser-reqvel   motion.requested-vel   => laser_reqvel_floor.in
+	net laser-reqvel-f laser_reqvel_floor.out => laser_velratio.in1
+	net laser-curvel   motion.current-vel     => laser_velratio.in0
+	net laser-ratio    laser_velratio.out     => laser_ratio_clamp.in
+	net laser-ratio-c  laser_ratio_clamp.out  => laser_dyn.in1
+	net laser-spd      spindle.1.speed-out    => laser_dyn.in0
+	net laser-dyn      laser_dyn.out          => laser_scale.in
 	net laser-pwm  laser_scale.out     => flexi.SP.SPINDLE_PWM
 	net laser-arm  spindle.1.on        => flexi.output.AUX3
 
