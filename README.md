@@ -150,17 +150,9 @@ Les numeros d'outil >= 100 sont reserves aux lasers. Pour eux,
 En tete d'un G-code laser : `T100 M6` puis `G43 H100` (offsets X/Y saisis
 une fois dans tool.tbl, offset Z palpe a chaque changement).
 
-**Regle des modes avec le laser :**
-* **Mode martyre (`#1001=0`)** : n'importe quel outil peut creer la
-  reference, y compris le laser (la distance palpeur->martyre est
-  mecanique). `T100 M6` seul suffit pour un job laser, et une fraise
-  palpee ensuite retrouve le bon zero meme si le laser est demonte.
-* **Mode piece (`#1001=1`)** : l'outil de reference DOIT etre celui qui
-  a physiquement pris le zero sur la piece. Le laser qualifie : son
-  nez alu touche la piece (papier a cigarette), exactement comme il
-  touche la pastille du palpeur au M6. Donc `T100 M6` puis zero au nez
-  sur la piece, et graver a Z = focale (comptee depuis le nez).
-  Alternative : zero avec une fraise, puis `T100 M6` (offset relatif).
+**Procedure operatoire complete : voir `WORKFLOW_LASER.md`** (workflows
+pas a pas Mode Martyre / Mode Piece / job mixte, aide-memoire commandes,
+pieges connus).
 
 ### Note : boutons de deplacement et vitesse elevee
 
@@ -176,13 +168,13 @@ Corrige en portant `wait_buffer_secs` de 1 a 4 s dans la fonction
 
 ## Laser (spindle.1)
 
-**Workflows de gravure pas-a-pas : voir [WORKFLOW_LASER.md](WORKFLOW_LASER.md)**
-(laser seul sur martyre, laser seul sur piece, job mixte, zero XY au
-laser, calibrations).
-
 Module **LaserTree LT-80W-AA-PRO** pilote comme deuxieme broche LinuxCNC.
 Le S-word est une consigne de puissance 0-1000, pas une vitesse :
 `M3 $1 S500` = 50%, `M5 $1` = arret, `S0` = eteint (sur les G0).
+
+> Pour la mise en oeuvre pas a pas (quel mode, dans quel ordre, quand le
+> nez touche quoi), voir **`WORKFLOW_LASER.md`**. La presente section
+> documente le materiel et la config, pas la procedure.
 
 * **Chaine de puissance (depuis le 17 juillet 2026) :** spindle.1 ->
   composant `laser_scale` (gain 0.1, offset 0) -> `flexi.SP.SPINDLE_PWM`
@@ -190,25 +182,15 @@ Le S-word est une consigne de puissance 0-1000, pas une vitesse :
   **PWM direct, plus aucun convertisseur externe.**
 * **Interlock :** relais AUX3 pilote par `spindle.1.on`, coupe le +24V du
   laser (fil rouge). Reste la coupure de reference du faisceau.
-* **Focale :** `#<z_focus> = 7` mm au-dessus du zero piece (valeur
-  PROVISOIRE, a mesurer avec `gcode_tests/test_focale_laser.ngc`).
-* **Offsets T100 (tool.tbl) :** Z palpe a chaque M6. X/Y : la table
-  contient `X-3 Y-90`, mais la convention LinuxCNC (coord travail =
-  machine - G5x - offset outil) donnerait `X-2 Y+90` pour un nez a
-  broche +2/-90 -- le signe du Y est suspect. A valider avec
-  `gcode_tests/test_offset_laser_xy.ngc` avant tout job mixte.
-
-### Tests de calibration (gcode_tests/)
-
-Deux programmes autonomes a copier dans `~/linuxcnc/nc_files` sur le
-Pi (instructions detaillees en tete de chaque fichier) :
-
-* `test_focale_laser.ngc` : rampe de traits a Z croissant (3 -> 10 mm
-  par pas de 0.5), puissance/vitesse constantes. Le trait le plus fin
-  donne la focale -> reporter dans `z_focus` et le post CAM.
-* `test_offset_laser_xy.ngc` : job mixte minimal, croix fraisee puis
-  croix laser au meme X0 Y0. L'ecart entre les croix corrige les
-  offsets X/Y de T100 dans tool.tbl (formules en tete de fichier).
+* **Focale :** **8.5 mm** entre le nez conique et le point focal (mesuree au
+  test de traits, `test_focale_laser.ngc`). C'est le nez qui sert de
+  reference au palpage, pas le focus : apres `T100 M6` + `G43 H100`, il
+  faut donc travailler a `Z = 8.5` en Mode Piece, ou `Z = epaisseur + 8.5`
+  en Mode Martyre. Valeur a reporter dans le post CAM (le generateur
+  d'atelier laser sortait 4.0 par defaut : frottement du nez garanti).
+* **Offsets T100 (tool.tbl) :** X = 2.0, Y = -90.0. Z palpe a chaque M6.
+  NE PAS y mettre la focale : `toolchange.ngc` ecrase la colonne Z a
+  chaque palpage (`G10 L1 P<n> Z<offset>`). Seuls X et Y survivent.
 
 ### Jumpers Flexi-HAL : P6 et P7 (CRITIQUE)
 
