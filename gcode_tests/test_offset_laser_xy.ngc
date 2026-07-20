@@ -2,6 +2,13 @@
 ; TEST DES OFFSETS X/Y DU LASER (validation tool.tbl T100)
 ; PrintNC Flexi-HAL - Atelier du Verdier
 ; =====================================================================
+; VOIR AUSSI : le mode "Test des offsets X/Y du laser" de LaserAtelier
+; fait le meme job mixte en plus complet (outil fraise et parametres
+; reglables, etiquettes gravees). Doc : https://laser.atelierduverdier.fr
+; Ce fichier-ci est la version AUTONOME rapide, sans FreeCAD : editer
+; les variables ci-dessous et lancer tel quel dans QtDragon. Pratique
+; pour une verif ponctuelle des offsets, apres un montage du laser.
+; =====================================================================
 ; PRINCIPE : job MIXTE minimal. Fraise une croix centree sur X0 Y0,
 ; puis grave une croix laser au MEME X0 Y0 programme. Si les offsets
 ; X/Y de T100 dans tool.tbl sont justes, les deux croix se

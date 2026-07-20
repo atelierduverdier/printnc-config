@@ -2,6 +2,14 @@
 ; TEST DE FOCALE LASER (T100) - rampe de hauteurs Z
 ; PrintNC Flexi-HAL - Atelier du Verdier
 ; =====================================================================
+; VOIR AUSSI : le mode "Bande de calibration defocus" de LaserAtelier
+; fait la meme mesure en plus complet (hauteurs ET puissances
+; reglables, etiquettes gravees, rampe de puissance, et mesure de la
+; DIVERGENCE du point, utile au remplissage "noir plein").
+; Doc : https://laser.atelierduverdier.fr
+; Ce fichier-ci est la version AUTONOME rapide, sans FreeCAD : editer
+; les variables ci-dessous et lancer tel quel dans QtDragon.
+; =====================================================================
 ; PRINCIPE : grave une serie de traits paralleles a puissance et
 ; vitesse constantes, en variant uniquement la hauteur Z au-dessus
 ; de la surface. Le trait LE PLUS FIN indique la distance focale.
