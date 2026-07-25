@@ -163,6 +163,11 @@ G0 Z2.0                        ; Remontee de 2mm
 G38.2 Z-5.0 F#<latch_feed>     ; Second palpage lent (max 5mm)
 G90                            ; Retour mode absolu
 
+; --- AJOUT DE SÉCURITÉ ---
+G91
+G0 Z3.0                        ; Remontée explicite de 3mm pour BIEN libérer le palpeur
+G90
+G4 P0.3                        ; Pause de 300ms pour stabiliser l'entrée Probe
 #<touch_z> = #5063             ; Capture position Z machine au contact
 (DEBUG, touch_z = [#<touch_z>])
 M71                            ; Restore etat modal sauvegarde
