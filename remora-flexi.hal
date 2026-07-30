@@ -97,6 +97,9 @@
 # Interlock  : spindle.1.on -> flexi.output.AUX3 -> relais 24V actif-bas
 #             -> contact NO ferme le +24V vers VCC laser (fil rouge)
 # Commande   : M3 $1 S<puissance>  /  M5 $1
+#              ... ou M3 $1 + M67 E0 Q<puissance> si la case « Puissance par
+#              M67 » est cochee dans LaserAtelier (les deux canaux sont
+#              additionnes, voir plus bas). M3/M5 restent l'interlock.
 # Outil      : T100 (offsets X0 Y+88.75 dans tool.tbl), focale Z +8mm
 #
 # JUMPERS FLEXI-HAL - CRITIQUE (serigraphie "SPINDLE PWM CONFIG") :
@@ -210,6 +213,12 @@
 #
 # M3/M5 ne changent pas : c est spindle.1.on qui ferme l interlock AUX3.
 # Seul le canal de la VALEUR bascule.
+# Gains poses EXPLICITEMENT : une somme simple, sans decalage. Ne PAS se
+# reposer sur les defauts de sum2 -- si gain0/gain1 ne valaient pas 1, le
+# laser tirerait a ZERO sans le moindre message, et le job sortirait blanc.
+	setp   laser_src.gain0  1
+	setp   laser_src.gain1  1
+	setp   laser_src.offset 0
 	net laser-spd      spindle.1.speed-out    => laser_src.in0
 	net laser-anaout   motion.analog-out-00   => laser_src.in1
 	net laser-src      laser_src.out          => laser_dyn.in0
@@ -232,11 +241,11 @@
 # DEUX BOUTS a 400 mm/s2. La machine s'arretait donc a chaque changement de
 # S au lieu d'enchainer des segments parfaitement colineaires.
 #
-# A VERIFIER A L'OREILLE : si les a-coups disparaissent sur une gravure
-# photo, c'etait bien ca. Sinon, la piste suivante est M67 E0 Q<valeur>
-# (sortie analogique SYNCHRONISEE avec le mouvement, qui ne vide pas la
-# file de trajectoire) a la place de S, avec
-# `net laser-spd motion.analog-out-00 => laser_dyn.in0` ci-dessus.
+# VERIFIE A L'OREILLE le 30/07/2026 : les a-coups ONT PERSISTE. Ce n'etait
+# donc pas la cause. La ligne reste -- elle est juste, et coherente avec le
+# OU de spindle.0 -- mais le vrai correctif est M67, cable ci-dessus.
+# Ne pas la retirer en croyant qu'elle ne sert a rien : sans elle, le
+# planificateur pourrait attendre un at-speed qui ne viendra jamais.
 	setp spindle.1.at-speed 1
 
 # estop loopback, SPI comms enable and feedback
