@@ -189,6 +189,28 @@
 	net laser-pwm  laser_scale.out     => flexi.SP.SPINDLE_PWM
 	net laser-arm  spindle.1.on        => flexi.output.AUX3
 
+# at-speed du LASER : force a VRAI, une fois pour toutes.
+#
+# Un laser n'a pas de montee en regime -- le PWM est a sa valeur au cycle
+# servo suivant. `spindle.1.at-speed` n'avait jamais ete cable et restait
+# donc a FALSE en permanence : meme oubli que pour spindle.0, corrige le
+# 16 juillet 2026 par le OU un peu plus haut, mais jamais reporte ici.
+#
+# Symptome mesure le 30/07/2026 sur une gravure photo (tramage lignes
+# gravees, ou la puissance change a presque chaque pixel) : 172 614 blocs
+# G1 de 0,30 mm annonces 1h30 et partis pour 4 h, avec un a-coup audible
+# par bloc. Soit ~76 ms par bloc la ou 0,30 mm a F800 en demande 22 -- et
+# 55 ms est exactement le temps d'un deplacement de 0,30 mm avec ARRET AUX
+# DEUX BOUTS a 400 mm/s2. La machine s'arretait donc a chaque changement de
+# S au lieu d'enchainer des segments parfaitement colineaires.
+#
+# A VERIFIER A L'OREILLE : si les a-coups disparaissent sur une gravure
+# photo, c'etait bien ca. Sinon, la piste suivante est M67 E0 Q<valeur>
+# (sortie analogique SYNCHRONISEE avec le mouvement, qui ne vide pas la
+# file de trajectoire) a la place de S, avec
+# `net laser-spd motion.analog-out-00 => laser_dyn.in0` ci-dessus.
+	setp spindle.1.at-speed 1
+
 # estop loopback, SPI comms enable and feedback
 	net user-enable-out iocontrol.0.user-enable-out => flexi.SPI-enable
 	net user-request-enable iocontrol.0.user-request-enable => flexi.SPI-reset estop_latch.reset
