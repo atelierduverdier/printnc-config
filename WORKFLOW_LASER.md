@@ -12,12 +12,12 @@ glissiere. A suivre dans l'ordre, sans sauter d'etape.
 | Repere | C'est quoi | Valeur |
 |--------|-----------|--------|
 | **Nez** | Le cone en bout de laser. C'est LUI qui touche la pastille du palpeur. C'est la reference de `T100 M6`. | - |
-| **Focus** | Le point ou le faisceau est le plus fin. Il est **8.5 mm SOUS le nez**. | 8.5 mm |
-| **Offset XY** | Ecart nez / axe broche. Dans `tool.tbl`, applique par `G43 H100`. | X +2.0 / Y -90.0 |
+| **Focus** | Le point ou le faisceau est le plus fin. Il est **8.0 mm SOUS le nez**. | 8.0 mm |
+| **Offset XY** | Ecart nez / axe broche. Dans `tool.tbl`, applique par `G43 H100`. | X 0 / Y +88.75 |
 
 **Regle d'or :** apres `T100 M6` + `G43 H100`, **Z0 = le NEZ**, pas le
 focus. Pour mettre le focus sur la surface, il faut donc travailler a
-`Z = <hauteur de la surface> + 8.5`.
+`Z = <hauteur de la surface> + 8.0`.
 
 **Le nez touche-t-il la piece ?** Ca depend du mode :
 
@@ -101,16 +101,16 @@ Le DRO affiche desormais la position du **nez du laser**.
 
 Dans l'atelier laser FreeCAD, renseigner :
 
-- **Focale : 8.5** (et pas 4, valeur par defaut du generateur)
+- **Focale : 8.0** (et pas 4, valeur par defaut du generateur)
 - **Epaisseur : <la mesure du pied a coulisse>**
 
--> le Z de gravure doit sortir a `epaisseur + 8.5`.
+-> le Z de gravure doit sortir a `epaisseur + 8.0`.
 
 **Verification obligatoire avant de lancer** : ouvrir le .ngc et lire
 les premieres lignes.
 
     G0 Z<degagement>
-    G0 Z<epaisseur + 8.5>     <- CE CHIFFRE
+    G0 Z<epaisseur + 8.0>     <- CE CHIFFRE
 
 Exemple : chute de 16.3 mm -> le Z de gravure doit etre **24.8**.
 Si le fichier dit Z9, le nez va labourer le bois. Ne pas lancer.
@@ -161,7 +161,7 @@ Mode Piece. Le Z est pris manuellement sur la piece, pas sur le martyre.
 - La piece n'est PAS posee a plat sur le martyre (gabarit, plaque a
   depression, cales)
 - L'epaisseur est irreguliere, ou on ne veut pas la mesurer
-- On veut que le generateur n'ait qu'UNE constante a connaitre : 8.5.
+- On veut que le generateur n'ait qu'UNE constante a connaitre : 8.0.
   Plus de saisie d'epaisseur, donc plus d'oubli possible.
 
 ### Etapes
@@ -196,11 +196,11 @@ sauf qu'on n'a PAS besoin de mesurer l'epaisseur.
 
 9. Zero X/Y : comme au Workflow A, etape 5 (tir de visee `M3 $1 S20`)
 
-10. Generateur : **Focale 8.5**, **Epaisseur 0**
-    -> le Z de gravure doit sortir a **8.5** tout court.
+10. Generateur : **Focale 8.0**, **Epaisseur 0**
+    -> le Z de gravure doit sortir a **8.0** tout court.
 
 11. Verification avant lancement : ouvrir le .ngc, le `G0 Z<...>` de
-    gravure doit dire **Z8.5**. Si autre chose, ne pas lancer.
+    gravure doit dire **Z8.0**. Si autre chose, ne pas lancer.
 
 12. Lancer, surveiller, `M5 $1` en fin de job.
 
@@ -220,7 +220,7 @@ precedente -> valeur silencieusement fausse.
 **Variante job mixte en Mode Piece :** meme principe, mais c'est la
 FRAISE qui prend le zero. Ordre : Reset Ref -> Mode Piece -> `T2 M6` ->
 `G43 H2` -> touch-off Z0 sur la piece -> usinage -> `M5` -> monter le
-laser -> `T100 M6` -> `G43 H100` -> graver a Z8.5. Avantage : le nez du
+laser -> `T100 M6` -> `G43 H100` -> graver a Z8.0. Avantage : le nez du
 laser ne touche jamais la piece.
 
 ---
@@ -232,7 +232,7 @@ laser ne touche jamais la piece.
 | Touch-off manuel | non | oui |
 | Nez du laser sur la piece | jamais | oui (une fois) |
 | Epaisseur a mesurer | **oui** (pied a coulisse) | non |
-| Z de gravure | `epaisseur + 8.5` | `8.5` |
+| Z de gravure | `epaisseur + 8.0` | `8.0` |
 | Piece sur cales / gabarit | non adapte | **adapte** |
 | Risque principal | oublier de saisir l'epaisseur | mater le cone au touch-off |
 
@@ -262,8 +262,8 @@ laser ne touche jamais la piece.
 **Le nez frotte le bois**
 -> Le Z du G-code est faux. Verifier le `G0 Z<...>` de gravure en tete
 de fichier :
-- Mode Martyre : doit valoir `epaisseur + 8.5`
-- Mode Piece : doit valoir `8.5`
+- Mode Martyre : doit valoir `epaisseur + 8.0`
+- Mode Piece : doit valoir `8.0`
 
 Cause habituelle : le generateur a garde son epaisseur (5 mm) ou sa
 focale (4 mm) par defaut.
@@ -287,7 +287,7 @@ Bug du generateur. Chercher `(... (...) ...)` dans le .ngc.
 
 **La gravure part 90 mm a cote**
 -> `G43 H100` oublie, ou colonnes X/Y de T100 vides dans `tool.tbl`
-(doivent valoir X 2.0 / Y -90.0).
+(doivent valoir X 0 / Y +88.75).
 
 **Pas de degrade, tout noir**
 -> Saturation du materiau : augmenter le feed, baisser la puissance max.

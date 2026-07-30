@@ -97,7 +97,7 @@
 # Interlock  : spindle.1.on -> flexi.output.AUX3 -> relais 24V actif-bas
 #             -> contact NO ferme le +24V vers VCC laser (fil rouge)
 # Commande   : M3 $1 S<puissance>  /  M5 $1
-# Outil      : T100 (offsets X+2 Y-90 dans tool.tbl), focale Z +7mm
+# Outil      : T100 (offsets X0 Y+88.75 dans tool.tbl), focale Z +8mm
 #
 # JUMPERS FLEXI-HAL - CRITIQUE (serigraphie "SPINDLE PWM CONFIG") :
 #   P6 = 5V       -> alimente le LM358 (U6 pin 8) via SPINDLE_PWR_12V

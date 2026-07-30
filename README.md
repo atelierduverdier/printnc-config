@@ -74,7 +74,7 @@ FLOOD (pas sur une AUX). AUX3 est pilotee directement par `spindle.1.on`
   4 roulements ceramiques serie 7, deviation max 0.01mm.
 * **Variateur (VFD) :** HuangYang (HY) 2.2kW 220VAC.
 * **Laser :** LaserTree LT-80W-AA-PRO (10W optique, 450 nm, 24V natif) sur
-  glissiere amovible a l'avant du porte-broche (offset X +2 / Y -90 par
+  glissiere amovible a l'avant du porte-broche (offset X 0 / Y +88.75 par
   rapport a l'axe broche). Pilote comme spindle.1 en PWM direct depuis la
   Flexi-HAL, interlock via relais AUX3 (voir section Laser).
 * **Refroidissement :** pompe 220V 75W (max 3200 L/H), circuit ferme au liquide
@@ -133,7 +133,7 @@ Les numeros d'outil >= 100 sont reserves aux lasers. Pour eux,
 `toolchange.ngc` applique deux comportements specifiques :
 
 * **Palpage decale :** la broche vise une position decalee de l'inverse de
-  l'offset laser (nez laser = broche X +2 / Y -90) pour que le cone du
+  l'offset laser (nez laser = broche X 0 / Y +88.75) pour que le cone du
   laser touche la pastille du VersaProbe. Si la position calculee sort de
   la course machine, elle est plafonnee a X -49.5 : la pastille de 20 mm
   de diametre absorbe le decalage residuel sans fausser le Z.
@@ -188,7 +188,7 @@ Le S-word est une consigne de puissance 0-1000, pas une vitesse :
   faut donc travailler a `Z = 8.5` en Mode Piece, ou `Z = epaisseur + 8.5`
   en Mode Martyre. Valeur a reporter dans le post CAM (le generateur
   d'atelier laser sortait 4.0 par defaut : frottement du nez garanti).
-* **Offsets T100 (tool.tbl) :** X = 2.0, Y = -90.0. Z palpe a chaque M6.
+* **Offsets T100 (tool.tbl) :** X = 0 (colonne absente), Y = +88.75. Z palpe a chaque M6.
   NE PAS y mettre la focale : `toolchange.ngc` ecrase la colonne Z a
   chaque palpage (`G10 L1 P<n> Z<offset>`). Seuls X et Y survivent.
 
