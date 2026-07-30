@@ -1418,6 +1418,25 @@ class HandlerClass:
                 self.add_status('Spindle lowered')
                 self._spindle_wait = False
 
+        # RUN TIME restait a 00:00:00 : `start_timer()` n avait qu un seul
+        # appelant, `btn_cycle_start_clicked`, donc le compteur ne demarrait
+        # QUE si le programme etait lance depuis le bouton CYCLE START de
+        # l ecran. Lance depuis le bouton PHYSIQUE (run_and.out =>
+        # halui.program.run, cf. remora-flexi.hal), il ne demarrait jamais --
+        # et avec le laser on lance forcement depuis la machine, lunettes sur
+        # le nez. `stop_timer` etait deja branche sur `interp-idle` : c est le
+        # demarrage qui manquait, pas l arret.
+        #
+        # Volontairement ecrit avec `periodic` + `STATUS.is_auto_running()`,
+        # deux choses que ce fichier utilise DEJA. Un
+        # `STATUS.connect('interp-run', ...)` serait plus elegant, mais si ce
+        # signal n existe pas dans cette version de Qtvcp, le connect leve et
+        # QtDragon refuse de demarrer -- pas un risque a prendre sur la
+        # machine. Le `not self.timer_on` evite en plus la remise a zero sur
+        # une reprise apres pause.
+        if STATUS.is_auto_running() and not self.timer_on:
+            self.start_timer()
+
         self.update_runtimer()
 
     def update_runtimer(self):
