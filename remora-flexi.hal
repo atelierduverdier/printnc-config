@@ -121,9 +121,11 @@
 	loadrt div2   names=laser_velratio
 	loadrt mult2  names=laser_dyn
 	loadrt scale  names=laser_scale
+	loadrt sum2   names=laser_src
 	addf   laser_reqvel_floor servo-thread
 	addf   laser_velratio      servo-thread
 	addf   laser_ratio_clamp   servo-thread
+	addf   laser_src           servo-thread
 	addf   laser_dyn           servo-thread
 	addf   laser_scale         servo-thread
 # flexi.SP.SPINDLE_PWM attend un rapport cyclique en pourcent (0-100).
@@ -184,7 +186,33 @@
 	net laser-curvel   motion.current-vel     => laser_velratio.in0
 	net laser-ratio    laser_velratio.out     => laser_ratio_clamp.in
 	net laser-ratio-c  laser_ratio_clamp.out  => laser_dyn.in1
-	net laser-spd      spindle.1.speed-out    => laser_dyn.in0
+# SOURCE DE LA PUISSANCE : les DEUX canaux, additionnes.
+#
+# `S` (spindle.1.speed-out) et `M67 E0 Q<v>` (motion.analog-out-00) arrivent
+# tous les deux ici. L un des deux vaut toujours zero -- l atelier n emet
+# jamais les deux a la fois -- donc la somme vaut le canal actif. C est
+# volontairement redondant : sans ca, basculer le reglage
+# « Puissance par M67 » dans LaserAtelier exigerait de recabler le HAL en
+# meme temps, et un desaccord entre les deux ferait sortir un job BLANC,
+# sans erreur, apres des heures de gravure. Avec la somme, les deux modes
+# marchent et les anciens fichiers .ngc restent valides.
+#
+# POURQUOI M67 : sur cette machine, un mot S entre deux G1 fait ARRETER le
+# mouvement, meme sur des segments parfaitement colineaires. Prouve le
+# 30/07/2026 par deux fichiers de geometrie identique (200 segments de
+# 0,30 mm a F800) : S constant fluide, S variable saccade. Un portrait de
+# 172 614 blocs annonce 1h30 est parti pour 4 h, soit ~76 ms par bloc la ou
+# 0,30 mm a F800 en demande 22 -- et 55 ms est le temps d un deplacement de
+# 0,30 mm avec ARRET AUX DEUX BOUTS a 400 mm/s2. M67 est la sortie
+# analogique SYNCHRONISEE avec le mouvement : la valeur est appliquee au
+# bloc suivant sans vider la file de trajectoire. (M68 est la variante
+# immediate et elle, elle arrete le mouvement : ne pas la confondre.)
+#
+# M3/M5 ne changent pas : c est spindle.1.on qui ferme l interlock AUX3.
+# Seul le canal de la VALEUR bascule.
+	net laser-spd      spindle.1.speed-out    => laser_src.in0
+	net laser-anaout   motion.analog-out-00   => laser_src.in1
+	net laser-src      laser_src.out          => laser_dyn.in0
 	net laser-dyn      laser_dyn.out          => laser_scale.in
 	net laser-pwm  laser_scale.out     => flexi.SP.SPINDLE_PWM
 	net laser-arm  spindle.1.on        => flexi.output.AUX3
