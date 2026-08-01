@@ -211,6 +211,16 @@
 # bloc suivant sans vider la file de trajectoire. (M68 est la variante
 # immediate et elle, elle arrete le mouvement : ne pas la confondre.)
 #
+# CE QUE CA A DONNE, mesure sur bois le 01/08/2026 : +2 % de temps gagne
+# seulement, sur un portrait comptant 64 869 changements de puissance.
+# L hypothese ci-dessus reste vraie -- un S isole arrete bien le mouvement,
+# les deux fichiers jumeaux le prouvent -- mais l essentiel du temps ne
+# partait pas la. C est ecrit ici pour que le raisonnement du dessus ne se
+# lise pas comme une victoire : il explique un phenomene reel dont la part
+# dans le temps total est faible. Le vrai gain de cette periode est venu
+# d ailleurs (ordonnancement des trajets : 56 m de deplacements a vide
+# ramenes a 5,1 m sur un meme dessin).
+#
 # M3/M5 ne changent pas : c est spindle.1.on qui ferme l interlock AUX3.
 # Seul le canal de la VALEUR bascule.
 # Gains poses EXPLICITEMENT : une somme simple, sans decalage. Ne PAS se
