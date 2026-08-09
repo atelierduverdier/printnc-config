@@ -100,14 +100,51 @@ O<atc_config> sub
 #<_atc_filetage>  = 10.0     ; [MODELE] FILETAGE_ENGAGE, mesure au pied a
                              ; coulisse sur le nez de broche le 06/08/2026
 
-#<_atc_rpm>       = 500      ; vitesse de vissage/devissage
-; Plafond : pendant la rampe d'acceleration Z le filet prend v^2/2a
-; d'avance sur la broche, et ca doit tenir dans la precharge du ressort
-; — 1,00 mm a engage_z. Avec MAX_ACCELERATION = 180 mm/s2, le plafond
-; est 1138 mm/min, soit 759 tr/min au pas de 1,5. On prend 500 pour
-; garder de la marge. Les 1500 tr/min du README du magasin decrivent
-; l'arret sec sur les billes (l'inertie qui fournit le couple), pas
-; cette phase-ci.
+; =====================================================================
+; DEUX PHASES, DEUX REGIMES — et ce n'est pas un raffinement
+; =====================================================================
+; Le couple de serrage ne vient PAS du moteur : une broche de 2,4 kW
+; prevue pour 24 000 tr/min ne donne presque rien a 500. Il vient de
+; l'INERTIE, dumpee quand la broche lancee s'arrete net sur les billes.
+; Cette energie vaut 1/2.J.w^2 : elle varie comme le CARRE du regime.
+; 500 contre 1500, c'est un facteur NEUF. D'ou deux reglages separes —
+; Greilick en a deux aussi (_rc_load_rpm / _rc_unload_rpm).
+;
+; Ce qui plafonne l'un ne plafonne pas l'autre :
+;
+;   VISSAGE — la broche plonge PENDANT que le filet avance, les deux
+;   sont lies par le pas. Pendant la rampe d'acceleration Z le filet
+;   prend v^2/2a d'avance, a payer sur la precharge de 1,00 mm. Avec
+;   MAX_ACCELERATION = 180, le plafond est 1138 mm/min, soit
+;   759 tr/min au pas de 1,5. AUCUN moyen de contourner : a 1500 il
+;   faudrait 3,91 mm de precharge, il y en a 1,00.
+;
+;   DEVISSAGE — le choc a lieu quand le six-pans TOMBE dans les billes,
+;   AVANT que le filet ait commence a sortir : hors de la phase liee.
+;   Et une fois qu'il sort, il pousse le siege vers le BAS, contre le
+;   ressort, qui cede toujours. Aucun plafond de regime ici.
+;
+;   SERRAGE — le choc a lieu quand le filet talonne, donc au bout du
+;   vissage, EN PLEINE phase liee. On ne peut pas y monter en regime.
+;   D'ou les COUPS : on ressort le six-pans des billes, on lance la
+;   broche a vide, on replonge. C'est exactement la boucle
+;   `plunge_count` de Greilick, et c'est une clé à chocs.
+;
+#<_atc_rpm_prise>   = 500    ; vissage lie. PLAFOND 759 (controle plus bas)
+#<_atc_rpm_serrage> = 800    ; coups de serrage, broche lancee a vide
+#<_atc_rpm_depose>  = 800    ; devissage, choc a l'entree des billes
+#<_atc_coups>       = 2      ; nombre de coups de serrage apres le vissage
+
+; POURQUOI 800 ET NON 1500 : le 1500 du README du magasin est une
+; ASSERTION, pas un calcul — la note de calcul a d'ailleurs refuse de
+; porter le chiffre, elle dit seulement « l'arret sec de la broche
+; lancee fournit le couple ». Et la piece qui encaisse le coup est un
+; siege imprime en PETG, jamais essaye sous choc : le gabarit a tenu
+; A LA MAIN, pas sous une broche lancee. Le regime est donc borne EN
+; BAS par le couple qu'il faut et EN HAUT par ce que le PETG survit, et
+; aucune des deux bornes n'est connue. MONTER PAR PALIERS depuis 800,
+; en regardant le siege entre les essais. Un siege fendu se voit ; un
+; ecrou mal serre, non — il se voit au premier passage, dans le bois.
 
 ; =====================================================================
 ; DEGAGEMENTS, tous comptes DEPUIS engage_z
@@ -137,6 +174,17 @@ O<atc_config> sub
                              ; de sortie fait tourner l'ecrou de ~23 deg
                              ; sur la calotte des billes, on ne l'arrache
                              ; pas en G0
+#<_atc_f_coup>     = 600     ; descente qui fait ENTRER le six-pans dans
+                             ; les billes — coups de serrage et depose.
+                             ; DECOUPLEE du filetage (le filet ne bouge
+                             ; pas pendant un coup, l'ecrou est deja a
+                             ; fond). C'est elle qui donne au six-pans le
+                             ; temps de trouver son creneau : a 800 tr/min
+                             ; il s'en presente un toutes les 12 ms, et
+                             ; 600 mm/min laisse ~10 chances sur le
+                             ; millimetre de capture. Si le six-pans
+                             ; reste assis sur les billes sans y tomber,
+                             ; c'est CE chiffre qu'il faut baisser.
 #<_atc_dwell>      = 0.3     ; attente au fond, broche tournante, qui
                              ; garantit que le filetage a fini sa course.
                              ; Sans danger : filet libere, la rotation ne
@@ -166,10 +214,13 @@ O<atc_config> sub
 ; engage_z + filetage et descend jusqu'a engage_z pendant que l'ecrou
 ; remonte d'autant. Le ressort revient ou il etait.
 #<_atc_z_vissage>  = [#<_atc_engage_z> + #<_atc_filetage>]
-#<_atc_feed>       = [#<_atc_pas_filet> * #<_atc_rpm>]
 
-; Plafond de vitesse impose par l'acceleration Z et la precharge.
-; 180 = [AXIS_Z]MAX_ACCELERATION, 1.0 = precharge du ressort a engage_z.
+; Ne concerne QUE le vissage : c'est la seule phase ou la plongee et la
+; rotation sont liees. Les coups et la depose ont leur propre avance.
+#<_atc_feed>       = [#<_atc_pas_filet> * #<_atc_rpm_prise>]
+
+; Plafond impose par l'acceleration Z et la precharge du ressort.
+; 180 = [AXIS_Z]MAX_ACCELERATION, 1.0 = precharge disponible a engage_z.
 #<_atc_feed_max>   = [60.0 * SQRT[2.0 * 180.0 * 1.0]]
 
 O<atc_config> endsub

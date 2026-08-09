@@ -81,12 +81,46 @@ tenir dans la precharge de 1,00 mm. Avec `[AXIS_Z]MAX_ACCELERATION = 180` :
 | **11** | **1,00 mm** | **1138 mm/min** | **759 tr/min** |
 | 12 | 0,00 mm | — | — |
 
-Retenu : **500 tr/min, 750 mm/min**. Les 1500 tr/min du README du magasin
-decrivent l'arret sec sur les billes (l'inertie qui fournit le couple), pas
-cette phase-ci.
+Retenu pour le vissage : **500 tr/min, 750 mm/min**. `atc_toolchange.ngc` refuse
+de tourner si `pas x rpm` depasse ce plafond, qu'il recalcule lui-meme.
 
-`atc_toolchange.ngc` refuse de tourner si `pas x rpm` depasse ce plafond, qu'il
-recalcule lui-meme.
+## 4bis. Mais le couple de serrage, lui, veut du regime
+
+Le couple ne vient PAS du moteur : une broche de 2,4 kW prevue pour
+24 000 tr/min ne donne presque rien a 500. Il vient de l'**inertie**, dumpee
+quand la broche lancee s'arrete net sur les billes — et cette energie vaut
+`1/2.J.w^2`, donc elle varie comme le **carre** du regime. 500 contre 1500,
+c'est un facteur **neuf**.
+
+Les deux exigences ne se contredisent pas, parce qu'elles ne portent pas sur la
+meme phase :
+
+| phase | le choc a lieu | plafond |
+|---|---|---|
+| **vissage** | — (le filet avance) | **759 tr/min**, phase liee |
+| **serrage** | quand le filet talonne, donc EN FIN de vissage | aucun, mais inatteignable sur place |
+| **depose** | quand le six-pans TOMBE dans les billes, AVANT que le filet sorte | **aucun** |
+
+La depose est donc libre : le choc precede la phase liee, et quand le filet sort
+il pousse le siege vers le bas contre le ressort, qui cede toujours.
+
+Le serrage, lui, ne peut pas monter en regime sur place — le filet vient de
+talonner, la broche est calee. D'ou les **coups** : on ressort le six-pans des
+billes (l'ecrou tourne alors librement avec la broche, filet inchange), on lance
+a vide, on replonge. Une cle a chocs. C'est exactement la boucle `plunge_count`
+de Greilick, dont l'usage n'etait pas evident a la lecture.
+
+Trois regimes separes, comme Greilick qui a lui aussi `_rc_load_rpm` et
+`_rc_unload_rpm` distincts : `_atc_rpm_prise` (500), `_atc_rpm_serrage` (800),
+`_atc_rpm_depose` (800), plus `_atc_coups` (2).
+
+**Pourquoi 800 et pas 1500.** Le 1500 du README du magasin est une **assertion**,
+pas un calcul — la note de calcul a d'ailleurs refuse de porter le chiffre, elle
+ne dit que « l'arret sec de la broche lancee fournit le couple ». Et la piece qui
+encaisse le coup est un siege **imprime en PETG, jamais essaye sous choc** : le
+gabarit a tenu A LA MAIN, pas sous une broche lancee. Le regime est borne en bas
+par le couple qu'il faut, en haut par ce que le PETG survit, et **aucune des deux
+bornes n'est connue**. Monter par paliers en regardant le siege entre les essais.
 
 ## 5. Deux pieges LinuxCNC, absents de l'original grblHAL
 
