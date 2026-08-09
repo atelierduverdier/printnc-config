@@ -154,6 +154,14 @@ une fois dans tool.tbl, offset Z palpe a chaque changement).
 pas a pas Mode Martyre / Mode Piece / job mixte, aide-memoire commandes,
 pieges connus).
 
+### Magasin ATC ER20 (pose, pas branche)
+
+Le changeur d'outil automatique est porte en sous-programmes O-word
+(`subroutines/atc_*.ngc`) mais **`REMAP=M6` pointe toujours sur
+`toolchange.ngc`** : le mode semi-manuel est inchange. Ou poser le magasin,
+quoi relever, dans quel ordre mettre en service : **voir `WORKFLOW_ATC.md`**.
+Les calculs sont dans `CHANGELOG.md`, entree du 9 aout 2026.
+
 ### Note : boutons de deplacement et vitesse elevee
 
 Les boutons de l'interface qui declenchent un deplacement via CALL_MDI_WAIT
