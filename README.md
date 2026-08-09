@@ -118,10 +118,14 @@ FLOOD (pas sur une AUX). AUX3 est pilotee directement par `spindle.1.on`
 * **Limites de courses logicielles :**
   * X : `-50.0` a `1240.0` mm
   * Y : `-2.0` a `1286.0` mm (HOME a `1275.0`)
-  * Z : `-185.0` a `5.0` mm (HOME de securite a `0.0`)
+  * Z : `-140.0` a `5.0` mm (HOME de securite a `0.0`). Course reduite de
+    45 mm le 9 aout 2026 (etait `-185.0`) : c'est cette valeur qui decide si
+    un outil peut sortir du magasin ATC, voir `WORKFLOW_ATC.md`.
 * **Vitesses maximales :**
-  * X & Y : 166,67 mm/s (10 000 mm/min), STEPGEN_MAXVEL 200
-  * Z : 33.33 mm/s (STEPGEN_MAXVEL 100, prudence face a la gravite)
+  * X & Y : 133,33 mm/s (8 000 mm/min), STEPGEN_MAXVEL 160
+  * Z : 45 mm/s (2 700 mm/min), STEPGEN_MAXVEL 100. Redescendue de 50 parce
+    que la vis grogne a 750 tr/min : le POURQUOI est dans le commentaire de
+    `[JOINT_2]`, a lire avant de la remonter.
 * **Timings impulsions :** STEPLEN = STEPSPACE = 2500 ns sur **tous** les axes (voir encadre ci-dessous).
 * **Homing :** Z monte en premier (sequence 0), puis X et Y ensemble (sequence -1).
 
@@ -176,8 +180,9 @@ Les calculs sont dans `CHANGELOG.md`, entree du 9 aout 2026.
 Les boutons de l'interface qui declenchent un deplacement via CALL_MDI_WAIT
 (ex : GO HOME) calculent un delai d'attente = distance / vitesse + marge.
 Ce calcul ignore le temps d'acceleration/deceleration. A vitesse elevee
-(10 000 mm/min), une marge trop courte fait expirer le WAIT avant la fin du
-mouvement -> message "EMC_TASK_PLAN_PAUSE cannot be executed".
+(le probleme est apparu quand X et Y etaient a 10 000 mm/min, ils sont
+redescendus a 8 000 depuis), une marge trop courte fait expirer le WAIT avant
+la fin du mouvement -> message "EMC_TASK_PLAN_PAUSE cannot be executed".
 Corrige en portant `wait_buffer_secs` de 1 a 4 s dans la fonction
 `calc_mdi_move_wait_time` du handler QtDragon.
 
