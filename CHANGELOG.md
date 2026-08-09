@@ -1,3 +1,165 @@
+# Changelog — 9 aout 2026 — Magasin ATC ER20 : portage du changeur d'outil
+## PrintNC Flexi-HAL — Atelier du Verdier
+
+**Machine :** PrintNC — FlexiHAL (Expatria / Remora) — LinuxCNC 2.9.8 — QtDragon_hd
+
+---
+
+## 1. Objectif
+
+Porter en sous-programmes O-word la logique des macros RapidChange ATC de
+Greilick Industries (`rcatc-scripts-grblhal`, **GPL-3.0**), ecrites pour
+grblHAL, pour le magasin ATC ER20 en cours d'impression
+(`~/Projets/magasin-atc`, modele GELE).
+
+**Rien n'est branche sur M6.** `REMAP=M6` pointe toujours sur `toolchange.ngc`
+(montage manuel), qui marche. Le nouveau jeu s'essaie en MDI.
+
+## 2. La cote qui commande tout : `engage_z`
+
+Recalculee depuis le modele le 9 aout, parce que le chanfrein de pied de
+l'ecrou trouve sur piece le 8 aout invalidait tout chiffre anterieur.
+
+Trois entrees seulement, toutes mesurees au pied a coulisse :
+
+| | | provenance |
+|---|---|---|
+| `H` ecrou hors tout | 22,00 | 07/08 |
+| `F` filetage engage | 10,00 | 06/08, nez de broche |
+| `C` course du siege | 12,00 | `FILETAGE_ENGAGE + 2` |
+
+Les deux contraintes, ecrites sur l'ecrasement final du siege, avec `h` la
+hauteur du bout libre du filetage au-dessus du plan d'appui de l'ecrou AU
+REPOS :
+
+- **prise** : ecrasement `(H-F) - h`, entre 0 et `C` -> `h` dans [0 ; 12]
+- **depose** : ecrasement `H - h`, entre 0 et `C` -> `h` dans [10 ; 22]
+
+Intersection : **`h` = 11,00 mm +/- 1,00**. La largeur vaut `C - F` = 2,00 mm
+— le « +2 » de la course EST la fenetre. Et 11 n'est pas qu'un milieu : il
+partage a egalite 1,00 mm de precharge pour la prise et 1,00 mm de marge avant
+le fond de poche pour la depose.
+
+**Recette d'etalonnage** : ecrou visse a fond sur la broche, descendre jusqu'au
+contact avec le cone du siege, puis **1,00 mm de plus**.
+
+**Piege corrige** : une note du 7 aout disait « enfoncer le siege de plus de 10
+et moins de 12 mm ». Les bornes sont bonnes, la grandeur ne l'est pas — a
+`engage_z` le siege n'est enfonce que de **1,00 mm**, les 11 mm ne sont atteints
+qu'en fin de devissage. Regler `engage_z` pour 11 mm d'ecrasement taperait le
+fond de poche 9 mm trop tot, broche en rotation contre une butee dure.
+
+## 3. Ce que le chanfrein de pied a decale
+
+Il ne touche pas la largeur de la fenetre : il descend le plan de reference de
+**1,50 mm**. Un `engage_z` d'avant le 8 aout donne `h` = 12,50, **hors de
+[10 ; 12]** — la demi-fenetre (1,00) est plus petite que le decalage (1,44
+mesure, 1,50 retenu). Ce n'est donc pas de l'imprecision, c'est un echec.
+
+Le cote qui casse est la **prise** : le siege devrait remonter 0,50 mm au-dessus
+de sa butee haute, il ne peut pas, le vissage s'arrete 0,50 mm avant le fond.
+L'ecrou n'est pas serre, la pince ne serre pas, et la macro se termine
+normalement. Panne silencieuse — l'outil part au premier passage.
+
+A ne pas confondre, trois grandeurs proches numeriquement : la montee dans le
+cone vaut 1,440 mm, le chanfrein 1,500, l'ecart mesure sur piece 1,44.
+
+## 4. Filetage : la plongee n'est pas un reglage libre
+
+Un filetage est une liaison cinematique. A `N` tr/min l'ecrou se deplace de
+`pas x N` mm/min par rapport a la broche, et la plongee doit suivre ce rythme —
+le ressort n'absorbe que l'ecart.
+
+Pas mesure le 9 aout : **M25x1,5**, 6 creux comptes sur les 10 mm de filetage.
+
+Pendant la rampe d'acceleration Z, le filet prend `v^2/2a` d'avance, et ca doit
+tenir dans la precharge de 1,00 mm. Avec `[AXIS_Z]MAX_ACCELERATION = 180` :
+
+| h | precharge | v max | N max au pas de 1,5 |
+|---|---|---|---|
+| 10 | 2,00 mm | 1610 mm/min | 1073 tr/min |
+| **11** | **1,00 mm** | **1138 mm/min** | **759 tr/min** |
+| 12 | 0,00 mm | — | — |
+
+Retenu : **500 tr/min, 750 mm/min**. Les 1500 tr/min du README du magasin
+decrivent l'arret sec sur les billes (l'inertie qui fournit le couple), pas
+cette phase-ci.
+
+`atc_toolchange.ngc` refuse de tourner si `pas x rpm` depasse ce plafond, qu'il
+recalcule lui-meme.
+
+## 5. Deux pieges LinuxCNC, absents de l'original grblHAL
+
+- **G61 obligatoire.** En G64 (le defaut) le planificateur arrondit le coin
+  entre la plongee et la remontee : la broche ne descend jamais jusqu'a
+  `engage_z`. Sur une fenetre de 2 mm, une tolerance de melange en mange la
+  moitie sans rien signaler.
+- **Collision de parametres.** Greilick utilise `#1001` comme drapeau
+  d'initialisation ; ici `#1001` est deja le mode Z de `toolchange.ngc`
+  (0 = martyre, 1 = piece). Le portage n'utilise **que** des globales nommees
+  `#<_atc_*>`, et `atc_config.ngc` est appele a chaque changement — ce qui
+  supprime le drapeau au passage.
+
+## 6. Fichiers
+
+| Fichier | Role |
+|---|---|
+| `subroutines/atc_config.ngc` | parametres, equivalent de `P200.macro`. Les valeurs d'etabli valent **999** tant qu'elles ne sont pas relevees |
+| `subroutines/atc_toolchange.ngc` | depose / prise / palpage, equivalent de `TC.macro` |
+| `subroutines/palper_outil.ngc` | palpage + offsets, **extrait** de `toolchange.ngc` pour ne pas le recopier |
+| `outils/verifier_ngc.py` | controle structurel des `.ngc` |
+
+`outils/verifier_ngc.py` verifie l'appariement `sub`/`endsub`, l'imbrication des
+`O<n> if/while`, la correspondance nom de sub / nom de fichier, l'existence des
+cibles de `o<nom> call`, et surtout qu'aucun `#<_xxx>` n'est **lu sans etre pose
+nulle part** — LinuxCNC le lirait a zero et enverrait la broche a Z0 sans
+broncher. Epreuves negatives faites sur les trois cas.
+
+```bash
+python3 outils/verifier_ngc.py subroutines/*.ngc
+```
+
+**Duplication assumee et transitoire** : `toolchange.ngc` porte encore sa propre
+copie du palpage. Quand le magasin sera en service, l'y remplacer par un appel a
+`palper_outil.ngc`. Une seule des deux doit survivre.
+
+## 7. Soufflage avant prise d'outil : rien de libre
+
+Releve, pas suppose :
+
+- **M7** (`flexi.output.MIST`) : pris par l'assistance d'air du laser.
+- **M8** : pompe a eau, et `remora-flexi.hal` la cable aussi sur
+  `spindle_cooldown` — **elle demarre des que la broche tourne**, + 30 s apres.
+  Un changement d'outil la fera donc tourner de toute facon. Circuit ferme de
+  refroidissement broche, pas d'arrosage : sans danger pour le magasin, mais M8
+  est doublement indisponible.
+- **AUX0 a AUX3** : aspirateur / lumiere / ventilateurs / interlock laser.
+  Aucune libre (voir `AFFECTATION_AUX.md`).
+
+Piste retenue pour l'atelier : M7 est **deja** une ligne d'air comprime, et
+graver au laser et changer d'outil ne se font jamais en meme temps. Un te et une
+buse pointee sur le poste, et M7 sert aux deux — sans une ligne de HAL.
+
+## 8. Reste a faire
+
+- **Verifier que la course Z suffit, avant de percer la table.** `MIN_LIMIT`
+  vient de passer de -185 a -140 (commit du 9 aout). Le magasin empile 91,5 mm
+  au-dessus du martyre (plaque 38 + bloc 43,5 + couvercle 10), et le bec de
+  l'outil doit passer au-dessus en transit : environ 151 mm de degagement pour
+  un outil de 60. `MAX_ACCELERATION` est reste a 180, le plafond de 759 tr/min
+  du § 4 tient donc toujours.
+- Relever les 4 valeurs d'etabli (`_atc_poste1_x/y`, `_atc_engage_z`,
+  `_atc_z_sur`), magasin boulonne.
+- Premiers essais avec `_atc_essai = 1` (aucune rotation de broche).
+- Verifier a l'oeil la **came de sortie** : en sortant, l'angle du six-pans doit
+  rouler sur la calotte des billes et faire tourner l'ecrou d'environ 23 deg
+  pour presenter ses plats. La came ne finit qu'a 2,02 mm au-dessus du centre
+  des billes, et c'est du PETG imprime.
+- Basculer `REMAP=M6` sur `atc_toolchange` quand les trajectoires seront
+  validees, puis supprimer le palpage duplique de `toolchange.ngc`.
+
+---
+
 # Changelog — 16-17 juillet 2026 — Integration laser : outil T100, PWM direct, at-speed multi-broche
 ## PrintNC Flexi-HAL — Atelier du Verdier
 

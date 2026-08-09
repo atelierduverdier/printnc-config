@@ -1,0 +1,188 @@
+O<palper_outil> sub
+; =====================================================================
+; PALPAGE DE LONGUEUR D'OUTIL + POSE DES OFFSETS
+; PrintNC Flexi-HAL 6000 - Atelier du Verdier
+; =====================================================================
+; Argument :
+;   #1  -> numero d'outil a palper
+;
+; Extrait tel quel de toolchange.ngc (la logique n'a pas bouge d'un
+; iota) pour que le changeur AUTOMATIQUE ne la RECOPIE pas. Le magasin
+; a deja paye ce piege : un controle qui recopiait une derivation au
+; lieu de l'appeler a vieilli sans que personne le voie, et il passait
+; pour de mauvaises raisons — un faux succes, pire qu'un faux echec.
+;
+; TRANSITOIRE : toolchange.ngc porte encore sa propre copie. Quand le
+; magasin sera en service, l'y remplacer par un appel a ce sous-
+; programme et supprimer la copie. Une seule des deux doit survivre.
+;
+; VARIABLES UTILISATEUR (partagees avec toolchange.ngc) :
+;   #1000 -> Position Z de reference du premier outil
+;   #1001 -> Mode Z : 0 = martyre auto, 1 = piece manuel
+;   #1002 -> Flag session : 0 = nouveau job, 1 = session en cours
+;
+; NOTE IMPORTANTE, heritee de toolchange.ngc :
+;   La gestion d'erreur de palpage a ete supprimee car les blocs
+;   "IF ... M2 ... ENDIF" cassent la preview de QtDragon.
+;   G38.2 declenche automatiquement une erreur LinuxCNC en cas
+;   d'echec de palpage, donc la verification manuelle est superflue.
+; =====================================================================
+
+#<tool_num> = #1
+
+; =====================================================================
+; PARAMETRES DU PALPAGE
+; =====================================================================
+#<probe_x>            = -50.0   ; Position X du palpeur (G53 machine)
+#<probe_y>            =  60.0   ; Position Y du palpeur (G53 machine)
+#<search_feed>        = 400     ; Vitesse premier palpage (mm/min)
+#<latch_feed>         =  25     ; Vitesse second palpage lent (mm/min)
+#<dist_palpeur_table> = 50.525  ; Distance haut palpeur -> martyre (mm)
+
+; =====================================================================
+; OFFSET LASER (mesure manuellement, glissiere sur porte-broche)
+; Position du nez du laser par rapport a l'axe de la broche.
+; =====================================================================
+#<laser_x_offset>     =   2.0   ; Laser = broche + 2.0 en X
+#<laser_y_offset>     = -90.0   ; Laser = broche - 90.0 en Y
+
+; =====================================================================
+; RESET AUTOMATIQUE AU PREMIER M6 DU JOB
+; #1002 sert de flag :
+;   - 0 -> premier M6 de la session, on reinitialise la reference Z
+;   - 1 -> changements suivants, on conserve la reference du 1er outil
+; Le bouton "Reset Ref" de QtDragon remet #1002 a 0 pour repartir
+; =====================================================================
+O205 IF [#1002 EQ 0]
+    #1000 = 0                  ; Reset reference Z
+    #1002 = 1                  ; Leve le flag "session en cours"
+    (DEBUG, Nouveau job detecte - Reset reference #1000)
+O205 ENDIF
+
+; =====================================================================
+; INFO : LE LASER DEFINIT LA REFERENCE DE CETTE SESSION
+; Les outils "laser" sont numerotes >= 100 par convention (voir T100).
+; Si aucune reference n'existe encore (#1000 EQ 0), c'est le laser qui
+; va la creer. C'est LEGITIME pour un job 100% laser : la distance
+; palpeur->martyre est mecanique, elle ne depend pas de l'outil.
+; Pour un job MIXTE (fraisage + gravure), palper une fraise d'abord.
+;
+; Simple message, PAS de pause : un M1 ici s'enchainait avec celui du
+; montage d'outil et bloquait la reprise dans QtDragon -- meme famille
+; de probleme que les blocs IF...M2...ENDIF signales en tete.
+; =====================================================================
+O210 IF [[#1000 EQ 0] AND [#<tool_num> GE 100]]
+    (MSG, Info - Le LASER T[#<tool_num>] va definir la reference de cette session. Normal pour un job laser seul. Pour un job mixte, palper une fraise d abord.)
+O210 ENDIF
+
+; =====================================================================
+; CALCUL DE LA POSITION DE PALPAGE EFFECTIVE
+; Pour un outil normal, on vise le palpeur directement (axe broche).
+; Pour le laser (tool_num >= 100), la broche doit se decaler de
+; l'INVERSE de l'offset laser, pour que ce soit le NEZ DU LASER qui
+; se retrouve au-dessus du palpeur (et pas l'axe broche/fraise en
+; place). Sans ce decalage, on palpe la fraise et pas le laser.
+; =====================================================================
+#<eff_probe_x> = #<probe_x>
+#<eff_probe_y> = #<probe_y>
+O230 IF [#<tool_num> GE 100]
+    #<eff_probe_x> = [#<probe_x> - #<laser_x_offset>]
+    #<eff_probe_y> = [#<probe_y> - #<laser_y_offset>]
+    (MSG, Laser detecte - decalage palpage applique)
+    ; =================================================================
+    ; GARDE-FOU LIMITE MACHINE (branche laser UNIQUEMENT)
+    ; La pastille (diametre 20mm) est au ras de la limite X (-50.0).
+    ; L'offset laser (+2mm) donne -52, hors course : on plafonne a
+    ; -49.5. Le nez du laser touche alors a 2.5mm du centre de la
+    ; pastille, largement dans son rayon de 10mm. Les outils normaux
+    ; ne passent jamais ici et palpent a -50.0 comme avant.
+    ; =================================================================
+    O235 IF [#<eff_probe_x> LT -49.5]
+        (MSG, Decalage laser hors course X - palpage plafonne a -49.5)
+        #<eff_probe_x> = -49.5
+    O235 ENDIF
+O230 ENDIF
+
+; =====================================================================
+; DEPLACEMENT VERS LE PALPEUR FIXE
+; =====================================================================
+G53 G0 Z0                      ; Toujours remonter avant deplacement XY
+G53 G0 X#<eff_probe_x> Y#<eff_probe_y> ; Position au-dessus du palpeur
+
+; =====================================================================
+; PALPAGE EN DEUX PASSES
+; Pass 1 : descente rapide pour gagner du temps
+; Pass 2 : descente lente pour precision
+; =====================================================================
+M70                            ; Sauvegarde etat modal courant
+G91                            ; Mode relatif pour la descente
+G38.2 Z-140 F#<search_feed>    ; Premier palpage rapide (max 140mm)
+G0 Z2.0                        ; Remontee de 2mm
+G38.2 Z-5.0 F#<latch_feed>     ; Second palpage lent (max 5mm)
+G90                            ; Retour mode absolu
+
+; --- AJOUT DE SECURITE ---
+G91
+G0 Z3.0                        ; Remontee explicite de 3mm pour BIEN liberer le palpeur
+G90
+G4 P0.3                        ; Pause de 300ms pour stabiliser l'entree Probe
+#<touch_z> = #5063             ; Capture position Z machine au contact
+(DEBUG, touch_z = [#<touch_z>])
+M71                            ; Restore etat modal sauvegarde
+
+; =====================================================================
+; CALCUL DES OFFSETS SELON LE MODE
+; #1001 determine le comportement :
+;   - 0 -> MODE MARTYRE : zero Z sur le dessus du martyre (automatique)
+;   - 1 -> MODE PIECE   : zero Z deja pris manuellement sur la piece
+; =====================================================================
+
+O200 IF [#1001 EQ 0]
+    ; =================================================================
+    ; MODE 0 - Z ZERO SUR LE MARTYRE (cas le plus courant)
+    ; La distance palpeur/martyre est connue (#<dist_palpeur_table>)
+    ; Le premier outil definit la reference ET le zero table
+    ; =================================================================
+    O201 IF [#1000 EQ 0]
+        ; --- PREMIER OUTIL DE LA SESSION ---
+        #1000 = #<touch_z>     ; Memorise sa position de contact
+        G10 L1 P#<tool_num> Z0                 ; Offset outil de ref = 0
+        G10 L20 P1 Z#<dist_palpeur_table>      ; Definit Z zero G54 sur martyre
+        (MSG, Premier outil reference - Zero martyre defini)
+    O201 ELSE
+        ; --- OUTILS SUIVANTS ---
+        ; Offset = difference entre cette mesure et la reference
+        #<tool_offset> = [#<touch_z> - #1000]
+        G10 L1 P#<tool_num> Z#<tool_offset>
+        (MSG, Offset outil calcule - Mode martyre)
+    O201 ENDIF
+
+O200 ELSE
+    ; =================================================================
+    ; MODE 1 - Z ZERO PRIS MANUELLEMENT SUR LA PIECE
+    ; Usage : gravure PCB, surfacage avec zero deja pris au touch plate
+    ; On ne touche PAS au zero table (G54 garde sa valeur manuelle)
+    ; =================================================================
+    O202 IF [#1000 EQ 0]
+        ; --- PREMIER OUTIL DE LA SESSION ---
+        ; C'est lui qui a servi a prendre le zero manuel
+        #1000 = #<touch_z>
+        G10 L1 P#<tool_num> Z0
+        (MSG, Premier outil reference - Mode piece)
+    O202 ELSE
+        ; --- OUTILS SUIVANTS ---
+        #<tool_offset> = [#<touch_z> - #1000]
+        G10 L1 P#<tool_num> Z#<tool_offset>
+        (MSG, Offset outil calcule - Mode piece)
+    O202 ENDIF
+
+O200 ENDIF
+
+; =====================================================================
+; ACTIVATION DE LA COMPENSATION
+; =====================================================================
+G53 G0 Z0                      ; Remontee max AVANT activation G43
+M61 Q#<tool_num>               ; Charge reellement l'outil (#5400)
+G43 H#<tool_num>               ; Active compensation longueur outil
+
+O<palper_outil> endsub

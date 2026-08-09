@@ -1,0 +1,255 @@
+O<atc_toolchange> sub
+; =====================================================================
+; CHANGEMENT D'OUTIL AUTOMATIQUE - MAGASIN ATC ER20
+; PrintNC Flexi-HAL 6000 - Atelier du Verdier
+; =====================================================================
+; Copyright (C) 2026 Christophe Le Verdier
+;
+; Portage de la LOGIQUE des macros RapidChange ATC de Greilick
+; Industries LLC (github.com/greilick-industries/rcatc-scripts-grblhal,
+; GPL-3.0), reecrites en sous-programmes O-word LinuxCNC. Aucun fichier
+; copie : grblHAL n'a ni table d'outils LinuxCNC, ni G10 L1, ni remap
+; M6, et son G65 P200 n'existe pas ici.
+;
+; Ce programme est un logiciel libre : vous pouvez le redistribuer
+; et/ou le modifier selon les termes de la Licence Publique Generale
+; GNU, version 3, telle que publiee par la Free Software Foundation.
+; Distribue SANS AUCUNE GARANTIE. Voir <https://www.gnu.org/licenses/>.
+; =====================================================================
+;
+; PAS ENCORE BRANCHE SUR M6. Le .ini pointe toujours REMAP=M6 sur
+; toolchange.ngc (montage manuel), qui marche. Pour essayer celui-ci :
+;   O<atc_toolchange> call [3]        en MDI, magasin monte
+; Quand les trajectoires seront validees, basculer le .ini :
+;   REMAP=M6 modalgroup=6 ngc=atc_toolchange
+;
+; PRINCIPE MECANIQUE, en trois phrases :
+;   L'ecrou ER20 pend dans une chambre, retenu par 3 billes qui mordent
+;   les angles de son six-pans : elles le tiennent en ROTATION mais le
+;   laissent monter et descendre. Le siege coulisse contre un ressort
+;   precharge, 12 mm de course. La broche visse ou devisse l'ecrou en
+;   plongeant exactement au rythme du filetage — le ressort n'absorbe
+;   que l'ecart.
+;
+; LES DEUX COTES QUI TUENT :
+;   1. engage_z, +/- 1,00 mm. Voir atc_config.ngc.
+;   2. pas x tr/min = vitesse de plongee. Un filetage est une liaison
+;      cinematique, pas une suggestion.
+; =====================================================================
+
+O<atc_config> call
+
+#<outil_demande> = #1
+#<outil_present> = #<_current_tool>
+
+; =====================================================================
+; CONTROLES DE COHERENCE
+; Le modele du magasin refuse de se construire si un controle echoue ;
+; ce fichier fait pareil. Un parametre d'etabli oublie a 999 enverrait
+; la broche a 999 mm.
+; =====================================================================
+#<config_ok> = 1
+
+O300 IF [[#<_atc_engage_z> GE 900] OR [#<_atc_z_sur> GE 900] OR [#<_atc_poste1_x> GE 900] OR [#<_atc_poste1_y> GE 900]]
+    #<config_ok> = 0
+    (MSG, ATC ABANDON - un parametre d etabli est encore a 999 dans atc_config.ngc)
+O300 ENDIF
+
+O305 IF [#<_atc_feed> GT #<_atc_feed_max>]
+    #<config_ok> = 0
+    (MSG, ATC ABANDON - plongee [#<_atc_feed>] mm/min au-dessus du plafond [#<_atc_feed_max>] impose par l acceleration Z. Baisser _atc_rpm.)
+O305 ENDIF
+
+O310 IF [#<outil_demande> LT 0]
+    #<config_ok> = 0
+    (MSG, ATC ABANDON - outil T[#<outil_demande>] hors plage)
+O310 ENDIF
+
+; Un seul point de sortie anticipee, sur le modele de toolchange.ngc :
+; les blocs IF...M2...ENDIF cassent la preview de QtDragon, on sort par
+; endsub et jamais par M2.
+O315 IF [#<config_ok> EQ 0]
+    M5
+    G53 G0 Z0
+    O<atc_toolchange> endsub
+O315 ENDIF
+
+O320 IF [#<outil_demande> EQ #<outil_present>]
+    (DEBUG, ATC - outil T[#<outil_demande>] deja en broche, rien a faire)
+    O<atc_toolchange> endsub
+O320 ENDIF
+
+; =====================================================================
+; PREPARATION
+; =====================================================================
+M70                            ; Sauvegarde l'etat modal du programme
+
+M5                             ; Broche a l'arret
+G4 P1.0                        ; 1s : elle ne s'arrete pas instantanement
+G90                            ; Absolu
+G49                            ; Annule toute compensation de longueur
+
+; G61 - ARRET EXACT, INDISPENSABLE.
+; En G64 (le defaut LinuxCNC) le planificateur ARRONDIT le coin entre
+; la plongee et la remontee : la broche ne descend jamais jusqu'a
+; engage_z. Sur une fenetre de 2 mm, une tolerance de melange mange la
+; moitie du budget sans que rien ne le signale.
+G61
+
+(DEBUG, ATC - T[#<outil_present>] vers T[#<outil_demande>])
+
+O330 IF [#<_atc_essai> EQ 1]
+    (MSG, ATC EN ESSAI A BLANC - aucune rotation de broche. Passer _atc_essai a 0 dans atc_config.ngc une fois les trajectoires validees.)
+O330 ENDIF
+
+; --- Abscisses des deux postes concernes -----------------------------
+O340 IF [#<_atc_axe> EQ 0]
+    #<x_depose> = [[[#<outil_present> - 1] * #<_atc_pas> * #<_atc_sens>] + #<_atc_poste1_x>]
+    #<y_depose> = #<_atc_poste1_y>
+    #<x_prise>  = [[[#<outil_demande> - 1] * #<_atc_pas> * #<_atc_sens>] + #<_atc_poste1_x>]
+    #<y_prise>  = #<_atc_poste1_y>
+O340 ELSE
+    #<x_depose> = #<_atc_poste1_x>
+    #<y_depose> = [[[#<outil_present> - 1] * #<_atc_pas> * #<_atc_sens>] + #<_atc_poste1_y>]
+    #<x_prise>  = #<_atc_poste1_x>
+    #<y_prise>  = [[[#<outil_demande> - 1] * #<_atc_pas> * #<_atc_sens>] + #<_atc_poste1_y>]
+O340 ENDIF
+
+; --- Hauteurs remarquables, toutes comptees depuis engage_z ----------
+#<z_billes>   = [#<_atc_engage_z> + #<_atc_deg_billes>]
+#<z_sortie>   = [#<_atc_engage_z> + #<_atc_deg_sortie>]
+#<z_rotation> = [#<_atc_engage_z> + #<_atc_z_rotation>]
+
+G53 G0 Z#<_atc_z_sur>          ; Degagement AVANT tout mouvement XY
+
+; =====================================================================
+; DEPOSE DE L'OUTIL PRESENT
+; =====================================================================
+; La broche descend en tournant a l'ENVERS. Le six-pans doit deja
+; tourner quand il aborde les billes : presente angle en avant il ne
+; passe pas (34,64 sur angles pour 32,60 de passage entre billes), en
+; tournant il trouve son creneau, tombe dedans, puis bute net a ~23 deg.
+; C'est cette butee qui tient l'ecrou pendant que le filet sort.
+;
+; L'ecrou descend alors de deux mouvements a la fois : la plongee de la
+; broche ET le filet qui le chasse vers le bas. Le siege encaisse les
+; deux — 11,00 mm des 12,00 de course. C'est le sens le plus indulgent
+; des deux : rien ne peut manquer de place en haut, le ressort cede.
+; =====================================================================
+O400 IF [#<outil_present> EQ 0]
+    (DEBUG, ATC - broche deja vide)
+O400 ELSEIF [#<outil_present> GE 100]
+    ; Le laser vit sur sa glissiere, il n'a pas de poste au magasin.
+    (DEBUG, ATC - T[#<outil_present>] est sur glissiere, rien a deposer)
+O400 ELSEIF [#<outil_present> GT #<_atc_postes>]
+    G53 G0 X#<_atc_poste1_x> Y#<_atc_poste1_y>
+    (MSG, ATC - T[#<outil_present>] n a pas de poste. Le demonter a la main puis RESUME.)
+    M0
+O400 ELSE
+    G53 G0 X#<x_depose> Y#<y_depose>
+    G53 G0 Z#<z_rotation>      ; Au-dessus des billes : le six-pans les
+                               ; aborde a engage_z + 9,06 [MODELE]
+
+    O410 IF [#<_atc_essai> EQ 0]
+        M4 S#<_atc_rpm>        ; Sens INVERSE : on devisse
+    O410 ENDIF
+
+    G53 G1 Z#<_atc_engage_z> F#<_atc_feed>
+    G4 P#<_atc_dwell>          ; Laisse le filetage finir sa course.
+                               ; Sans danger : une fois le filet libere,
+                               ; la rotation ne fait plus rien du tout.
+    M5
+
+    ; Remontee DOUCE dans la zone des billes. Si le devissage a echoue,
+    ; l'ecrou est encore accroche a la broche et un G0 l'arracherait du
+    ; siege imprime.
+    G53 G1 Z#<z_billes> F#<_atc_f_degage>
+    G53 G0 Z#<_atc_z_sur>
+
+    O420 IF [#<_atc_confirmer> EQ 1]
+        (MSG, ATC - verifier que T[#<outil_present>] est bien dans son poste puis RESUME.)
+        M0
+    O420 ENDIF
+O400 ENDIF
+
+; =====================================================================
+; PRISE DE L'OUTIL DEMANDE
+; =====================================================================
+; Ici la broche descend a VIDE sur l'ecrou au repos, l'effleure, puis
+; s'enfonce de 1,00 mm : c'est la PRECHARGE. Elle sert a une seule
+; chose, mais elle est indispensable — pendant que Z accelere, le filet
+; a deja pris de l'avance (v^2/2a), et c'est ce millimetre qui la paie.
+; Sans lui le siege est en butee haute des le depart et le filet force.
+;
+; La plongee vaut ensuite EXACTEMENT la longueur de filetage : la broche
+; descend de 10 mm pendant que l'ecrou en monte 10. Le ressort revient
+; ou il etait, l'attaque des billes sur le six-pans ne bouge pas.
+; =====================================================================
+O500 IF [#<outil_demande> EQ 0]
+    (DEBUG, ATC - T0 demande, la broche reste vide)
+O500 ELSEIF [#<outil_demande> GE 100]
+    ; Laser : deja en place sur sa glissiere, rien a monter.
+    (DEBUG, ATC - T[#<outil_demande>] est sur glissiere, rien a prendre)
+O500 ELSEIF [#<outil_demande> GT #<_atc_postes>]
+    G53 G0 X#<_atc_poste1_x> Y#<_atc_poste1_y>
+    (MSG, ATC - T[#<outil_demande>] n a pas de poste. Le monter a la main puis RESUME.)
+    M0
+O500 ELSE
+    G53 G0 X#<x_prise> Y#<y_prise>
+    G53 G0 Z#<z_sortie>        ; Juste au-dessus du couvercle
+
+    ; Descente douce jusqu'a la precharge : le nez se pose sur le
+    ; filetage de l'ecrou et enfonce le siege de 1,00 mm.
+    G53 G1 Z#<_atc_z_vissage> F#<_atc_f_approche>
+
+    O510 IF [#<_atc_essai> EQ 1]
+        ; A BLANC on s'arrete ICI, et c'est exactement le controle qui
+        ; sert : si le nez mord 1,00 mm dans l'ecrou a cette hauteur,
+        ; engage_z est bon. Descendre jusqu'au fond sans rotation
+        ; enfoncerait le siege de 11 mm pour rien, a 1 mm du fond de
+        ; poche — un engage_z faux d'un millimetre taperait.
+        (MSG, ATC ESSAI - arret a la precharge. Verifier que le nez touche l ecrou et l enfonce de 1 mm.)
+        M0
+    O510 ELSE
+        M3 S#<_atc_rpm>        ; Sens direct : on visse
+        G53 G1 Z#<_atc_engage_z> F#<_atc_feed>
+        G4 P#<_atc_dwell>      ; Rattrape les ~46 deg que l'ecrou tourne
+                               ; a vide avant de buter sur les billes
+                               ; (0,19 mm de filet au pas de 1,5), puis
+                               ; serre. Le siege a 1,00 mm de remontee
+                               ; disponible, largement de quoi.
+        M5
+    O510 ENDIF
+
+    ; Remontee DOUCE : en sortant, l'angle du six-pans doit rouler sur
+    ; la calotte des billes et faire tourner l'ecrou d'environ 23 deg
+    ; pour presenter ses plats. La came ne finit qu'a 2,02 mm au-dessus
+    ; du centre des billes. On ne l'arrache pas en G0.
+    G53 G1 Z#<z_billes> F#<_atc_f_degage>
+    G53 G0 Z#<_atc_z_sur>
+
+    O520 IF [#<_atc_confirmer> EQ 1]
+        (MSG, ATC - verifier que T[#<outil_demande>] est bien serre en broche puis RESUME.)
+        M0
+    O520 ENDIF
+O500 ENDIF
+
+; =====================================================================
+; PALPAGE ET OFFSETS
+; Delegue a palper_outil.ngc, qui porte la logique deja eprouvee de
+; toolchange.ngc. On ne la recopie pas : ce projet a deja paye une
+; derivation dupliquee qui avait vieilli dans son coin.
+; =====================================================================
+M71                            ; Restaure l'etat modal (dont G64)
+
+O600 IF [#<_atc_essai> EQ 1]
+    (MSG, ATC ESSAI - palpage saute)
+    M61 Q#<outil_demande>
+O600 ELSE
+    O<palper_outil> call [#<outil_demande>]
+O600 ENDIF
+
+G53 G0 Z0
+(MSG, ATC - changement termine, T[#<outil_demande>] en broche)
+
+O<atc_toolchange> endsub
