@@ -163,6 +163,13 @@ O400 ELSE
                                ; Sans danger : une fois le filet libere,
                                ; la rotation ne fait plus rien du tout.
     M5
+    G4 P#<_atc_arret_broche>   ; Broche VRAIMENT arretee avant de remonter.
+                               ; En temps normal le nez ressort a vide et
+                               ; ne touche rien — mais si le devissage a
+                               ; echoue, l'ecrou est encore serre dessus,
+                               ; et le remonter en tournant le ferait
+                               ; marteler les billes. Le cas rate est
+                               ; justement celui ou il ne faut pas insister.
 
     ; Remontee DOUCE dans la zone des billes. Si le devissage a echoue,
     ; l'ecrou est encore accroche a la broche et un G0 l'arracherait du
@@ -236,16 +243,23 @@ O500 ELSE
         ; boucle. C'est la boucle `plunge_count` de Greilick.
         #<coup> = 0
         O530 WHILE [#<coup> LT #<_atc_coups>]
+            M5
+            G4 P#<_atc_arret_broche>   ; INDISPENSABLE : on ne remonte
+                                       ; jamais le six-pans a travers les
+                                       ; billes broche tournante, sinon
+                                       ; ses 6 angles martellent au lieu
+                                       ; de passer une fois par la came
             G53 G1 Z#<z_billes> F#<_atc_f_degage>
-            M3 S#<_atc_rpm_serrage>    ; monte en regime A VIDE ; le
-                                       ; mouvement suivant attend
-                                       ; spindle.0.at-speed
+            M3 S#<_atc_rpm_serrage>    ; monte en regime A VIDE, six-pans
+                                       ; hors des billes ; le mouvement
+                                       ; suivant attend spindle.0.at-speed
             G53 G1 Z#<_atc_engage_z> F#<_atc_f_coup>
             G4 P#<_atc_dwell>
             #<coup> = [#<coup> + 1]
             (DEBUG, ATC - coup de serrage [#<coup>] sur [#<_atc_coups>])
         O530 ENDWHILE
         M5
+        G4 P#<_atc_arret_broche>       ; idem avant la remontee finale
     O510 ENDIF
 
     ; Remontee DOUCE : en sortant, l'angle du six-pans doit rouler sur

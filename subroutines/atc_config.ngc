@@ -191,6 +191,31 @@ O<atc_config> sub
                              ; fait plus rien.
 
 ; =====================================================================
+; ARRET DE BROCHE — le parametre qui n'a l'air de rien
+; =====================================================================
+; JAMAIS remonter le six-pans a travers les billes broche tournante.
+; L'ecrou est serre sur la broche : tire vers le haut EN TOURNANT, ses
+; 6 angles martellent les 3 billes au lieu de passer UNE fois par la
+; came. A 800 tr/min ca fait 80 chocs par seconde sur un siege imprime,
+; la ou il en faut un seul.
+;
+; Et LinuxCNC ne nous attendra PAS : `spindle.0.at-speed` est force a
+; VRAI des que la broche est a l'arret commande (atspeed_or.in1 dans
+; remora-flexi.hal, le correctif laser de juillet). Apres un M5, plus
+; aucun signal ne dit que le rotor tourne encore. Il faut donc temporiser
+; a la main — c'est exactement ce que fait deja toolchange.ngc avec son
+; « G4 P1.0 ; Attente 1s que la broche s'arrete ».
+;
+; A CALER SUR LE VFD : ce delai doit couvrir la descente en vitesse du
+; Huanyang depuis _atc_rpm_serrage. Sur les HY classiques c'est PD015
+; (temps de deceleration, PD014 pour l'acceleration) — a lire sur le
+; clavier, et attention : ce temps est compte sur la PLEINE echelle, donc
+; la descente depuis 800 tr/min n'en prend qu'une fraction. Chronometrer
+; a l'oreille plutot que de calculer : la broche siffle en descendant.
+#<_atc_arret_broche> = 1.0   ; secondes ; 1.0 = la valeur eprouvee de
+                             ; toolchange.ngc
+
+; =====================================================================
 ; MISE EN SERVICE
 ; =====================================================================
 #<_atc_essai>      = 1       ; 1 = A BLANC : tous les mouvements, AUCUNE

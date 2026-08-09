@@ -122,6 +122,40 @@ gabarit a tenu A LA MAIN, pas sous une broche lancee. Le regime est borne en bas
 par le couple qu'il faut, en haut par ce que le PETG survit, et **aucune des deux
 bornes n'est connue**. Monter par paliers en regardant le siege entre les essais.
 
+## 4ter. Le temps d'arret du VFD, qui n'a l'air de rien
+
+Sur une question de Christophe. Le temps de deceleration du Huanyang ne joue
+**pas** sur l'energie du choc : l'arret est MECANIQUE, l'angle vient buter sur
+une bille et le rotor est stoppe en quelques millisecondes — aucune rampe de
+variateur, si courte soit-elle, n'y participe. `1/2.J.w^2` est deja engage.
+
+En revanche il decide **combien de temps il faut attendre avant de ressortir le
+six-pans des billes**, et la premiere version du portage ne l'attendait pas.
+
+L'ecrou est serre sur la broche. Tire vers le haut **en tournant**, ses 6 angles
+martellent les 3 billes au lieu de passer UNE fois par la came : a 800 tr/min,
+80 chocs par seconde sur un siege imprime, la ou il en faut un seul.
+
+Et LinuxCNC ne previent pas : `spindle.0.at-speed` est force a VRAI des que la
+broche est a l'arret commande (`atspeed_or.in1`, le correctif laser de juillet,
+§ 3 du changelog du 16-17 juillet). **Apres un M5, plus aucun signal ne dit que
+le rotor tourne encore.** `toolchange.ngc` le savait deja, avec son
+`G4 P1.0 ; Attente 1s que la broche s'arrete` — le portage l'avait perdu.
+
+D'ou `_atc_arret_broche` (1,0 s, la valeur eprouvee), pose avant **chaque**
+remontee a travers les billes : dans la boucle de coups, avant la remontee
+finale de la prise, et a la depose — parce que le cas ou le devissage a echoue
+est justement celui ou l'ecrou est encore serre sur la broche.
+
+A caler sur le variateur : sur les HY classiques c'est **PD015** (deceleration,
+PD014 pour l'acceleration), compte sur la pleine echelle — la descente depuis
+800 tr/min n'en prend qu'une fraction. Chronometrer a l'oreille plutot que
+calculer, la broche siffle en descendant.
+
+Consequence de structure : chaque coup est desormais **arret / remontee /
+lancement a vide / plongee**, donc un vrai coup unique par tour de boucle, au
+prix d'une deceleration et d'une acceleration du VFD.
+
 ## 5. Deux pieges LinuxCNC, absents de l'original grblHAL
 
 - **G61 obligatoire.** En G64 (le defaut) le planificateur arrondit le coin
