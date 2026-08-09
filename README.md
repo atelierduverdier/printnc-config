@@ -72,7 +72,16 @@ FLOOD (pas sur une AUX). AUX3 est pilotee directement par `spindle.1.on`
 ### 2. Broche, Laser & Refroidissement
 * **Broche :** G-Penny 2.2kW ER20 refroidie par eau (80x230mm, 220V),
   4 roulements ceramiques serie 7, deviation max 0.01mm.
-* **Variateur (VFD) :** HuangYang (HY) 2.2kW 220VAC.
+* **Variateur (VFD) :** Huanyang (HY) 2.2kW 220VAC, pilote par le driver
+  LinuxCNC `hy_vfd` (protocole proprietaire HuanYang, pas MODBUS), charge
+  dans `remora-flexi.hal` sur `/dev/ttyAMA2` en 9600 8N1, esclave 1 : c'est
+  lui qui cree les pins `vfd.*` du HAL. Les parametres du variateur lui-meme
+  (`PD000`..`PD1xx`, dont `PD014` acceleration et `PD015` deceleration) se
+  reglent au clavier du variateur et ne sont dans AUCUN fichier de ce depot ;
+  `PD015` decide du temps d'attente avant de ressortir des billes du magasin
+  ATC (CHANGELOG, section 4ter). `vfdmod` n'est pas utilise :
+  `vfdmod_h100-v70.ini` est un exemple garde pour reference seulement, pour
+  un eventuel passage a ce driver (voir son en-tete).
 * **Laser :** LaserTree LT-80W-AA-PRO (10W optique, 450 nm, 24V natif) sur
   glissiere amovible a l'avant du porte-broche (offset X 0 / Y +88.75 par
   rapport a l'axe broche). Pilote comme spindle.1 en PWM direct depuis la
