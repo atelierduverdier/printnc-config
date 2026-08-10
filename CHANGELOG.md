@@ -211,7 +211,7 @@ buse pointee sur le poste, et M7 sert aux deux — sans une ligne de HAL.
 ## 8. Reste a faire
 
 - **Verifier que la course Z suffit, avant de percer la table.** `MIN_LIMIT`
-  vient de passer de -185 a -140 (commit du 9 aout). Le magasin empile 91,5 mm
+  vient de passer de -185 a -140 (commit du 9 aout). Le magasin empile 86,5 mm (91,5 avant que le couvercle passe a 5)
   au-dessus du martyre (plaque 38 + bloc 43,5 + couvercle 10), et le bec de
   l'outil doit passer au-dessus en transit : environ 151 mm de degagement pour
   un outil de 60. `MAX_ACCELERATION` est reste a 180, le plafond de 759 tr/min

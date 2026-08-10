@@ -29,31 +29,57 @@ Ce fichier-ci ne dit que **quoi faire, dans quel ordre**.
 
 Avant de percer quoi que ce soit dans la table.
 
-Le magasin empile **91,5 mm** au-dessus du martyre (plaque 38 + bloc 43,5 +
-couvercle 10). Pour aller chercher un outil, la broche doit le **sortir** de son
-poste et passer **au-dessus** de cette pile — avec l'outil qui pend dessous.
+Pour aller chercher un outil, la broche doit le **sortir** de son poste et
+passer **au-dessus** du magasin — avec l'outil qui pend dessous. C'est
+l'empilement au-dessus du martyre qui commande, et il depend du montage choisi :
+
+| montage | empilement | degagement sous l'ecrou |
+|---|---|---|
+| plaque 38 (d'origine) | 91,5 mm | 65,9 mm |
+| **couvercle ramene a 5** (fait le 09/08) | **86,5 mm** | 65,9 mm |
+| plaque ramenee a 12 (outils ≤ 40) | 60,5 mm | 39,9 mm |
+| **lit de la CNC perce, sans plaque** | **48,5 mm** | 27,9 + epaisseur du lit + vide dessous |
 
 > **Le test, 30 secondes.** Monte ton outil le plus long (le releve du 08/08 dit
 > **60 mm** sous l'ecrou). Fais monter Z tout en haut (`G53 G0 Z0`). Mesure du
-> **bout de l'outil au martyre**.
->
-> - **≥ 110 mm** : ca passe, avec de la marge.
-> - **91,5 a 110 mm** : ca passe tout juste. Reduire `plaque_ep` dans le modele
->   du magasin (voir plus bas) avant d'imprimer la plaque.
-> - **< 91,5 mm** : l'outil de 60 ne pourra jamais sortir de son poste. Deux
->   sorties : ne pas mettre les outils longs au magasin (le sous-programme sait
->   les renvoyer en manuel), ou recuperer de la course Z.
+> **bout de l'outil au martyre**. Il faut **l'empilement de ta ligne, plus une
+> vingtaine de millimetres de marge**.
 
 **A verifier au passage** : `[AXIS_Z] MIN_LIMIT` est passe de −185 a **−140**
 le 9 aout. Si cette limite est un choix logiciel et non une butee physique, elle
 vient de couter 45 mm — exactement la grandeur en jeu ici.
 
-**Le levier, si c'est juste** : `plaque_ep` (38 mm) n'existe que pour laisser le
-bec de l'outil ressortir sous le bloc. Le bloc donne deja **27,94 mm** de
-degagement. Il faut donc `plaque_ep ≥ outil_le_plus_long − 27,94` — soit 32 mm
-pour un outil de 60, et **12 mm pour un outil de 40**. Chaque millimetre enleve
-a la plaque est un millimetre de degagement gagne. La plaque n'est pas encore
-usinee : c'est le bon moment.
+### Les trois leviers, par ordre de rendement
+
+1. **Percer le lit de la CNC** (43 mm) — l'outil traverse le lit et prend son
+   degagement dans le vide en dessous. La plaque bois disparait.
+2. **Amincir la plaque** (jusqu'a 26 mm) — `plaque_ep` n'existe que pour laisser
+   le bec ressortir sous le bloc, et le bloc donne deja **27,94 mm**. Il faut
+   `plaque_ep ≥ outil_le_plus_long − 27,94` : 32 mm pour un outil de 60,
+   **12 mm pour un outil de 40**.
+3. **Le couvercle** (5 mm) — fait le 09/08, `COUVERCLE_EP` 10 → 5.
+
+Les leviers 1 et 2 s'excluent. Dans les deux cas la vraie question est la meme :
+**quel est l'outil le plus long que tu mets AU MAGASIN ?** Les autres peuvent
+rester en manuel, le sous-programme sait les renvoyer.
+
+### Si tu perces le lit
+
+- **Poser le bloc sur quelque chose qui ne bouge pas.** Le martyre se
+  resurface ; a chaque passe, le magasin descend d'autant et **`engage_z` est
+  faux** — la fenetre ne fait que ± 1 mm. Boulonner a travers le lit dans le
+  bati, pas dans le martyre.
+- **Faire percer les trous par la machine elle-meme**, aux coordonnees des
+  postes, avant de poser le bloc. Aucune erreur de report : ce sont exactement
+  les coordonnees que la macro utilisera.
+- Les goupilles Ø8 et les vis de bridage, que la plaque portait, vont
+  desormais dans le lit. Goupilles au Ø **nominal** dans le bois : on ne les
+  chasse pas, on les glisse.
+- Les Ø28 debouchent sous la machine : les copeaux tomberont au travers.
+- **Le modele ne sait pas encore le faire** : `PLAQUE_EP = 0` plante
+  (`makeBox`, hauteur nulle). Il faut un drapeau `AVEC_PLAQUE`, sur le modele
+  d'`AVEC_CHAPEAU` qui existe deja, et `outil_max()` doit alors lire le
+  degagement reel sous le bloc au lieu de l'epaisseur d'une plaque.
 
 ---
 
@@ -63,8 +89,8 @@ usinee : c'est le bon moment.
 
 | | X | Y | Z au-dessus du martyre |
 |---|---|---|---|
-| magasin x6 | **450 mm** | **71,2 mm** | 91,5 mm |
-| magasin x4 | 300 mm | 71,2 mm | 91,5 mm |
+| magasin x6 | **450 mm** | **71,2 mm** | 86,5 mm (48,5 sans plaque) |
+| magasin x4 | 300 mm | 71,2 mm | 86,5 mm (48,5 sans plaque) |
 | quai dust shoe | ~150 mm | ~160 mm (Ø170 a l'arc) | ~94 mm |
 
 Postes espaces de **75 mm**, le premier a **37,5 mm** du bout du bloc. Positionne
@@ -121,7 +147,7 @@ tourner** tant qu'elles y sont. Magasin boulonne, goupilles en place :
 | `_atc_poste1_x` | X machine de l'axe du poste 1 |
 | `_atc_poste1_y` | Y machine de l'axe des postes |
 | `_atc_engage_z` | **la recette ci-dessous** |
-| `_atc_z_sur` | Z machine de transit : bout de l'outil le plus long au-dessus de 91,5 mm du martyre, plus une marge |
+| `_atc_z_sur` | Z machine de transit : bout de l'outil le plus long au-dessus de l'empilement (§ 1), plus une marge |
 
 ### La recette pour `engage_z`
 
