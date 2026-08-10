@@ -95,6 +95,13 @@ Zero piece a poser en **X, Y ET Z** : Z0 = surface du lit, X0/Y0 = le bout
 gauche du bloc sur l'axe des postes. Le poste 1 tombe a **X37,5** de la : c'est
 ce chiffre, en machine, qui va dans `_atc_poste1_x`.
 
+**Pour le voir trace** : `percage_lit_atc_apercu.ngc`, meme parcours mais tous
+les reglages resolus en nombres. Les visualiseurs ordinaires (NC Viewer,
+Camotics) n'implementent ni les parametres `#<nom>` ni les expressions `[..]`
+de LinuxCNC, et tracent n'importe quoi sans se plaindre quand on leur donne la
+version parametree. L'apercu **ne se lance pas** : il n'a plus de mode essai.
+L'apercu de QtDragon, lui, lit la vraie version sans probleme.
+
 Le generateur **relit son propre G-code** et en ressort les trous — centres et
 diametres — pour les confronter a la table. Il refuse d'ecrire si ca ne
 correspond pas. Epreuves negatives faites sur quatre fautes : trou deplace,
