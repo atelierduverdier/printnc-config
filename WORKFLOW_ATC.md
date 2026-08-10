@@ -33,37 +33,44 @@ Pour aller chercher un outil, la broche doit le **sortir** de son poste et
 passer **au-dessus** du magasin — avec l'outil qui pend dessous. C'est
 l'empilement au-dessus du martyre qui commande, et il depend du montage choisi :
 
-| montage | empilement | degagement sous l'ecrou |
-|---|---|---|
-| plaque 38 (d'origine) | 91,5 mm | 65,9 mm |
-| **couvercle ramene a 5** (fait le 09/08) | **86,5 mm** | 65,9 mm |
-| plaque ramenee a 12 (outils ≤ 40) | 60,5 mm | 39,9 mm |
-| **lit de la CNC perce, sans plaque** | **48,5 mm** | 27,9 + epaisseur du lit + vide dessous |
+### C'est tranche : lit perce, sans plaque
 
-> **Le test, 30 secondes.** Monte ton outil le plus long (le releve du 08/08 dit
-> **60 mm** sous l'ecrou). Fais monter Z tout en haut (`G53 G0 Z0`). Mesure du
-> **bout de l'outil au martyre**. Il faut **l'empilement de ta ligne, plus une
-> vingtaine de millimetres de marge**.
+Decide le 9 aout sur trois mesures de la machine :
+
+| mesure | valeur |
+|---|---|
+| nez de broche nu -> lit, Z en haut | **180 mm** |
+| epaisseur du lit | **14 mm** |
+| vide sous le lit | **50 mm** |
+| bas du chariot Z -> lit (fixe) | **120 mm** |
+
+Le magasin est passe au couvercle de 5 mm et **sans plaque bois** : l'outil
+traverse le lit et prend son degagement dans le vide qu'il y a dessous.
+
+| montage | empilement | outil admissible | marge de transit |
+|---|---|---|---|
+| plaque 38, couvercle 10 (d'origine) | 91,5 mm | 65,9 | +16,5 |
+| plaque 38, couvercle 5 | 86,5 mm | 65,9 | +21,5 |
+| **lit perce, couvercle 5** (retenu) | **48,5 mm** | **91,9** | **+58,0** |
+
+Lecture des deux dernieres colonnes, pour un outil de 60 mm (releve du 08/08) :
+
+- **outil admissible** : 27,94 donnes par le bloc + 64 mesures sous le lit
+  = 91,9 mm, soit **31,9 mm de marge** sous la pointe.
+- **marge de transit** : le point le plus haut du magasin charge est le HAUT DE
+  L'ECROU, a 49,94 mm — pas le couvercle. Il faut donc que le nez monte a
+  49,94 + 12 + 60 = 121,9 mm, et il monte a 180 : **58 mm de rab**.
+
+**Le chariot ne gene pas.** Son dessous est a 120 mm du lit, et le magasin
+charge culmine a 49,94 : il reste **70 mm** dessous. (Avec la plaque il n'en
+serait reste que 32.) En revanche c'est **le quai a dust shoe qu'il faut
+verifier** : ~94 mm de haut, il ne laisserait que ~26 mm sous le chariot.
 
 **A verifier au passage** : `[AXIS_Z] MIN_LIMIT` est passe de −185 a **−140**
-le 9 aout. Si cette limite est un choix logiciel et non une butee physique, elle
-vient de couter 45 mm — exactement la grandeur en jeu ici.
+le 9 aout. Avec le lit perce ce n'est plus critique, mais si cette limite est un
+choix logiciel et non une butee physique, elle rend 45 mm.
 
-### Les trois leviers, par ordre de rendement
-
-1. **Percer le lit de la CNC** (43 mm) — l'outil traverse le lit et prend son
-   degagement dans le vide en dessous. La plaque bois disparait.
-2. **Amincir la plaque** (jusqu'a 26 mm) — `plaque_ep` n'existe que pour laisser
-   le bec ressortir sous le bloc, et le bloc donne deja **27,94 mm**. Il faut
-   `plaque_ep ≥ outil_le_plus_long − 27,94` : 32 mm pour un outil de 60,
-   **12 mm pour un outil de 40**.
-3. **Le couvercle** (5 mm) — fait le 09/08, `COUVERCLE_EP` 10 → 5.
-
-Les leviers 1 et 2 s'excluent. Dans les deux cas la vraie question est la meme :
-**quel est l'outil le plus long que tu mets AU MAGASIN ?** Les autres peuvent
-rester en manuel, le sous-programme sait les renvoyer.
-
-### Si tu perces le lit
+### Percer le lit : les deux reserves
 
 - **Poser le bloc sur quelque chose qui ne bouge pas.** Le martyre se
   resurface ; a chaque passe, le magasin descend d'autant et **`engage_z` est
@@ -76,10 +83,11 @@ rester en manuel, le sous-programme sait les renvoyer.
   desormais dans le lit. Goupilles au Ø **nominal** dans le bois : on ne les
   chasse pas, on les glisse.
 - Les Ø28 debouchent sous la machine : les copeaux tomberont au travers.
-- **Le modele ne sait pas encore le faire** : `PLAQUE_EP = 0` plante
-  (`makeBox`, hauteur nulle). Il faut un drapeau `AVEC_PLAQUE`, sur le modele
-  d'`AVEC_CHAPEAU` qui existe deja, et `outil_max()` doit alors lire le
-  degagement reel sous le bloc au lieu de l'epaisseur d'une plaque.
+  Les prendre a **Ø30-32**, ca pardonne le positionnement du bloc.
+- **Cote modele, c'est fait** (09/08) : drapeau `AVEC_PLAQUE = False`,
+  `DEGAGEMENT_SOUS_BLOC = 14 + 50`, et un controle 11bis qui **refuse** le
+  montage si l'outil le plus long talonnerait — jusque-la la longueur
+  admissible etait annoncee, jamais comparee.
 
 ---
 
