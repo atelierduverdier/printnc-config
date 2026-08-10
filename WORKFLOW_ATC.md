@@ -70,6 +70,36 @@ verifier** : ~94 mm de haut, il ne laisserait que ~26 mm sous le chariot.
 le 9 aout. Avec le lit perce ce n'est plus critique, mais si cette limite est un
 choix logiciel et non une butee physique, elle rend 45 mm.
 
+### Le programme de percage
+
+`gcode_tests/percage_lit_atc.ngc` — les 20 trous, **engendre** par
+`magasin-atc/code/percage_lit.py` depuis `table_percage()`. Les trous et la
+macro sortent donc de la meme source : il n'y a pas de second chemin par lequel
+ils pourraient diverger.
+
+Une seule fraise **Ø6**, aucun changement d'outil : helicoidal pour les Ø6,5
+et Ø8, poche en spirale pour les Ø30 (une simple helice laisserait un bouchon
+de Ø18 qui tomberait dans le vide, ou se ferait attraper sur la derniere
+passe).
+
+```gcode
+#<essai> = 1     ; A BLANC : tout se passe 10 mm AU-DESSUS du lit
+```
+
+**Lancer a blanc d'abord.** Ce n'est pas une precaution de forme : c'est la
+que se voient une origine fausse ou un percage qui sort de la table. Les deux
+bornes de coupe (`#<z_haut>`, `#<z_bas>`) valent alors la hauteur de transit,
+donc **aucune cote de coupe n'est ecrite en dur** et rien ne peut toucher.
+
+Zero piece a poser en **X, Y ET Z** : Z0 = surface du lit, X0/Y0 = le bout
+gauche du bloc sur l'axe des postes. Le poste 1 tombe a **X37,5** de la : c'est
+ce chiffre, en machine, qui va dans `_atc_poste1_x`.
+
+Le generateur **relit son propre G-code** et en ressort les trous — centres et
+diametres — pour les confronter a la table. Il refuse d'ecrire si ca ne
+correspond pas. Epreuves negatives faites sur quatre fautes : trou deplace,
+mauvais diametre, trou supprime, vis percee au mauvais Ø.
+
 ### Percer le lit : les deux reserves
 
 - **Poser le bloc sur quelque chose qui ne bouge pas.** Le martyre se
