@@ -57,12 +57,14 @@ O300 ENDIF
 
 O305 IF [#<_atc_feed> GT #<_atc_feed_max>]
     #<config_ok> = 0
-    (MSG, ATC ABANDON - plongee de vissage [#<_atc_feed>] mm/min au-dessus du plafond [#<_atc_feed_max>] impose par l acceleration Z. Baisser _atc_rpm_prise. Les regimes de serrage et de depose ne sont PAS concernes.)
+    (DEBUG, ATC ABANDON - plongee [#<_atc_feed>] mm/min pour un plafond de [#<_atc_feed_max>])
+    (MSG, ATC ABANDON - la plongee de vissage depasse le plafond impose par l acceleration Z. Baisser _atc_rpm_prise dans atc_config.ngc. Les regimes de serrage et de depose ne sont PAS concernes.)
 O305 ENDIF
 
 O310 IF [#<outil_demande> LT 0]
     #<config_ok> = 0
-    (MSG, ATC ABANDON - outil T[#<outil_demande>] hors plage)
+    (DEBUG, ATC ABANDON - outil T[#<outil_demande>] hors plage)
+    (MSG, ATC ABANDON - numero d outil hors plage.)
 O310 ENDIF
 
 ; Un seul point de sortie anticipee, sur le modele de toolchange.ngc :
@@ -143,7 +145,8 @@ O400 ELSEIF [#<outil_present> GE 100]
     (DEBUG, ATC - T[#<outil_present>] est sur glissiere, rien a deposer)
 O400 ELSEIF [#<outil_present> GT #<_atc_postes>]
     G53 G0 X#<_atc_poste1_x> Y#<_atc_poste1_y>
-    (MSG, ATC - T[#<outil_present>] n a pas de poste. Le demonter a la main puis RESUME.)
+    (DEBUG, ATC - T[#<outil_present>] n a pas de poste)
+    (MSG, ATC - l outil en broche n a pas de poste au magasin. Le demonter a la main puis RESUME.)
     M0
 O400 ELSE
     G53 G0 X#<x_depose> Y#<y_depose>
@@ -178,7 +181,8 @@ O400 ELSE
     G53 G0 Z#<_atc_z_sur>
 
     O420 IF [#<_atc_confirmer> EQ 1]
-        (MSG, ATC - verifier que T[#<outil_present>] est bien dans son poste puis RESUME.)
+        (DEBUG, ATC - depose de T[#<outil_present>] terminee)
+        (MSG, ATC - verifier que l outil est bien retombe dans son poste puis RESUME.)
         M0
     O420 ENDIF
 O400 ENDIF
@@ -203,7 +207,8 @@ O500 ELSEIF [#<outil_demande> GE 100]
     (DEBUG, ATC - T[#<outil_demande>] est sur glissiere, rien a prendre)
 O500 ELSEIF [#<outil_demande> GT #<_atc_postes>]
     G53 G0 X#<_atc_poste1_x> Y#<_atc_poste1_y>
-    (MSG, ATC - T[#<outil_demande>] n a pas de poste. Le monter a la main puis RESUME.)
+    (DEBUG, ATC - T[#<outil_demande>] n a pas de poste)
+    (MSG, ATC - l outil demande n a pas de poste au magasin. Le monter a la main puis RESUME.)
     M0
 O500 ELSE
     G53 G0 X#<x_prise> Y#<y_prise>
@@ -270,7 +275,8 @@ O500 ELSE
     G53 G0 Z#<_atc_z_sur>
 
     O520 IF [#<_atc_confirmer> EQ 1]
-        (MSG, ATC - verifier que T[#<outil_demande>] est bien serre en broche puis RESUME.)
+        (DEBUG, ATC - prise de T[#<outil_demande>] terminee)
+        (MSG, ATC - verifier que l outil est bien SERRE en broche puis RESUME.)
         M0
     O520 ENDIF
 O500 ENDIF
@@ -291,6 +297,7 @@ O600 ELSE
 O600 ENDIF
 
 G53 G0 Z0
-(MSG, ATC - changement termine, T[#<outil_demande>] en broche)
+(DEBUG, ATC - changement termine, T[#<outil_demande>] en broche)
+(MSG, ATC - changement termine.)
 
 O<atc_toolchange> endsub

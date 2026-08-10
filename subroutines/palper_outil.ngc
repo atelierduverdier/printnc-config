@@ -72,7 +72,8 @@ O205 ENDIF
 ; de probleme que les blocs IF...M2...ENDIF signales en tete.
 ; =====================================================================
 O210 IF [[#1000 EQ 0] AND [#<tool_num> GE 100]]
-    (MSG, Info - Le LASER T[#<tool_num>] va definir la reference de cette session. Normal pour un job laser seul. Pour un job mixte, palper une fraise d abord.)
+    (DEBUG, Info - le LASER T[#<tool_num>] va definir la reference de cette session)
+    (MSG, Info - le LASER va definir la reference de cette session. Normal pour un job laser seul. Pour un job mixte, palper une fraise d abord.)
 O210 ENDIF
 
 ; =====================================================================

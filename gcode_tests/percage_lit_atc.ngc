@@ -54,7 +54,7 @@ O100 IF [#<essai> EQ 1]
     #<z_haut>     = #<z_sur>
     #<z_bas>      = #<z_sur>
     #<z_approche> = #<z_sur>
-    (MSG, PERCAGE LIT - ESSAI A BLANC, tout se passe a [#<z_sur>] mm au-dessus du lit. Mettre essai a 0 pour couper.)
+    (MSG, PERCAGE LIT - ESSAI A BLANC, tout se passe a 10 mm au-dessus du lit. Mettre essai a 0 pour couper.)
 O100 ENDIF
 
 G21 G90 G17 G94       ; mm, absolu, plan XY, avance par minute
