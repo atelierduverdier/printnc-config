@@ -341,3 +341,30 @@ Note historique : le moteur Y2 (JOINT_3) avait ete regle a 5000 ns lors de la
 recherche d'un bruit moteur. Le vrai coupable etait un mauvais reglage des DIP
 switches du driver, pas les timings -> tous les axes sont desormais harmonises
 a 2500 ns.
+
+## Licence
+
+Ce depot melange trois origines, qui n'ont pas les memes termes. Une seule licence
+collee sur l'ensemble serait fausse : on ne relicencie pas le travail des autres.
+
+**Le travail de l'Atelier du Verdier** — configuration `.ini` et `.hal`, sous-programmes
+O-word, table d'outils, documentation — est publie sous **GPL-3.0**. Le texte complet est
+dans le fichier `LICENSE`.
+
+**Les sous-programmes ATC** (`subroutines/atc_toolchange.ngc`, `subroutines/atc_config.ngc`)
+portent la LOGIQUE des macros RapidChange ATC de Greilick Industries LLC
+([rcatc-scripts-grblhal](https://github.com/greilick-industries/rcatc-scripts-grblhal),
+GPL-3.0), reecrites en sous-programmes O-word LinuxCNC. Aucun fichier n'a ete copie —
+grblHAL n'a ni table d'outils LinuxCNC, ni G10 L1, ni remap M6, et son G65 P200 n'existe
+pas ici — mais la licence d'origine est respectee et ces fichiers restent en GPL-3.0.
+
+**Les ecrans QtDragon HD** (`qtvcp/screens/`) viennent de LinuxCNC, recopies puis adaptes a
+cette machine. Ils restent sous la licence de LinuxCNC (GPL-2.0, voir le `COPYING` du
+projet). L'Atelier du Verdier n'en est pas l'auteur et ne les relicencie pas.
+
+**Le magasin ATC lui-meme** est modelise d'apres la demande de brevet US 2024/0278368 A1
+(Greilick Industries LLC, publiee le 22/08/2024, statut « pending » — demande en instance,
+pas un brevet delivre). Ce depot ne contient que du logiciel : ni modele 3D, ni STL.
+
+Distribue SANS AUCUNE GARANTIE, dans l'espoir d'etre utile. Voir
+<https://www.gnu.org/licenses/> pour les termes complets.
