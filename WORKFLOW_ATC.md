@@ -72,10 +72,13 @@ choix logiciel et non une butee physique, elle rend 45 mm.
 
 ### Le programme de percage
 
-`gcode_tests/percage_lit_atc.ngc` — les 20 trous, **engendre** par
+`magasin-atc/gcode/percage_lit_atc.ngc` — les 20 trous, **engendre** par
 `magasin-atc/code/percage_lit.py` depuis `table_percage()`. Les trous et la
 macro sortent donc de la meme source : il n'y a pas de second chemin par lequel
 ils pourraient diverger.
+
+Il vit **avec le modele qui l'engendre**, et non ici : ce depot ne contient que
+de la config machine. On copie le fichier sur la machine au moment de percer.
 
 Une seule fraise **Ø6**, aucun changement d'outil : helicoidal pour les Ø6,5
 et Ø8, poche en spirale pour les Ø30 (une simple helice laisserait un bouchon
