@@ -85,7 +85,7 @@ chaque `o<nom> call` visant un fichier qui existe. C'est la passe `ast.parse` du
 G-code.
 
 Pour un vrai contrôle de trajectoire, le **visualiseur de parcours**
-(`~/Projets/visualiseur-gcode`) interprète le fichier avec `rs274` et montre ce
+(`~/Projets/logiciels/visualiseur-gcode`) interprète le fichier avec `rs274` et montre ce
 que la machine ferait — y compris les sous-programmes, grâce au
 `SUBROUTINE_PATH` ci-dessus.
 

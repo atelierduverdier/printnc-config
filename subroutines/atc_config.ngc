@@ -23,7 +23,7 @@ O<atc_config> sub
 ; numerote : #1000 #1001 #1002 appartiennent a toolchange.ngc.
 ;
 ; Geometrie : les valeurs marquees [MODELE] sortent de
-; ~/Projets/magasin-atc/code/magasin_er20.py, source de verite du
+; ~/Projets/machine/magasin-atc/code/magasin_er20.py, source de verite du
 ; magasin. Celles marquees [ETABLI] doivent etre relevees machine
 ; montee — elles valent 999 tant que ce n'est pas fait, pour que
 ; le controle de coherence refuse de tourner.

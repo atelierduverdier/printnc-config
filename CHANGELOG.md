@@ -10,7 +10,7 @@
 Porter en sous-programmes O-word la logique des macros RapidChange ATC de
 Greilick Industries (`rcatc-scripts-grblhal`, **GPL-3.0**), ecrites pour
 grblHAL, pour le magasin ATC ER20 en cours d'impression
-(`~/Projets/magasin-atc`, modele GELE).
+(`~/Projets/machine/magasin-atc`, modele GELE).
 
 **Rien n'est branche sur M6.** `REMAP=M6` pointe toujours sur `toolchange.ngc`
 (montage manuel), qui marche. Le nouveau jeu s'essaie en MDI.
