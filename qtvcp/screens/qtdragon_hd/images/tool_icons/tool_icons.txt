@@ -8,22 +8,25 @@
 # L'original reste dans /usr/share/qtvcp/screens/qtdragon_hd/images/tool_icons/.
 #
 # CE QUI N'EST PAS ICI N'EST PAS UNE ERREUR : un outil absent de cette liste
-# affiche l'image generique de broche. C'est voulu — dire « NO TOOL » pour un
-# outil qu'on ne sait pas nommer serait une fausse alarme. Le triangle
-# « NO TOOL » est reserve a T0, ou il est exact.
+# affiche `inconnu.png`, gris et tirete — « un outil est monte, on ignore ce
+# qu'il coupe ». Dire « pas d'outil » pour un outil qu'on ne sait pas nommer
+# serait une fausse alarme. `aucun.png` est reserve a T0, ou il est exact.
 #
-# Dessins disponibles : ball_end_mill, center_drill, drill, probe,
-# surfacing, upcut_spiral, vbit-90deg, not_found.
+# LES DESSINS SONT LES NOTRES, en vectoriel dans source/*.svg, rendus en PNG
+# par `python3 outils/faire_theme.py`. Editer le SVG a Inkscape puis relancer.
+# Leur grammaire : l'ORANGE marque la partie coupante, et seulement quand on
+# sait la nommer ; la pince et la queue sont communes a tous les dessins,
+# c'est ce qui rend la partie basse comparable d'un outil a l'autre.
+#
+# Disponibles : fraise_droite, fraise_demi_ronde, fraise_v, foret,
+#               surfaceuse, palpeur, laser, inconnu, aucun.
 #
 # --- table de l'atelier (tool.tbl, 13/08/2026) ---------------------------
-#   T0    pas d'outil            -> traite par le code, not_found.png
-#   T1    manuel, non decrit     -> generique
-2:upcut_spiral.png            # Fraise 6 mm
-#   T3    manuel, non decrit     -> generique
-#   T4    manuel, non decrit     -> generique
-#   T5    manuel, non decrit     -> generique
-#   T6    manuel, non decrit     -> generique
-#   T100  LASER LT-80W           -> AUCUN dessin de laser n'est livre.
-#         Laisse en generique plutot que de montrer une fraise : le laser
-#         n'est meme pas dans la broche, il est sur sa glissiere. Ajouter
-#         une ligne 100:laser.png le jour ou l'image existera.
+#   T0    pas d'outil            -> aucun.png, pose par le code
+#   T1    manuel, non decrit     -> inconnu
+2:fraise_droite.png             # Fraise 6 mm
+#   T3    manuel, non decrit     -> inconnu
+#   T4    manuel, non decrit     -> inconnu
+#   T5    manuel, non decrit     -> inconnu
+#   T6    manuel, non decrit     -> inconnu
+100:laser.png                    # LASER LT-80W (sur sa glissiere)

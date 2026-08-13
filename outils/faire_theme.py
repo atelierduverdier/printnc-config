@@ -433,6 +433,64 @@ def poser_logo() -> str:
             f"{peints} pixels peints")
 
 
+# --- 7. Le jeu de dessins d'outils ----------------------------------------
+# Les dessins vivent en SVG dans images/tool_icons/source/ et sont RENDUS en
+# PNG ici. Meme raison que pour le logo : `PyQt5.QtSvg` est un paquet separe
+# sur Debian, et rien ne garantit qu'il soit sur le Raspberry Pi. Le vectoriel
+# reste la source — editable a Inkscape — le runtime ne voit que des PNG.
+#
+# Rendus a 2x la taille d'affichage (le cadre fait 159x192) : le gestionnaire
+# reduit ensuite avec un lissage, ce qui est net, alors qu'agrandir ne l'est
+# jamais.
+OUTILS_SOURCE = RACINE / 'qtvcp' / 'screens' / 'qtdragon_hd' / 'images' / 'tool_icons' / 'source'
+OUTILS_SORTIE = OUTILS_SOURCE.parent
+OUTILS_LARGEUR = 320
+
+
+def poser_dessins_outils() -> str:
+    """Rend les SVG d'outils en PNG. Rend un compte rendu d'une ligne."""
+    sources = sorted(OUTILS_SOURCE.glob('*.svg'))
+    if not sources:
+        return f"outils : aucun SVG dans {OUTILS_SOURCE.name}/, rien de rendu"
+
+    import os
+    os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+    try:
+        from PyQt5 import QtCore, QtGui, QtWidgets
+        from PyQt5.QtSvg import QSvgRenderer
+    except ImportError as e:
+        return f"outils : Qt indisponible ({e}), rien de rendu"
+    if QtWidgets.QApplication.instance() is None:
+        QtWidgets.QApplication([])
+
+    faits, vides = [], []
+    for svg in sources:
+        rendeur = QSvgRenderer(str(svg))
+        if not rendeur.isValid():
+            return f"ECHEC outils : QtSvg refuse {svg.name}"
+        t = rendeur.defaultSize()
+        hauteur = max(1, round(OUTILS_LARGEUR * t.height() / t.width()))
+        image = QtGui.QImage(OUTILS_LARGEUR, hauteur, QtGui.QImage.Format_ARGB32)
+        image.fill(QtCore.Qt.transparent)
+        peintre = QtGui.QPainter(image)
+        rendeur.render(peintre)
+        peintre.end()
+        # `isValid()` ment : QtSvg rend une image VIDE, sans erreur, sur un SVG
+        # qu'il n'aime pas. Le seul verdict est de compter les pixels peints.
+        peints = sum(1 for y in range(0, hauteur, 3)
+                     for x in range(0, OUTILS_LARGEUR, 3)
+                     if QtGui.QColor.fromRgba(image.pixel(x, y)).alpha() > 8)
+        if peints < 150:
+            vides.append(f"{svg.stem} ({peints})")
+            continue
+        image.save(str(OUTILS_SORTIE / f"{svg.stem}.png"))
+        faits.append(svg.stem)
+
+    if vides:
+        return f"ECHEC outils : rendu vide pour {', '.join(vides)}"
+    return f"outils : {len(faits)} dessins rendus a {OUTILS_LARGEUR} px"
+
+
 REGLE = re.compile(r'([^{}]+)\{([^}]*)\}')
 
 # « 9 pt » avec une espace, ligne 205 de dark.qss, est une syntaxe INVALIDE que
@@ -530,12 +588,11 @@ def main() -> int:
     print(f"  {compte['particulier']} corrections particulieres, "
           f"{compte['encre']} couleurs de texte, {polices} polices nommees")
 
-    compte_rendu = poser_logo()
-    print(f"  {compte_rendu}")
-
     faute = 0
-    if compte_rendu.startswith('ECHEC'):
-        faute = 1
+    for compte_rendu in (poser_logo(), poser_dessins_outils()):
+        print(f"  {compte_rendu}")
+        if compte_rendu.startswith('ECHEC'):
+            faute = 1
     if apres != avant + ajoutees:
         print(f"  ECHEC : {avant}+{ajoutees} regles attendues, {apres} en sortie")
         faute = 1

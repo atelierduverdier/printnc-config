@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 240"
+     width="160" height="240" role="img" aria-label="Foret">
+  <title>Foret</title>
+  <!-- Pince et queue, communes a tous les dessins : c'est ce qui rend la
+       partie basse comparable d'un outil a l'autre. -->
+  <path d="M28 12 h104 a6 6 0 0 1 6 6 v34 a6 6 0 0 1 -6 6 h-104
+           a6 6 0 0 1 -6 -6 v-34 a6 6 0 0 1 6 -6 z" fill="#7c8592"/>
+  <rect x="46" y="58" width="68" height="12" rx="3" fill="#7c8592"/>
+  <rect x="66" y="66" width="28" height="84" fill="#a8b0bc"/>
+  <rect x="70" y="150" width="20" height="62" fill="#ff9a1f"/>
+  <path d="M70 212 h20 l-10 20 z" fill="#ff9a1f"/>
+  <path d="M70 166 l20 -10 M70 186 l20 -10 M70 206 l20 -10"
+        stroke="#14171b" stroke-width="4" fill="none" opacity="0.55"/>
+</svg>

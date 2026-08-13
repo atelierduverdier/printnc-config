@@ -764,8 +764,12 @@ class HandlerClass:
     # fausse alarme : il y a bien un outil, on ignore lequel. Une alarme qui
     # se trompe s'apprend a ignorer.
 
-    IMAGE_OUTIL_DEFAUT = 'atc_spindle_tool.png'
-    IMAGE_SANS_OUTIL = 'not_found.png'
+    # Le jeu de dessins est le NOTRE : dessine en SVG dans
+    # images/tool_icons/source/, rendu en PNG par outils/faire_theme.py.
+    # Sa grammaire tient en une regle : l'ORANGE marque la partie coupante,
+    # et seulement quand on sait la nommer. D'ou `inconnu.png`, gris.
+    IMAGE_OUTIL_DEFAUT = 'inconnu.png'
+    IMAGE_SANS_OUTIL = 'aucun.png'
 
     def init_image_outil(self):
         self.dessins_outils = {}
@@ -809,11 +813,8 @@ class HandlerClass:
         else:
             fichier = self.dessins_outils.get(numero, self.IMAGE_OUTIL_DEFAUT)
 
-        if fichier == self.IMAGE_OUTIL_DEFAUT:
-            chemin = self.chercher_image(os.path.join('images', fichier))
-        else:
-            chemin = self.chercher_image(
-                os.path.join('images', 'tool_icons', fichier))
+        chemin = self.chercher_image(
+            os.path.join('images', 'tool_icons', fichier))
         if chemin is None:
             self.dire_logo("OUTIL: T%s -> %s introuvable" % (numero, fichier))
             return

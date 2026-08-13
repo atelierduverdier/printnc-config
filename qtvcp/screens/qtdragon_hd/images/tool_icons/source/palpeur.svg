@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 240"
+     width="160" height="240" role="img" aria-label="Palpeur">
+  <title>Palpeur</title>
+  <!-- Pince et queue, communes a tous les dessins : c'est ce qui rend la
+       partie basse comparable d'un outil a l'autre. -->
+  <path d="M28 12 h104 a6 6 0 0 1 6 6 v34 a6 6 0 0 1 -6 6 h-104
+           a6 6 0 0 1 -6 -6 v-34 a6 6 0 0 1 6 -6 z" fill="#7c8592"/>
+  <rect x="46" y="58" width="68" height="12" rx="3" fill="#7c8592"/>
+  <rect x="66" y="66" width="28" height="84" fill="#a8b0bc"/>
+  <rect x="74" y="150" width="12" height="52" fill="#a8b0bc"/>
+  <circle cx="80" cy="214" r="18" fill="#ff9a1f"/>
+</svg>

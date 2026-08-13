@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 240"
+     width="160" height="240" role="img" aria-label="Laser">
+  <title>Laser</title>
+  <!-- Pince et queue, communes a tous les dessins : c'est ce qui rend la
+       partie basse comparable d'un outil a l'autre. -->
+  <path d="M28 12 h104 a6 6 0 0 1 6 6 v34 a6 6 0 0 1 -6 6 h-104
+           a6 6 0 0 1 -6 -6 v-34 a6 6 0 0 1 6 -6 z" fill="#7c8592"/>
+  <rect x="46" y="58" width="68" height="12" rx="3" fill="#7c8592"/>
+
+  <rect x="44" y="66" width="72" height="76" rx="6" fill="#a8b0bc"/>
+  <rect x="60" y="142" width="40" height="16" rx="3" fill="#7c8592"/>
+  <path d="M70 158 l10 62 l10 -62 z" fill="#ff9a1f" opacity="0.85"/>
+  <circle cx="80" cy="226" r="6" fill="#ff9a1f"/>
+</svg>

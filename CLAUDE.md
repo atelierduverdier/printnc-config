@@ -238,14 +238,31 @@ l'outil réellement en broche, par le signal `tool-in-spindle-changed`.
 
 | outil | image |
 |---|---|
-| **T0** | `not_found.png`, le triangle « NO TOOL » — exact, il n'y a pas d'outil |
+| **T0** | `aucun.png`, la pince vide en tireté — exact, il n'y a pas d'outil |
 | **connu** (dans le manifeste) | son dessin |
-| **présent mais non décrit** | l'image générique de broche |
+| **présent mais non décrit** | `inconnu.png`, gris et tireté |
 
-Montrer « NO TOOL » pour un outil qu'on ne sait pas nommer serait une fausse
+Dire « pas d'outil » pour un outil qu'on ne sait pas nommer serait une fausse
 alarme : il y a bien un outil, on ignore lequel. C'est pourquoi le manifeste
 n'a **pas** besoin d'être complet, et pourquoi une entrée manquante n'est pas
 une erreur.
+
+**Les dessins sont les nôtres**, en vectoriel dans
+`images/tool_icons/source/*.svg`, rendus en PNG par `faire_theme.py` — même
+chemin que le logo, et pour la même raison : `PyQt5.QtSvg` est un paquet
+séparé sur Debian, pas garanti sur le Raspberry Pi. Le SVG reste la source,
+éditable à Inkscape ; le runtime ne voit que des PNG.
+
+Leur grammaire tient en une règle : **l'orange marque la partie coupante, et
+seulement quand on sait la nommer.** La pince et la queue sont communes à
+tous, ce qui rend la partie basse comparable d'un outil à l'autre — c'est la
+silhouette qui distingue, pas le détail, parce qu'à 160 px sur une ardoise
+une goujure ne se lit pas alors qu'un fond plat contre un fond rond, si.
+Aucun dessin n'emploie de `<text>` : pas de police dont dépendre.
+
+Neuf dessins : `fraise_droite`, `fraise_demi_ronde`, `fraise_v`, `foret`,
+`surfaceuse`, `palpeur`, `laser`, `inconnu`, `aucun`. Le **laser manquait
+au jeu livré** alors que T100 est le LT-80W.
 
 Le manifeste est `images/tool_icons/tool_icons.txt`, en `numéro:fichier.png`.
 Celui livré par LinuxCNC associait **les numéros de quelqu'un d'autre** — son
@@ -254,10 +271,8 @@ aurait menti à chaque outil ; il est remplacé, l'original restant dans
 `/usr/share`. Notre lecture tolère commentaires et lignes vides, contrairement
 au `split(':')` sec de l'amont.
 
-Aujourd'hui **une seule correspondance** : `2:upcut_spiral.png`, la fraise
-6 mm. La table ne nomme que deux outils, et `T100` — le laser — n'a aucun
-dessin livré : le laisser en générique vaut mieux qu'une fraise, puisqu'il
-n'est même pas dans la broche mais sur sa glissière.
+Aujourd'hui **deux correspondances**, les deux seuls outils que la table
+nomme : `2:fraise_droite.png` et `100:laser.png`.
 
 Deux pièges payés :
 
@@ -270,8 +285,8 @@ Deux pièges payés :
   SOURCE et on la remet à l'échelle sur chaque redimensionnement, par
   `AuRedimensionnement` — le même petit `QObject` qui recentre le logo.
 
-Éprouvé sur la simulation, les trois cas à l'écran : `M61 Q2` → fraise,
-`M61 Q5` → générique, `M61 Q0` → « NO TOOL ». À savoir pour rejouer l'essai :
+Éprouvé sur la simulation, les quatre cas à l'écran : `M61 Q2` → fraise
+droite, `M61 Q5` → inconnu, `M61 Q100` → laser, `M61 Q0` → pince vide. À savoir pour rejouer l'essai :
 **le MDI exige une machine référencée**, sinon `c.mode(MODE_MDI)` est ignoré
 en silence et le `M61` ne part jamais.
 
