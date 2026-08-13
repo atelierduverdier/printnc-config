@@ -232,7 +232,20 @@ longtemps : corrigé.
 
 Il ne pouvait pas s'allumer : `qtdragon.led-limits-tripped` n'était câblée
 nulle part, et ne pouvait pas l'être — les contacteurs de cette machine sont
-en **prise d'origine seule**, 5 `home-sw-in` et **zéro** `lim-sw-in`. Un
+en **prise d'origine seule** : **4** capteurs inductifs — X, Y, Y2 (`A_LIMIT`
+sur la carte) et Z — tous sur `home-sw-in`, et **zéro** `lim-sw-in`. Les deux
+Y sont ce qui équerre le portique, un capteur par montant. Le port s'appelle
+`X_LIMIT` côté Flexi-HAL, ce qui trompe : le fil va sur l'entrée d'origine.
+
+Une double protection — le même capteur servant aussi de fin de course — a
+été étudiée puis **écartée le 13/08/2026**, mesures à l'appui. Chaque capteur
+est à un seul bout, et pour Z c'est le **haut** (`HOME_SEARCH_VEL = +10`,
+course −140 → 5) : on protégerait la remontée, jamais la descente dans le
+martyre, le seul écrasement qui compte. S'y ajoutait un coût relevé en
+simulation : la prise d'origine **refusée en silence** tant qu'un capteur est
+enfoncé, même avec `HOME_IGNORE_LIMITS = YES` — soit exactement l'état où
+l'on se trouve après un déclenchement. Ce qui protège vraiment reste les
+**limites logicielles**, aux deux bouts, une fois la machine référencée. Un
 voyant éteint en permanence se lit « rien de déclenché, tout va bien » :
 c'est l'alarme qui s'apprend à ignorer.
 
