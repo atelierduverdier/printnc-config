@@ -63,8 +63,8 @@ CRITICAL = 2
 
 VERSION ='1.5'
 
-class RecentreurChapeau(QtCore.QObject):
-    """Recentre le chapeau quand son panneau change de taille.
+class RecentreurLogo(QtCore.QObject):
+    """Recentre le logo quand son panneau change de taille.
 
     Un objet a part, et non le gestionnaire lui-meme : HandlerClass n'herite
     PAS de QObject, et `installEventFilter(self)` leve un TypeError qui fait
@@ -194,7 +194,7 @@ class HandlerClass:
         self.w.btn_dimensions.setChecked(True)
         self.w.page_buttonGroup.buttonClicked.connect(self.main_tab_changed)
         self.w.filemanager_usb.showMediaDir(quiet = True)
-        self.init_chapeau()
+        self.init_logo()
 
     # Boutons lanceurs d'applications externes (terminal, editeur, navigateur, fichiers)
     # Chaque connexion n'est faite que si le bouton existe dans le .ui (hasattr),
@@ -746,15 +746,17 @@ class HandlerClass:
         self.w.lbl_max_rapid.setText("{:4.0f}".format(rapid))
 
     # ------------------------------------------------------------------
-    # Le chapeau de l'atelier, au centre de la vue
+    # Le logo de l'atelier, au centre du panneau
     # ------------------------------------------------------------------
     # Repris du visualiseur de parcours, y compris sa regle : il ne s'affiche
     # QUE tant qu'aucun programme n'est charge, et disparait au premier
     # fichier. Une marque qui reste par-dessus le travail devient un tampon
     # sur le pare-brise.
     #
-    # L'image est posee par outils/faire_theme.py depuis kit/chapeau.svg du
-    # depot `site`. Si elle manque, on se tait : un logo absent ne doit pas
+    # L'image est posee par outils/faire_theme.py depuis ressources/printnc.svg
+    # du depot du visualiseur de parcours, ou elle sert deja de filigrane. Le
+    # logo COMPLET et non le chapeau seul : la machine EST une PrintNC, et le
+    # dessin le dit. Si l'image manque, on se tait : un logo absent ne doit pas
     # empecher la machine de demarrer.
     #
     # IL N'EST PAS DANS LA VUE 3D, ET CE N'EST PAS UN CHOIX. gcodegraphics est
@@ -767,10 +769,10 @@ class HandlerClass:
     # aussi tant qu'aucun programme n'est charge, et GcodeEditor est un
     # QWidget ordinaire, sans OpenGL.
 
-    ANCRE_CHAPEAU = 'gcode_viewer'
+    ANCRE_LOGO = 'gcode_viewer'
 
-    def dire_chapeau(self, message):
-        """Signale un CHAPEAU manquant, dans un fichier et non sur stdout.
+    def dire_logo(self, message):
+        """Signale un LOGO manquant, dans un fichier et non sur stdout.
 
         Le script /usr/bin/linuxcnc ne redirige que stderr vers son fichier de
         debogage (`exec 2>>$DEBUG_FILE`), et la sortie standard de l'affichage
@@ -778,12 +780,12 @@ class HandlerClass:
         meme parade : on ecrit ou l'on est sur de relire.
         """
         try:
-            with open('/tmp/chapeau-diag.txt', 'a') as f:
+            with open('/tmp/logo-diag.txt', 'a') as f:
                 f.write(time.strftime('%H:%M:%S ') + message + chr(10))
         except OSError:
             pass
 
-    def chercher_chapeau(self):
+    def chercher_logo(self):
         """Le PNG, cherche la ou qtvcp cherche : la config d'abord.
 
         PAS `__file__` : qtvcp charge ce gestionnaire autrement, et le chemin
@@ -794,60 +796,60 @@ class HandlerClass:
         """
         essais = [
             os.path.join(PATH.CONFIGPATH, 'qtvcp/screens', PATH.BASEPATH,
-                         'images', 'chapeau-verdier.png'),
+                         'images', 'logo-verdier.png'),
             os.path.join(PATH.SCREENDIR, PATH.BASEPATH,
-                         'images', 'chapeau-verdier.png'),
+                         'images', 'logo-verdier.png'),
         ]
         for chemin in essais:
             if os.path.isfile(chemin):
                 return chemin
-        self.dire_chapeau("CHAPEAU: introuvable, essaye : %s" % ' | '.join(essais))
+        self.dire_logo("LOGO: introuvable, essaye : %s" % ' | '.join(essais))
         return None
 
-    def init_chapeau(self):
-        self._chapeau = None
-        chemin = self.chercher_chapeau()
+    def init_logo(self):
+        self._logo = None
+        chemin = self.chercher_logo()
         if chemin is None:
             return
         image = QtGui.QPixmap(chemin)
         if image.isNull():
-            self.dire_chapeau("CHAPEAU: %s illisible par Qt" % chemin)
+            self.dire_logo("LOGO: %s illisible par Qt" % chemin)
             return
-        ancre = getattr(self.w, self.ANCRE_CHAPEAU, None)
+        ancre = getattr(self.w, self.ANCRE_LOGO, None)
         if ancre is None:
-            self.dire_chapeau("CHAPEAU: pas de widget nomme %s" % self.ANCRE_CHAPEAU)
+            self.dire_logo("LOGO: pas de widget nomme %s" % self.ANCRE_LOGO)
             return
-        self._chapeau = QtWidgets.QLabel(ancre)
-        self._chapeau.setPixmap(image)
-        self._chapeau.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
-        self._chapeau.setStyleSheet("background: transparent; border: none;")
-        self._chapeau.resize(image.size())
-        self._chapeau.raise_()
-        self._chapeau.show()
+        self._logo = QtWidgets.QLabel(ancre)
+        self._logo.setPixmap(image)
+        self._logo.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+        self._logo.setStyleSheet("background: transparent; border: none;")
+        self._logo.resize(image.size())
+        self._logo.raise_()
+        self._logo.show()
         # Se recentrer quand le panneau change de taille. La reference est
         # gardee sur l'instance : un filtre sans reference est ramasse.
-        self._recentreur = RecentreurChapeau(self.placer_chapeau)
+        self._recentreur = RecentreurLogo(self.placer_logo)
         ancre.installEventFilter(self._recentreur)
-        self.placer_chapeau()
+        self.placer_logo()
 
-    def placer_chapeau(self):
-        if getattr(self, '_chapeau', None) is None:
+    def placer_logo(self):
+        if getattr(self, '_logo', None) is None:
             return
-        ancre = getattr(self.w, self.ANCRE_CHAPEAU, None)
+        ancre = getattr(self.w, self.ANCRE_LOGO, None)
         if ancre is None:
             return
         vue = ancre.size()
-        logo = self._chapeau.size()
-        self._chapeau.move(max(0, (vue.width() - logo.width()) // 2),
+        logo = self._logo.size()
+        self._logo.move(max(0, (vue.width() - logo.width()) // 2),
                            max(0, (vue.height() - logo.height()) // 2))
-        self._chapeau.raise_()
+        self._logo.raise_()
 
-    def cacher_chapeau(self):
-        if getattr(self, '_chapeau', None) is not None:
-            self._chapeau.hide()
+    def cacher_logo(self):
+        if getattr(self, '_logo', None) is not None:
+            self._logo.hide()
 
     def file_loaded(self, obj, filename):
-        self.cacher_chapeau()
+        self.cacher_logo()
         if os.path.basename(filename).count('.') > 1:
             self.last_loaded_program = ""
             return

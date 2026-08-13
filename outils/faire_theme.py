@@ -364,31 +364,37 @@ QScrollBar::add-page, QScrollBar::sub-page {{
 }}
 """
 
-# --- 6. Le chapeau de l'atelier -------------------------------------------
-# Il ne se recopie pas à la main : il est RENDU depuis `kit/chapeau.svg` du
-# dépôt `site`, la source unique de la charte. Relancer ce script le remet à
-# jour si le dessin change.
+# --- 6. Le logo de la machine ---------------------------------------------
+# Il ne se recopie pas à la main : il est RENDU depuis `ressources/printnc.svg`
+# du dépôt du visualiseur de parcours, où il sert déjà de filigrane. Relancer
+# ce script le remet à jour si le dessin change.
+#
+# Le LOGO COMPLET et non le chapeau seul : la machine EST une PrintNC, et ce
+# dessin le dit — chapeau, « PrintNC », « Orange Mécanique ». Le partage vient
+# du visualiseur (`interface/marque.py`) : le chapeau seul fait les icônes,
+# parce qu'à seize pixels le reste n'est plus qu'une tache ; le logo complet
+# va là où il y a la place. Ici il y en a.
+#
+# Son texte est déjà converti en COURBES (inkscape --export-text-to-path) :
+# les trois polices d'origine ne sont installées que sur ce poste, et un
+# `<text>` aurait donné un logo juste ici et méconnaissable ailleurs.
 #
 # En PNG et non en SVG, délibérément : `PyQt5.QtSvg` est un paquet SÉPARÉ sur
 # Debian (`python3-pyqt5.qtsvg`), et rien ne garantit qu'il soit installé sur
 # le Raspberry Pi de l'atelier. Un logo qui manque là-bas et pas ici serait
 # une différence invisible entre les deux machines.
-#
-# C'est le chapeau du KIT, pas celui du visualiseur : les deux existent, mais
-# celui du kit a le liseré blanc le plus franc, et c'est lui qui se détache
-# sur l'ardoise. Vérifié en le composant sur #14171b.
-CHAPEAU_SOURCE = Path.home() / 'Projets/site/Site_AtelierDuVerdier/kit/chapeau.svg'
-CHAPEAU_SORTIE = RACINE / 'qtvcp' / 'screens' / 'qtdragon_hd' / 'images' / 'chapeau-verdier.png'
-CHAPEAU_LARGEUR = 300
+LOGO_SOURCE = Path.home() / 'Projets/logiciels/visualiseur-gcode/ressources/printnc.svg'
+LOGO_SORTIE = RACINE / 'qtvcp' / 'screens' / 'qtdragon_hd' / 'images' / 'logo-verdier.png'
+LOGO_LARGEUR = 380
 
 
-def poser_chapeau() -> str:
-    """Rend le chapeau en PNG. Rend un compte rendu d'une ligne."""
-    if not CHAPEAU_SOURCE.is_file():
-        if CHAPEAU_SORTIE.is_file():
-            return (f"chapeau : source absente ({CHAPEAU_SOURCE.name}), "
+def poser_logo() -> str:
+    """Rend le logo en PNG. Rend un compte rendu d'une ligne."""
+    if not LOGO_SOURCE.is_file():
+        if LOGO_SORTIE.is_file():
+            return (f"logo : source absente ({LOGO_SOURCE.name}), "
                     "la copie en place est gardee")
-        return f"chapeau : ni source ni copie — pas de logo pose"
+        return f"logo : ni source ni copie — pas de logo pose"
 
     import os
     os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
@@ -396,18 +402,18 @@ def poser_chapeau() -> str:
         from PyQt5 import QtCore, QtGui, QtWidgets
         from PyQt5.QtSvg import QSvgRenderer
     except ImportError as e:
-        return f"chapeau : Qt indisponible ({e}), rien de pose"
+        return f"logo : Qt indisponible ({e}), rien de pose"
 
     if QtWidgets.QApplication.instance() is None:
         QtWidgets.QApplication([])
 
-    rendeur = QSvgRenderer(str(CHAPEAU_SOURCE))
+    rendeur = QSvgRenderer(str(LOGO_SOURCE))
     if not rendeur.isValid():
-        return f"ECHEC chapeau : QtSvg refuse {CHAPEAU_SOURCE}"
+        return f"ECHEC logo : QtSvg refuse {LOGO_SOURCE}"
 
     t = rendeur.defaultSize()
-    hauteur = max(1, round(CHAPEAU_LARGEUR * t.height() / t.width()))
-    image = QtGui.QImage(CHAPEAU_LARGEUR, hauteur, QtGui.QImage.Format_ARGB32)
+    hauteur = max(1, round(LOGO_LARGEUR * t.height() / t.width()))
+    image = QtGui.QImage(LOGO_LARGEUR, hauteur, QtGui.QImage.Format_ARGB32)
     image.fill(QtCore.Qt.transparent)
     p = QtGui.QPainter(image)
     rendeur.render(p)
@@ -416,14 +422,14 @@ def poser_chapeau() -> str:
     # `isValid()` ment : QtSvg rend une image VIDE, sans erreur, sur un SVG
     # qu'il n'aime pas. Le seul verdict est de compter les pixels peints.
     peints = sum(1 for y in range(0, hauteur, 2)
-                 for x in range(0, CHAPEAU_LARGEUR, 2)
+                 for x in range(0, LOGO_LARGEUR, 2)
                  if QtGui.QColor.fromRgba(image.pixel(x, y)).alpha() > 8)
     if peints < 200:
-        return f"ECHEC chapeau : rendu vide ({peints} pixels peints)"
+        return f"ECHEC logo : rendu vide ({peints} pixels peints)"
 
-    CHAPEAU_SORTIE.parent.mkdir(parents=True, exist_ok=True)
-    image.save(str(CHAPEAU_SORTIE))
-    return (f"chapeau : {CHAPEAU_SORTIE.name} {CHAPEAU_LARGEUR}x{hauteur}, "
+    LOGO_SORTIE.parent.mkdir(parents=True, exist_ok=True)
+    image.save(str(LOGO_SORTIE))
+    return (f"logo : {LOGO_SORTIE.name} {LOGO_LARGEUR}x{hauteur}, "
             f"{peints} pixels peints")
 
 
@@ -524,7 +530,7 @@ def main() -> int:
     print(f"  {compte['particulier']} corrections particulieres, "
           f"{compte['encre']} couleurs de texte, {polices} polices nommees")
 
-    compte_rendu = poser_chapeau()
+    compte_rendu = poser_logo()
     print(f"  {compte_rendu}")
 
     faute = 0

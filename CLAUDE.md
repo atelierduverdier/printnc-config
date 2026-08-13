@@ -235,17 +235,25 @@ l'être — les contacteurs sont en prise d'origine seule (5 `home-sw-in`,
 déclenché, tout va bien » : c'est l'alarme qui s'apprend à ignorer. Le
 masquer serait plus honnête que le laisser.
 
-### Le chapeau de l'atelier, et les trois murs rencontrés
+### Le logo de la machine, et les trois murs rencontrés
 
-`qtvcp/screens/qtdragon_hd/images/chapeau-verdier.png` s'affiche **au centre
-du panneau de gauche tant qu'aucun programme n'est chargé**, et disparaît au
+`qtvcp/screens/qtdragon_hd/images/logo-verdier.png` s'affiche **au centre du
+panneau de gauche tant qu'aucun programme n'est chargé**, et disparaît au
 premier fichier. Règle reprise du visualiseur de parcours : une marque qui
 reste par-dessus le travail devient un tampon sur le pare-brise.
 
+C'est le **logo complet** — chapeau, « PrintNC », « Orange Mécanique » — et
+non le chapeau seul : la machine EST une PrintNC, et le dessin le dit. Le
+partage vient du visualiseur (`interface/marque.py`) : le chapeau seul fait
+les icônes, parce qu'à seize pixels le reste n'est plus qu'une tache ; le
+logo complet va là où il y a la place.
+
 L'image est **engendrée** par `outils/faire_theme.py` depuis
-`kit/chapeau.svg` du dépôt `site` — pas recopiée. En PNG et non en SVG parce
-que `PyQt5.QtSvg` est un paquet séparé sur Debian et n'est pas garanti sur le
-Raspberry Pi.
+`ressources/printnc.svg` du dépôt du visualiseur — pas recopiée. Son texte y
+est déjà converti en courbes, sans quoi les trois polices d'origine, qui
+n'existent que sur ce poste, le rendraient méconnaissable ailleurs. En PNG et
+non en SVG parce que `PyQt5.QtSvg` est un paquet séparé sur Debian et n'est
+pas garanti sur le Raspberry Pi.
 
 Trois murs, tous payés :
 
@@ -256,7 +264,7 @@ Trois murs, tous payés :
   le widget et de le promouvoir dans le `.ui`.
 * **`HandlerClass` n'est pas un `QObject`.** `installEventFilter(self)` lève un
   `TypeError` qui fait surgir la boîte d'erreur de qtvcp au démarrage. D'où
-  `RecentreurChapeau`, un vrai `QObject`, dont il faut **garder la référence**
+  `RecentreurLogo`, un vrai `QObject`, dont il faut **garder la référence**
   sinon le ramasse-miettes l'emporte.
 * **Ni `__file__` ni `paths.IMAGEDIR` ne désignent le dossier de l'écran.**
   qtvcp charge le gestionnaire autrement, et `IMAGEDIR` est
@@ -268,8 +276,8 @@ Et pour déboguer tout ça : **`print()` ne sert à rien ici.** Le script
 `/usr/bin/linuxcnc` ne redirige que stderr (`exec 2>>$DEBUG_FILE`), la sortie
 standard de l'affichage se perd, et Python la tamponne de toute façon. Même
 piège que la console de FreeCAD ailleurs dans l'atelier, même parade : écrire
-dans un fichier. C'est ce que fait `dire_chapeau()`, vers
-`/tmp/chapeau-diag.txt`, et **uniquement quand quelque chose manque**.
+dans un fichier. C'est ce que fait `dire_logo()`, vers
+`/tmp/logo-diag.txt`, et **uniquement quand quelque chose manque**.
 
 ### Ne jamais arrêter qtvcp au signal
 
