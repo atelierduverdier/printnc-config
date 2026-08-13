@@ -1541,8 +1541,13 @@ class HandlerClass:
 
     # change Status bar text color
     def set_style_default(self):
+        # Ardoise de la charte, et non le blanc d'origine : un style pose ici
+        # par setStyleSheet bat celui de l'application, donc AUCUN theme ne
+        # peut atteindre cette barre. Elle restait une bande blanche pleine
+        # largeur au bas d'une interface sombre.
+        # Les deux etats suivants ne bougent pas : ce sont des alertes.
         self.w.statusbar.setStyleSheet(
-                "background-color: rgb(252, 252, 252);color: rgb(0,0,0)")  #default white
+                "background-color: rgb(26, 30, 35);color: rgb(230, 233, 238)")
     def set_style_warning(self):
         self.w.statusbar.setStyleSheet(
                 "background-color: rgb(242, 246, 103);color: rgb(0,0,0)")  #yellow

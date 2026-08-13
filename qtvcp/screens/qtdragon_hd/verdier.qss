@@ -24,7 +24,7 @@ SystemToolButton,
 AxisToolButton,
 QToolButton {
     background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #39414d,  stop:0.3 #14171b);
-    border: 1px solid brown;
+    border: 1px solid #2a3038;
     border-radius: 4px;
     font: bold 10pt "Noto Sans";
     color: #e6e9ee;
@@ -51,7 +51,7 @@ AxisToolButton:hover {
 
 QPushButton:disabled,
 ActionButton:disabled {
-    color: gray;
+    color: #7c8592;
 }
 
 ActionButton#action_machine_on {
@@ -93,7 +93,7 @@ QLabel#label_axis_5 {
 }
 
 DROLabel[isHomed=false] {
-    color: red;
+    color: #ff4040;
 }
 
 QLabel#lbl_cycle_start,
@@ -103,16 +103,16 @@ QLabel#lbl_home_all {
 }
 
 StatusLabel, StateLabel {
-    background: #2a3038;
-    border: 1px solid gray;
+    background: #1a1e23;
+    border: 1px solid #2a3038;
     border-radius: 4px;
     font: bold 10pt "Noto Sans";
     color: #e6e9ee;
 }
 
 QLineEdit {
-    background: #2a3038;
-    border: 1px solid gray;
+    background: #1a1e23;
+    border: 1px solid #2a3038;
     border-radius: 4px;
     font: bold 10pt "Noto Sans";
     color:#e6e9ee;
@@ -124,7 +124,7 @@ CalculatorDialog QLineEdit {
 
 QLineEdit#mdiline{
     background: #1a1e23;
-    color: #2a3038;
+    color: #e6e9ee;
 }
 
 QTextEdit {
@@ -153,7 +153,7 @@ QCheckBox::indicator:checked {
 
 QCheckBox::indicator:unchecked {
     image: url(:/buttons/images/unchecked.png);
-    background-color: #e6e9ee;
+    background-color: #22272e;
     height: 14px;
     width: 14px;
 }
@@ -204,7 +204,7 @@ QGroupBox {
 QGroupBox::title {
     subcontrol-origin: margin;
     padding: 0 3px;
-    color: #2a3038;
+    color: #e6e9ee;
 }
 
 QProgressBar {
@@ -222,7 +222,7 @@ QProgressBar::chunk {
 
 .QFrame {
     background: #22272e;
-    border: 1px solid orange;
+    border: 1px solid #ff9a1f;
 }
 
 QFrame#frame_cycle_start,
@@ -343,13 +343,13 @@ QSlider::handle:vertical:disabled{
 /* warning colors for overrides if out of normal range*/
 
     #slider_spindle_ovr[alertState='over'] {
-        background: red;
+        background: #ff4040;
     }
     #slider_feed_ovr[alertState='over'] {
-        background: red;
+        background: #ff4040;
     }
     #slider_feed_ovr[alertState='under'] {
-        background: yellow;
+        background: #ffd94d;
     }
 
 QDialog,
@@ -358,7 +358,7 @@ ToolDialog,
 CloseDialog,
 EntryDialog,
 CalculatorDialog {
-background-color: gray;
+background-color: #1a1e23;
 }
 
 LcncDialog QPushButton,
@@ -386,7 +386,7 @@ QMenu {
 QMenu::item {
     /* sets background of menu item. set this to something non-transparent
         if you want menu color and menu item color to be different */
-    background-color: gray;
+    background-color: #1a1e23;
 }
 
 QMenu::item:selected { /* when user selects item using mouse or keyboard */
@@ -427,7 +427,7 @@ QSpinBox::up-arrow {
 
 /** Tab Widget **/
 QTabWidget::pane {
-  border: 1px solid gray;
+  border: 1px solid #2a3038;
   top:-1px;
 background-color: #22272e;
      

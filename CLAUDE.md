@@ -141,6 +141,35 @@ Les couleurs de la coloration syntaxique sont celles que le **visualiseur de
 parcours** emploie déjà pour le même G-code — cyan le travail, jaune le
 palpage. Même langage de couleur du visualiseur à la machine.
 
+### Ce que seul le lancement RÉEL a trouvé
+
+L'aperçu hors écran valide la feuille, pas l'écran : il ne monte qu'un
+échantillon de widgets. Quatre défauts n'ont sauté aux yeux qu'en lançant
+qtdragon pour de vrai, et trois étaient de mon fait.
+
+* **Une couleur nommée peut survivre à une réécriture.** `brown` est tombé
+  d'une table de correspondance, et les boutons ont porté une bordure marron
+  jusqu'au lancement. Le contrôle d'alors ne cherchait que des `#hex`. Il
+  cherche désormais **tout mot en position de couleur** : il en trouve sept
+  dans `dark.qss` — `black, brown, gray, orange, red, white, yellow` — et
+  aucun dans `verdier.qss`.
+* **`black` et `gray` jouent trois rôles** : bordure, fond, encre. Traduits en
+  bloc, ils ont donné `color: #2a3038` sur `background: #1a1e23` dans la ligne
+  MDI — **1,4:1, illisible** — et auraient peint tous les dialogues en gris
+  moyen. Un contrôle de contraste refuse maintenant tout couple sous 3:1.
+* **`red` et `yellow` sont des états**, pas des ornements : DRO non référencé,
+  correcteur d'avance hors plage. Ils gardent leur teinte.
+* **La barre d'état ne vient PAS de la feuille.** `set_style_default()` du
+  gestionnaire pose `rgb(252,252,252)` par `setStyleSheet` **sur le widget** —
+  et un style de widget bat celui de l'application. Aucun thème ne peut
+  l'atteindre : c'était une bande blanche pleine largeur au bas de l'écran.
+  Corrigé dans le gestionnaire. Les états avertissement (jaune) et critique
+  (orange) sont laissés tels quels, ce sont des alertes.
+
+Reste une question ouverte : l'état **critique** de cette barre est
+`rgb(255,144,0)`, à un cheveu de l'orange d'accent `#ff9a1f`. Une alerte qui a
+la couleur de la décoration alerte moins.
+
 Pour l'allumer : onglet **Settings**, sélecteur de thème, « verdier ». Le
 choix s'écrit dans `style_QSS_Path`, section `[BOOK_KEEPING]` de
 `qtdragon.pref` — qui n'est pas dans ce dépôt.

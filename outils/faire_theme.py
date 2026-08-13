@@ -132,6 +132,80 @@ PARTICULIERS = [
     ('QSlider::handle:horizontal:disabled',   '#eee', ENCRE_3),
 ]
 
+# --- 3 bis. Les couleurs NOMMÉES, qui dépendent de la propriété -----------
+# `black` et `gray` jouent TROIS rôles dans dark.qss, et une table globale les
+# confond. Payé : traduits en bloc vers la couleur de trait, ils ont rendu
+# `QLineEdit#mdiline` illisible — encre #2a3038 sur fond #1a1e23, sombre sur
+# sombre — et auraient peint toutes les boîtes de dialogue en gris moyen
+# (`QDialog { background-color: gray }`).
+#
+#   bordure -> le trait de la charte
+#   fond    -> une surface sombre
+#   encre   -> une encre claire
+#
+# (préfixe de propriété, mot, remplaçant)
+PAR_PROPRIETE = [
+    ('color',      'black',  ENCRE),
+    ('color',      'gray',   ENCRE_3),   # boutons désactivés
+    ('color',      'white',  ENCRE),
+    ('background', 'black',  FOND_2),
+    ('background', 'gray',   FOND_2),    # les dialogues
+    ('background', 'white',  FOND_3),
+    ('border',     'black',  TRAIT),
+    ('border',     'gray',   TRAIT),
+    ('border',     'grey',   TRAIT),
+    ('border',     'brown',  TRAIT),     # la bordure des boutons
+    ('border',     'orange', ORANGE),    # le cadre des .QFrame
+    # `red` et `yellow` sont des ÉTATS, pas des ornements : DRO non référencé,
+    # correcteur d'avance hors plage. On garde la teinte, on la remonte juste
+    # assez pour qu'elle se lise sur l'ardoise.
+    ('color',      'red',    ROUGE),
+    ('background', 'red',    ROUGE),
+    ('background', 'yellow', AUXILIAIRE),
+]
+
+DECLARATION = re.compile(r'([a-z-]+)(\s*:\s*)([^;}]*)')
+
+# Les mots qui ne sont PAS des couleurs, dans une déclaration qui en porte.
+NON_COULEURS = {
+    'px', 'pt', 'em', 'solid', 'none', 'transparent', 'qlineargradient',
+    'stop', 'spread', 'pad', 'reflect', 'repeat', 'rgba', 'rgb', 'url',
+    'newPrefix', 'images', 'png', 'buttons', 'checked', 'unchecked',
+    'outset', 'inset', 'dotted', 'dashed', 'double', 'groove', 'ridge',
+    'center', 'left', 'right', 'top', 'bottom', 'bold', 'italic', 'normal',
+}
+
+
+def couleurs_nommees(texte: str):
+    """Les couleurs écrites en toutes lettres qui subsistent.
+
+    Payé : « brown » a survécu à une réécriture de la table et les boutons
+    ont porté une bordure marron jusqu'au lancement réel — le contrôle
+    d'alors ne cherchait que des `#hex`. On ne cherche donc plus une liste
+    de mots connus, mais TOUT mot en position de couleur.
+    """
+    trouves = set()
+    for m in DECLARATION.finditer(texte):
+        prop, valeur = m.group(1), m.group(3)
+        if 'color' not in prop and not prop.startswith(('background', 'border')):
+            continue
+        for mot in re.findall(r'(?<![\w#-])([a-z]{3,})(?![\w(-])', valeur):
+            if mot not in NON_COULEURS:
+                trouves.add(mot)
+    return sorted(trouves)
+
+
+def par_propriete(corps: str) -> str:
+    """Traduit `black`/`gray`/`white` d'après la propriété qui les porte."""
+    def une(m):
+        prop, sep, valeur = m.group(1), m.group(2), m.group(3)
+        for prefixe, mot, remplacant in PAR_PROPRIETE:
+            if prop.startswith(prefixe):
+                valeur = re.sub(r'\b' + mot + r'\b', remplacant, valeur)
+        return prop + sep + valeur
+    return DECLARATION.sub(une, corps)
+
+
 # --- 4. La table globale --------------------------------------------------
 # L'ordre compte : les formes longues d'abord, sinon « #eee » mangerait le
 # début de « #eeeeee », et « #fff » celui de « #fff3e2 ».
@@ -171,8 +245,8 @@ PALETTE = [
     ('#999',                     ENCRE_3),
     ('#444',                     TRAIT_2),
     ('#fff',                     ENCRE),
-    ('white',                    ENCRE),
-    ('black',                    TRAIT),    # 13 bordures noires, invisibles
+    # `black`, `gray` et `white` ne sont PAS ici : ils passent par
+    # PAR_PROPRIETE, faute de quoi une encre devient un fond.
 ]
 
 # --- 5. Ce que dark.qss ne couvre PAS -------------------------------------
@@ -326,6 +400,7 @@ def main() -> int:
                 corps = corps.replace(avant, apres)
                 compte['particulier'] += 1
 
+        corps = par_propriete(corps)
         corps = traduire(corps)
 
         for cible, couleur in ENCRE_FORCEE.items():
@@ -393,6 +468,34 @@ def main() -> int:
     if re.search(r'Lato', resultat):
         print("  ECHEC : « Lato » subsiste, or la police n'est pas installee")
         faute = 1
+
+    # Aucune couleur nommée ne doit survivre : chacune a un sens qui dépend de
+    # sa propriété, et une seule oubliée suffit à rendre un champ illisible.
+    nommees = couleurs_nommees(resultat)
+    if nommees:
+        print(f"  ECHEC : couleurs nommees non traduites : {', '.join(nommees)}")
+        faute = 1
+
+    # Le contraste des couples encre/fond effectivement écrits. Sombre sur
+    # sombre est le défaut qui ne se voit pas dans un diff.
+    for m in REGLE.finditer(resultat):
+        sel = ' '.join(m.group(1).split())
+        f = re.search(r'background(?:-color)?\s*:\s*(#[0-9a-fA-F]{6})\s*;',
+                      m.group(2))
+        e = re.search(r'(?<!-)color\s*:\s*(#[0-9a-fA-F]{6})\s*;', m.group(2))
+        if not (f and e):
+            continue
+
+        def luma(c):
+            r, v, b = (int(c[i:i + 2], 16) for i in (1, 3, 5))
+            return (0.2126 * r + 0.7152 * v + 0.0722 * b) / 255 + 0.05
+
+        rapport = max(luma(f.group(1)), luma(e.group(1))) / \
+            min(luma(f.group(1)), luma(e.group(1)))
+        if rapport < 3.0:
+            print(f"  ECHEC : {sel[:44]} — encre {e.group(1)} sur fond "
+                  f"{f.group(1)}, contraste {rapport:.1f}:1")
+            faute = 1
     if etrangeres:
         print(f"  ECHEC : couleurs non traduites : {', '.join(etrangeres)}")
         faute = 1
