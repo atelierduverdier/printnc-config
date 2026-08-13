@@ -228,12 +228,23 @@ Et le commentaire en tête de `custom_postgui.hal` annonçait ses trois `net`
 comme « désactivées temporairement » alors qu'elles étaient actives depuis
 longtemps : corrigé.
 
-**Ce qui reste à décider** : le voyant **LIMIT** ne s'allumera jamais. Sa
-broche `qtdragon.led-limits-tripped` n'est câblée nulle part et ne peut pas
-l'être — les contacteurs sont en prise d'origine seule (5 `home-sw-in`,
-**zéro** `lim-sw-in`). Un voyant éteint en permanence se lit « rien de
-déclenché, tout va bien » : c'est l'alarme qui s'apprend à ignorer. Le
-masquer serait plus honnête que le laisser.
+### Le voyant LIMIT a été RETIRÉ, pas caché
+
+Il ne pouvait pas s'allumer : `qtdragon.led-limits-tripped` n'était câblée
+nulle part, et ne pouvait pas l'être — les contacteurs de cette machine sont
+en **prise d'origine seule**, 5 `home-sw-in` et **zéro** `lim-sw-in`. Un
+voyant éteint en permanence se lit « rien de déclenché, tout va bien » :
+c'est l'alarme qui s'apprend à ignorer.
+
+**Retiré du `.ui` plutôt que masqué**, et la différence compte. Un widget
+caché garde sa broche HAL : le jour où l'on câblerait de vraies fins de
+course, le `net` réussirait et n'allumerait rien — une panne silencieuse. Le
+widget retiré, la broche n'existe plus, et ce même `net` **fait échouer le
+chargement de HAL**. Une erreur bruyante vaut mieux qu'un voyant muet.
+
+Donc : si des fins de course sont un jour installées, il faut **recréer le
+voyant** en même temps qu'on écrit le `net`, et LinuxCNC le rappellera de
+lui-même en refusant de démarrer.
 
 ### Le logo de la machine, et les trois murs rencontrés
 
