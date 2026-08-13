@@ -63,8 +63,8 @@ CRITICAL = 2
 
 VERSION ='1.5'
 
-class RecentreurLogo(QtCore.QObject):
-    """Recentre le logo quand son panneau change de taille.
+class AuRedimensionnement(QtCore.QObject):
+    """Rappelle une fonction quand un widget change de taille.
 
     Un objet a part, et non le gestionnaire lui-meme : HandlerClass n'herite
     PAS de QObject, et `installEventFilter(self)` leve un TypeError qui fait
@@ -195,6 +195,7 @@ class HandlerClass:
         self.w.page_buttonGroup.buttonClicked.connect(self.main_tab_changed)
         self.w.filemanager_usb.showMediaDir(quiet = True)
         self.init_logo()
+        self.init_image_outil()
 
     # Boutons lanceurs d'applications externes (terminal, editeur, navigateur, fichiers)
     # Chaque connexion n'est faite que si le bouton existe dans le .ui (hasattr),
@@ -746,6 +747,99 @@ class HandlerClass:
         self.w.lbl_max_rapid.setText("{:4.0f}".format(rapid))
 
     # ------------------------------------------------------------------
+    # L'image de l'outil en broche
+    # ------------------------------------------------------------------
+    # `lbl_tool_image` etait une DECORATION : une fraise fixe que ni ce
+    # gestionnaire ni celui de l'amont ne touchait jamais. Or LinuxCNC livre
+    # tout pour la rendre vivante — images/tool_icons/ et son manifeste
+    # numero:fichier.png. L'ecran `woodpecker` a meme une update_tool_image(),
+    # mais elle n'est APPELEE NULLE PART et n'emploie pas le dictionnaire
+    # qu'elle vient de lire : il y avait une idee a reprendre, pas du code.
+    #
+    # TROIS CAS, et le troisieme est le plus important :
+    #   T0            -> not_found.png, le triangle « NO TOOL ». C'est exact.
+    #   outil connu   -> son dessin.
+    #   outil PRESENT mais non decrit -> l'image generique de broche.
+    # Montrer « NO TOOL » pour un outil qu'on ne sait pas nommer serait une
+    # fausse alarme : il y a bien un outil, on ignore lequel. Une alarme qui
+    # se trompe s'apprend a ignorer.
+
+    IMAGE_OUTIL_DEFAUT = 'atc_spindle_tool.png'
+    IMAGE_SANS_OUTIL = 'not_found.png'
+
+    def init_image_outil(self):
+        self.dessins_outils = {}
+        manifeste = self.chercher_image(
+            os.path.join('images', 'tool_icons', 'tool_icons.txt'))
+        if manifeste is None:
+            self.dire_logo("OUTIL: tool_icons.txt introuvable, image figee")
+            return
+        # Notre lecture tolere commentaires et lignes vides, contrairement au
+        # split(':') sec de l'amont, qui casserait sur un fichier annote.
+        with open(manifeste) as f:
+            for n, ligne in enumerate(f, 1):
+                ligne = ligne.split('#')[0].strip()
+                if not ligne:
+                    continue
+                try:
+                    cle, valeur = ligne.split(':', 1)
+                    self.dessins_outils[int(cle)] = valeur.strip()
+                except ValueError:
+                    self.dire_logo("OUTIL: %s ligne %d illisible : %r"
+                                   % (os.path.basename(manifeste), n, ligne))
+        self._image_outil = None
+        # Le cadre ne connait pas sa taille a l'initialisation : il rend
+        # 100x30 tant que la mise en page n'a pas eu lieu, et le dessin
+        # sortait timbre-poste jusqu'au premier changement d'outil. On garde
+        # donc l'image SOURCE et on la remet a l'echelle a chaque
+        # redimensionnement du cadre.
+        self._redim_outil = AuRedimensionnement(self.appliquer_image_outil)
+        self.w.lbl_tool_image.installEventFilter(self._redim_outil)
+        STATUS.connect('tool-in-spindle-changed',
+                       lambda w, numero: self.changer_image_outil(numero))
+        self.changer_image_outil(STATUS.get_current_tool())
+
+    def changer_image_outil(self, numero):
+        try:
+            numero = int(numero)
+        except (TypeError, ValueError):
+            return
+        if numero == 0:
+            fichier = self.IMAGE_SANS_OUTIL
+        else:
+            fichier = self.dessins_outils.get(numero, self.IMAGE_OUTIL_DEFAUT)
+
+        if fichier == self.IMAGE_OUTIL_DEFAUT:
+            chemin = self.chercher_image(os.path.join('images', fichier))
+        else:
+            chemin = self.chercher_image(
+                os.path.join('images', 'tool_icons', fichier))
+        if chemin is None:
+            self.dire_logo("OUTIL: T%s -> %s introuvable" % (numero, fichier))
+            return
+        image = QtGui.QPixmap(chemin)
+        if image.isNull():
+            self.dire_logo("OUTIL: %s illisible par Qt" % chemin)
+            return
+        self._image_outil = image
+        self.appliquer_image_outil()
+
+    def appliquer_image_outil(self):
+        """Met la source a l'echelle du cadre, proportions gardees.
+
+        Les dessins livres n'ont pas tous la meme taille — upcut_spiral fait
+        281x388, les autres 170x240 — donc on ne peut pas s'en remettre a
+        setScaledContents, qui deformerait.
+        """
+        if getattr(self, '_image_outil', None) is None:
+            return
+        cadre = self.w.lbl_tool_image.size()
+        if cadre.width() < 40 or cadre.height() < 40:
+            return          # pas encore mis en page ; le filtre repassera
+        self.w.lbl_tool_image.setPixmap(self._image_outil.scaled(
+            cadre, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation))
+
+    # ------------------------------------------------------------------
     # Le logo de l'atelier, au centre du panneau
     # ------------------------------------------------------------------
     # Repris du visualiseur de parcours, y compris sa regle : il ne s'affiche
@@ -785,26 +879,30 @@ class HandlerClass:
         except OSError:
             pass
 
-    def chercher_logo(self):
-        """Le PNG, cherche la ou qtvcp cherche : la config d'abord.
+    def chercher_image(self, relatif):
+        """Un fichier de l'ecran, cherche la ou qtvcp cherche : config d'abord.
 
         PAS `__file__` : qtvcp charge ce gestionnaire autrement, et le chemin
-        qu'on en tire ne designe rien. La premiere version sortait donc en
-        silence sans poser le logo — le genre de panne qui ressemble a un
-        succes. PAS `paths.IMAGEDIR` non plus : c'est /usr/share/qtvcp/images,
-        les icones communes, pas le dossier de l'ecran.
+        qu'on en tire ne designe rien. La premiere version du logo sortait
+        donc en silence sans rien poser — le genre de panne qui ressemble a
+        un succes. PAS `paths.IMAGEDIR` non plus : c'est
+        /usr/share/qtvcp/images, les icones communes, pas le dossier de
+        l'ecran.
         """
         essais = [
-            os.path.join(PATH.CONFIGPATH, 'qtvcp/screens', PATH.BASEPATH,
-                         'images', 'logo-verdier.png'),
-            os.path.join(PATH.SCREENDIR, PATH.BASEPATH,
-                         'images', 'logo-verdier.png'),
+            os.path.join(PATH.CONFIGPATH, 'qtvcp/screens', PATH.BASEPATH, relatif),
+            os.path.join(PATH.SCREENDIR, PATH.BASEPATH, relatif),
         ]
         for chemin in essais:
             if os.path.isfile(chemin):
                 return chemin
-        self.dire_logo("LOGO: introuvable, essaye : %s" % ' | '.join(essais))
         return None
+
+    def chercher_logo(self):
+        chemin = self.chercher_image(os.path.join('images', 'logo-verdier.png'))
+        if chemin is None:
+            self.dire_logo("LOGO: images/logo-verdier.png introuvable")
+        return chemin
 
     def init_logo(self):
         self._logo = None
@@ -828,7 +926,7 @@ class HandlerClass:
         self._logo.show()
         # Se recentrer quand le panneau change de taille. La reference est
         # gardee sur l'instance : un filtre sans reference est ramasse.
-        self._recentreur = RecentreurLogo(self.placer_logo)
+        self._recentreur = AuRedimensionnement(self.placer_logo)
         ancre.installEventFilter(self._recentreur)
         self.placer_logo()
 

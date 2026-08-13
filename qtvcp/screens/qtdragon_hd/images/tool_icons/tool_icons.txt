@@ -1,20 +1,29 @@
-99:probe.png
-0:not_found.png
-1:ball_end_mill.png
-23:tool_icons.txt
-4:upcut_spiral.png
-21:ball_end_mill.png
-12:ball_end_mill.png
-8:surfacing.png
-15:vbit-90deg.png
-10:center_drill.png
-13:ball_end_mill.png
-11:ball_end_mill.png
-14:ball_end_mill.png
-33:drill.png
-34:upcut_spiral.png
-26:center_drill.png
-6:surfacing.png
-16:center_drill.png
-2:upcut_spiral.png
-9:upcut_spiral.png
+# tool_icons.txt — quel dessin pour quel outil, dans le panneau TOOL.
+#
+# Format : <numero d'outil>:<fichier .png de ce dossier>
+# Les lignes vides et tout ce qui suit un # sont ignores. Le fichier livre
+# par LinuxCNC n'admettait ni l'un ni l'autre, et associait les numeros de
+# QUELQU'UN D'AUTRE : son T1 etait une fraise hemispherique, le notre est un
+# emplacement manuel sans description. Il aurait donc menti a chaque outil.
+# L'original reste dans /usr/share/qtvcp/screens/qtdragon_hd/images/tool_icons/.
+#
+# CE QUI N'EST PAS ICI N'EST PAS UNE ERREUR : un outil absent de cette liste
+# affiche l'image generique de broche. C'est voulu — dire « NO TOOL » pour un
+# outil qu'on ne sait pas nommer serait une fausse alarme. Le triangle
+# « NO TOOL » est reserve a T0, ou il est exact.
+#
+# Dessins disponibles : ball_end_mill, center_drill, drill, probe,
+# surfacing, upcut_spiral, vbit-90deg, not_found.
+#
+# --- table de l'atelier (tool.tbl, 13/08/2026) ---------------------------
+#   T0    pas d'outil            -> traite par le code, not_found.png
+#   T1    manuel, non decrit     -> generique
+2:upcut_spiral.png            # Fraise 6 mm
+#   T3    manuel, non decrit     -> generique
+#   T4    manuel, non decrit     -> generique
+#   T5    manuel, non decrit     -> generique
+#   T6    manuel, non decrit     -> generique
+#   T100  LASER LT-80W           -> AUCUN dessin de laser n'est livre.
+#         Laisse en generique plutot que de montrer une fraise : le laser
+#         n'est meme pas dans la broche, il est sur sa glissiere. Ajouter
+#         une ligne 100:laser.png le jour ou l'image existera.

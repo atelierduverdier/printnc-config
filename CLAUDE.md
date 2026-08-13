@@ -228,6 +228,53 @@ Et le commentaire en tête de `custom_postgui.hal` annonçait ses trois `net`
 comme « désactivées temporairement » alors qu'elles étaient actives depuis
 longtemps : corrigé.
 
+### L'image de l'outil en broche
+
+`lbl_tool_image` était une **décoration** : une fraise fixe que ni ce
+gestionnaire ni celui de l'amont ne touchait jamais. Elle suit désormais
+l'outil réellement en broche, par le signal `tool-in-spindle-changed`.
+
+**Trois cas, et le troisième est le plus important :**
+
+| outil | image |
+|---|---|
+| **T0** | `not_found.png`, le triangle « NO TOOL » — exact, il n'y a pas d'outil |
+| **connu** (dans le manifeste) | son dessin |
+| **présent mais non décrit** | l'image générique de broche |
+
+Montrer « NO TOOL » pour un outil qu'on ne sait pas nommer serait une fausse
+alarme : il y a bien un outil, on ignore lequel. C'est pourquoi le manifeste
+n'a **pas** besoin d'être complet, et pourquoi une entrée manquante n'est pas
+une erreur.
+
+Le manifeste est `images/tool_icons/tool_icons.txt`, en `numéro:fichier.png`.
+Celui livré par LinuxCNC associait **les numéros de quelqu'un d'autre** — son
+T1 était une fraise hémisphérique, le nôtre un emplacement manuel — donc il
+aurait menti à chaque outil ; il est remplacé, l'original restant dans
+`/usr/share`. Notre lecture tolère commentaires et lignes vides, contrairement
+au `split(':')` sec de l'amont.
+
+Aujourd'hui **une seule correspondance** : `2:upcut_spiral.png`, la fraise
+6 mm. La table ne nomme que deux outils, et `T100` — le laser — n'a aucun
+dessin livré : le laisser en générique vaut mieux qu'une fraise, puisqu'il
+n'est même pas dans la broche mais sur sa glissière.
+
+Deux pièges payés :
+
+* **`update_tool_image()` de l'écran `woodpecker` n'est appelée nulle part**,
+  et n'emploie pas le dictionnaire qu'elle vient de lire. Il y avait une idée
+  à reprendre, pas du code à recopier.
+* **Le cadre ne connaît pas sa taille à l'initialisation** : `size()` rend
+  `100x30` tant que la mise en page n'a pas eu lieu, et le dessin sortait en
+  timbre-poste jusqu'au premier changement d'outil. On garde donc l'image
+  SOURCE et on la remet à l'échelle sur chaque redimensionnement, par
+  `AuRedimensionnement` — le même petit `QObject` qui recentre le logo.
+
+Éprouvé sur la simulation, les trois cas à l'écran : `M61 Q2` → fraise,
+`M61 Q5` → générique, `M61 Q0` → « NO TOOL ». À savoir pour rejouer l'essai :
+**le MDI exige une machine référencée**, sinon `c.mode(MODE_MDI)` est ignoré
+en silence et le `M61` ne part jamais.
+
 ### Le voyant LIMIT a été RETIRÉ, pas caché
 
 Il ne pouvait pas s'allumer : `qtdragon.led-limits-tripped` n'était câblée
