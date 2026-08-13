@@ -1,17 +1,25 @@
 # custom_postgui_sim.hal
 # Version SIMULATION du postgui (PC sans carte FlexiHAL).
-# Les boutons aux0..aux3 du .ui pilotent les or2 comme en reel, mais la
+# Les boutons aux0..aux2 du .ui pilotent les or2 comme en reel, mais la
 # sortie combinee ne va PAS vers flexi.output.AUX (absent) : elle est
 # laissee en signal libre, observable dans halshow / halmeter.
 
 # Boutons AUX (PushButton HAL QtDragon) vers la seconde entree des or2
+#   aux0 = ASPIRATEUR   aux1 = LUMIERE   aux2 = VENTILATEURS
 	net aux0-btn qtdragon.aux0 => aux0_or.in1
 	net aux1-btn qtdragon.aux1 => aux1_or.in1
 	net aux2-btn qtdragon.aux2 => aux2_or.in1
-	net aux3-btn qtdragon.aux3 => aux3_or.in1
+# PAS de aux3 : le bouton a ete retire du .ui le 13/08/2026 (il etait sans
+# effet, AUX3 etant reserve au laser en production). Laisser cette ligne
+# ferait echouer le chargement de HAL sur une pin qui n'existe plus.
 
 # Sortie combinee (bouton OU G-code). En simulation, signal libre.
 	net aux0-out aux0_or.out
 	net aux1-out aux1_or.out
 	net aux2-out aux2_or.out
 	net aux3-out aux3_or.out
+
+# Le voyant LASER ARME reste ETEINT en simulation, et c'est exact : l'ini de
+# simulation ne declare qu'une broche (SPINDLES = 1), donc spindle.1.on —
+# la source de `laser-arm` en production — n'existe pas ici. Rien a cabler :
+# une pin de LED sans source vaut faux, ce qui est la verite du banc.

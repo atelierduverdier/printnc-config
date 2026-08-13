@@ -199,6 +199,42 @@ Le `.ui` et le gestionnaire portent de vraies retouches : on ne les supprime
 donc pas. Les remettre à niveau demande de rejouer ces retouches sur la base
 1.6 — un vrai chantier, à faire sciemment, pas au détour d'autre chose.
 
+### Le voyant LASER ARME
+
+Panneau **INPUTS**, juste sous PROBE, rouge et non vert : un laser sous
+tension est un danger, pas un état courant. Il suit `laser-arm`, la net qui
+existait déjà (`spindle.1.on => flexi.output.AUX3`) — s'y greffer n'enlève
+rien à l'interlock, un signal ayant une source et autant de destinations
+qu'on veut.
+
+Il comble le seul vrai trou de l'interface : **rien à l'écran ne disait que
+le laser était sous tension**, alors qu'une pause ne le coupe pas et que le
+jumper P6 est la seule autre protection.
+
+**Il reste éteint en simulation, et c'est exact** : `remora-flexi-sim.ini`
+déclare `SPINDLES = 1`, donc `spindle.1.on` n'y existe pas. Rien à câbler
+côté banc — une entrée de LED sans source vaut faux, ce qui est la vérité.
+
+Deux retards corrigés en même temps, le 13/08/2026 :
+
+* le bouton **AUX 3 a été retiré du `.ui`**. Le postgui disait lui-même que
+  « le bouton QtDragon AUX3 n'a plus d'effet » depuis qu'AUX3 est dédié au
+  laser. Attention : sa broche était encore nettée dans
+  `custom_postgui_sim.hal`, et **laisser cette ligne aurait fait échouer le
+  chargement de HAL** sur une pin disparue. Les deux vont ensemble.
+* **AUX 2 s'appelle désormais VENTILATEURS**, ce qu'il pilote réellement.
+
+Et le commentaire en tête de `custom_postgui.hal` annonçait ses trois `net`
+comme « désactivées temporairement » alors qu'elles étaient actives depuis
+longtemps : corrigé.
+
+**Ce qui reste à décider** : le voyant **LIMIT** ne s'allumera jamais. Sa
+broche `qtdragon.led-limits-tripped` n'est câblée nulle part et ne peut pas
+l'être — les contacteurs sont en prise d'origine seule (5 `home-sw-in`,
+**zéro** `lim-sw-in`). Un voyant éteint en permanence se lit « rien de
+déclenché, tout va bien » : c'est l'alarme qui s'apprend à ignorer. Le
+masquer serait plus honnête que le laisser.
+
 ### Le chapeau de l'atelier, et les trois murs rencontrés
 
 `qtvcp/screens/qtdragon_hd/images/chapeau-verdier.png` s'affiche **au centre

@@ -6081,23 +6081,7 @@ LOG</string>
                        </rect>
                       </property>
                       <property name="text">
-                       <string>AUX 2</string>
-                      </property>
-                      <property name="checkable">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                     <widget class="PushButton" name="aux3">
-                      <property name="geometry">
-                       <rect>
-                        <x>360</x>
-                        <y>30</y>
-                        <width>101</width>
-                        <height>71</height>
-                       </rect>
-                      </property>
-                      <property name="text">
-                       <string>AUX 3</string>
+                       <string>VENTILATEURS</string>
                       </property>
                       <property name="checkable">
                        <bool>true</bool>
@@ -7872,6 +7856,93 @@ OFF</string>
                     <red>0</red>
                     <green>255</green>
                     <blue>0</blue>
+                   </color>
+                  </property>
+                  <property name="off_color" stdset="0">
+                   <color>
+                    <red>0</red>
+                    <green>0</green>
+                    <blue>0</blue>
+                   </color>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_laser">
+                <property name="spacing">
+                 <number>4</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="label_laser">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>24</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>16777215</width>
+                    <height>24</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>LASER ARME</string>
+                  </property>
+                  <property name="toolTip">
+                   <string>Laser sous tension (interlock AUX3 ferme par spindle.1).
+              Une PAUSE ne coupe PAS le laser.</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                  </property>
+                  <property name="margin">
+                   <number>0</number>
+                  </property>
+                  <property name="indent">
+                   <number>4</number>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="LED" name="hal_led_laser">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>24</width>
+                    <height>24</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>24</width>
+                    <height>24</height>
+                   </size>
+                  </property>
+                  <property name="pin_name" stdset="0">
+                   <string>led-laser</string>
+                  </property>
+                  <property name="diameter">
+                   <number>15</number>
+                  </property>
+                  <property name="color">
+                   <color>
+                    <red>255</red>
+                    <green>64</green>
+                    <blue>64</blue>
                    </color>
                   </property>
                   <property name="off_color" stdset="0">

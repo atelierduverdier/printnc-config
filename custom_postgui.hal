@@ -1,15 +1,20 @@
 # custom_postgui.hal
 # Charge APRES le GUI : les pins des boutons QtVCP existent ici.
 
-# Boutons AUX : lignes desactivees temporairement.
-# A reactiver une fois les boutons aux0..aux3 recrees dans le .ui.
+# Boutons AUX du .ui, ACTIFS. (Le commentaire precedent les annoncait
+# « desactivees temporairement, a reactiver une fois les boutons recrees » :
+# c'etait faux depuis que les boutons existent, et laissait croire que les
+# auxiliaires ne marchaient pas. Corrige le 13/08/2026.)
 # Verifier le nom reel avec :  halcmd show pin | grep -i aux
+#   aux0 = ASPIRATEUR   aux1 = LUMIERE   aux2 = VENTILATEURS
 	net aux0-btn qtdragon.aux0 => aux0_or.in1
 	net aux1-btn qtdragon.aux1 => aux1_or.in1
 	net aux2-btn qtdragon.aux2 => aux2_or.in1
-# AUX3 reserve au laser (interlock spindle.1, voir remora-flexi.hal,
-# section LASER). Le bouton QtDragon AUX3 n'a plus d'effet.
-#	net aux3-btn qtdragon.aux3 => aux3_or.in1
+# AUX3 est reserve au laser (interlock spindle.1, voir remora-flexi.hal,
+# section LASER). Le bouton QtDragon AUX3 n'avait donc AUCUN effet : il a ete
+# retire du .ui le 13/08/2026, avec sa ligne dans custom_postgui_sim.hal. Un
+# bouton qui promet sans tenir est pire qu'un bouton absent.
+# Ne pas le recreer sans lui redonner une sortie.
 
 # Sortie combinee vers les relais.
 	net aux0-out aux0_or.out => flexi.output.AUX0
@@ -25,3 +30,11 @@
 # remora-flexi.hal (net laser-arm). NE PAS reconnecter aux3_or.out ici,
 # sinon conflit "pin already connected" au chargement de HAL.
 #	net aux3-out aux3_or.out => flexi.output.AUX3
+
+# Voyant LASER ARME du panneau INPUTS.
+# Rien a l'ecran ne disait que le laser etait sous tension, alors qu'une
+# PAUSE NE LE COUPE PAS (voir CLAUDE.md) et que le jumper P6 est la seule
+# autre protection. On se greffe sur la net qui existe deja : un signal a
+# une source et autant de destinations qu'on veut, donc ceci n'enleve rien
+# a l'interlock.
+	net laser-arm => qtdragon.led-laser
