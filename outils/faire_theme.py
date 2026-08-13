@@ -364,6 +364,69 @@ QScrollBar::add-page, QScrollBar::sub-page {{
 }}
 """
 
+# --- 6. Le chapeau de l'atelier -------------------------------------------
+# Il ne se recopie pas à la main : il est RENDU depuis `kit/chapeau.svg` du
+# dépôt `site`, la source unique de la charte. Relancer ce script le remet à
+# jour si le dessin change.
+#
+# En PNG et non en SVG, délibérément : `PyQt5.QtSvg` est un paquet SÉPARÉ sur
+# Debian (`python3-pyqt5.qtsvg`), et rien ne garantit qu'il soit installé sur
+# le Raspberry Pi de l'atelier. Un logo qui manque là-bas et pas ici serait
+# une différence invisible entre les deux machines.
+#
+# C'est le chapeau du KIT, pas celui du visualiseur : les deux existent, mais
+# celui du kit a le liseré blanc le plus franc, et c'est lui qui se détache
+# sur l'ardoise. Vérifié en le composant sur #14171b.
+CHAPEAU_SOURCE = Path.home() / 'Projets/site/Site_AtelierDuVerdier/kit/chapeau.svg'
+CHAPEAU_SORTIE = RACINE / 'qtvcp' / 'screens' / 'qtdragon_hd' / 'images' / 'chapeau-verdier.png'
+CHAPEAU_LARGEUR = 300
+
+
+def poser_chapeau() -> str:
+    """Rend le chapeau en PNG. Rend un compte rendu d'une ligne."""
+    if not CHAPEAU_SOURCE.is_file():
+        if CHAPEAU_SORTIE.is_file():
+            return (f"chapeau : source absente ({CHAPEAU_SOURCE.name}), "
+                    "la copie en place est gardee")
+        return f"chapeau : ni source ni copie — pas de logo pose"
+
+    import os
+    os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+    try:
+        from PyQt5 import QtCore, QtGui, QtWidgets
+        from PyQt5.QtSvg import QSvgRenderer
+    except ImportError as e:
+        return f"chapeau : Qt indisponible ({e}), rien de pose"
+
+    if QtWidgets.QApplication.instance() is None:
+        QtWidgets.QApplication([])
+
+    rendeur = QSvgRenderer(str(CHAPEAU_SOURCE))
+    if not rendeur.isValid():
+        return f"ECHEC chapeau : QtSvg refuse {CHAPEAU_SOURCE}"
+
+    t = rendeur.defaultSize()
+    hauteur = max(1, round(CHAPEAU_LARGEUR * t.height() / t.width()))
+    image = QtGui.QImage(CHAPEAU_LARGEUR, hauteur, QtGui.QImage.Format_ARGB32)
+    image.fill(QtCore.Qt.transparent)
+    p = QtGui.QPainter(image)
+    rendeur.render(p)
+    p.end()
+
+    # `isValid()` ment : QtSvg rend une image VIDE, sans erreur, sur un SVG
+    # qu'il n'aime pas. Le seul verdict est de compter les pixels peints.
+    peints = sum(1 for y in range(0, hauteur, 2)
+                 for x in range(0, CHAPEAU_LARGEUR, 2)
+                 if QtGui.QColor.fromRgba(image.pixel(x, y)).alpha() > 8)
+    if peints < 200:
+        return f"ECHEC chapeau : rendu vide ({peints} pixels peints)"
+
+    CHAPEAU_SORTIE.parent.mkdir(parents=True, exist_ok=True)
+    image.save(str(CHAPEAU_SORTIE))
+    return (f"chapeau : {CHAPEAU_SORTIE.name} {CHAPEAU_LARGEUR}x{hauteur}, "
+            f"{peints} pixels peints")
+
+
 REGLE = re.compile(r'([^{}]+)\{([^}]*)\}')
 
 # « 9 pt » avec une espace, ligne 205 de dark.qss, est une syntaxe INVALIDE que
@@ -461,7 +524,12 @@ def main() -> int:
     print(f"  {compte['particulier']} corrections particulieres, "
           f"{compte['encre']} couleurs de texte, {polices} polices nommees")
 
+    compte_rendu = poser_chapeau()
+    print(f"  {compte_rendu}")
+
     faute = 0
+    if compte_rendu.startswith('ECHEC'):
+        faute = 1
     if apres != avant + ajoutees:
         print(f"  ECHEC : {avant}+{ajoutees} regles attendues, {apres} en sortie")
         faute = 1

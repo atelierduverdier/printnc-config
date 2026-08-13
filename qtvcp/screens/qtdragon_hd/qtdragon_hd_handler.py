@@ -63,6 +63,24 @@ CRITICAL = 2
 
 VERSION ='1.5'
 
+class RecentreurChapeau(QtCore.QObject):
+    """Recentre le chapeau quand son panneau change de taille.
+
+    Un objet a part, et non le gestionnaire lui-meme : HandlerClass n'herite
+    PAS de QObject, et `installEventFilter(self)` leve un TypeError qui fait
+    surgir la boite d'erreur de qtvcp au demarrage. Paye une fois.
+    """
+
+    def __init__(self, rappel):
+        super().__init__()
+        self._rappel = rappel
+
+    def eventFilter(self, objet, evenement):
+        if evenement.type() == QtCore.QEvent.Resize:
+            self._rappel()
+        return False
+
+
 class HandlerClass:
     def __init__(self, halcomp, widgets, paths):
         self.h = halcomp
@@ -176,6 +194,7 @@ class HandlerClass:
         self.w.btn_dimensions.setChecked(True)
         self.w.page_buttonGroup.buttonClicked.connect(self.main_tab_changed)
         self.w.filemanager_usb.showMediaDir(quiet = True)
+        self.init_chapeau()
 
     # Boutons lanceurs d'applications externes (terminal, editeur, navigateur, fichiers)
     # Chaque connexion n'est faite que si le bouton existe dans le .ui (hasattr),
@@ -726,7 +745,109 @@ class HandlerClass:
             rapid = (float(self.w.slider_rapid_ovr.value()) / 100) * self.max_linear_velocity / 25.4
         self.w.lbl_max_rapid.setText("{:4.0f}".format(rapid))
 
+    # ------------------------------------------------------------------
+    # Le chapeau de l'atelier, au centre de la vue
+    # ------------------------------------------------------------------
+    # Repris du visualiseur de parcours, y compris sa regle : il ne s'affiche
+    # QUE tant qu'aucun programme n'est charge, et disparait au premier
+    # fichier. Une marque qui reste par-dessus le travail devient un tampon
+    # sur le pare-brise.
+    #
+    # L'image est posee par outils/faire_theme.py depuis kit/chapeau.svg du
+    # depot `site`. Si elle manque, on se tait : un logo absent ne doit pas
+    # empecher la machine de demarrer.
+    #
+    # IL N'EST PAS DANS LA VUE 3D, ET CE N'EST PAS UN CHOIX. gcodegraphics est
+    # un QGLWidget — l'ancien widget OpenGL a fenetre native — et la surface
+    # GL peint PAR-DESSUS ses enfants. Essaye : hors ecran l'etiquette se
+    # voyait, sur la vraie fenetre elle avait disparu. L'y mettre demanderait
+    # de sous-classer le widget et de le promouvoir dans le .ui.
+    #
+    # Le panneau de gauche donne la meme intention a moindre frais : vide lui
+    # aussi tant qu'aucun programme n'est charge, et GcodeEditor est un
+    # QWidget ordinaire, sans OpenGL.
+
+    ANCRE_CHAPEAU = 'gcode_viewer'
+
+    def dire_chapeau(self, message):
+        """Signale un CHAPEAU manquant, dans un fichier et non sur stdout.
+
+        Le script /usr/bin/linuxcnc ne redirige que stderr vers son fichier de
+        debogage (`exec 2>>$DEBUG_FILE`), et la sortie standard de l'affichage
+        se perd. Meme piege que la console de FreeCAD ailleurs dans l'atelier,
+        meme parade : on ecrit ou l'on est sur de relire.
+        """
+        try:
+            with open('/tmp/chapeau-diag.txt', 'a') as f:
+                f.write(time.strftime('%H:%M:%S ') + message + chr(10))
+        except OSError:
+            pass
+
+    def chercher_chapeau(self):
+        """Le PNG, cherche la ou qtvcp cherche : la config d'abord.
+
+        PAS `__file__` : qtvcp charge ce gestionnaire autrement, et le chemin
+        qu'on en tire ne designe rien. La premiere version sortait donc en
+        silence sans poser le logo — le genre de panne qui ressemble a un
+        succes. PAS `paths.IMAGEDIR` non plus : c'est /usr/share/qtvcp/images,
+        les icones communes, pas le dossier de l'ecran.
+        """
+        essais = [
+            os.path.join(PATH.CONFIGPATH, 'qtvcp/screens', PATH.BASEPATH,
+                         'images', 'chapeau-verdier.png'),
+            os.path.join(PATH.SCREENDIR, PATH.BASEPATH,
+                         'images', 'chapeau-verdier.png'),
+        ]
+        for chemin in essais:
+            if os.path.isfile(chemin):
+                return chemin
+        self.dire_chapeau("CHAPEAU: introuvable, essaye : %s" % ' | '.join(essais))
+        return None
+
+    def init_chapeau(self):
+        self._chapeau = None
+        chemin = self.chercher_chapeau()
+        if chemin is None:
+            return
+        image = QtGui.QPixmap(chemin)
+        if image.isNull():
+            self.dire_chapeau("CHAPEAU: %s illisible par Qt" % chemin)
+            return
+        ancre = getattr(self.w, self.ANCRE_CHAPEAU, None)
+        if ancre is None:
+            self.dire_chapeau("CHAPEAU: pas de widget nomme %s" % self.ANCRE_CHAPEAU)
+            return
+        self._chapeau = QtWidgets.QLabel(ancre)
+        self._chapeau.setPixmap(image)
+        self._chapeau.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+        self._chapeau.setStyleSheet("background: transparent; border: none;")
+        self._chapeau.resize(image.size())
+        self._chapeau.raise_()
+        self._chapeau.show()
+        # Se recentrer quand le panneau change de taille. La reference est
+        # gardee sur l'instance : un filtre sans reference est ramasse.
+        self._recentreur = RecentreurChapeau(self.placer_chapeau)
+        ancre.installEventFilter(self._recentreur)
+        self.placer_chapeau()
+
+    def placer_chapeau(self):
+        if getattr(self, '_chapeau', None) is None:
+            return
+        ancre = getattr(self.w, self.ANCRE_CHAPEAU, None)
+        if ancre is None:
+            return
+        vue = ancre.size()
+        logo = self._chapeau.size()
+        self._chapeau.move(max(0, (vue.width() - logo.width()) // 2),
+                           max(0, (vue.height() - logo.height()) // 2))
+        self._chapeau.raise_()
+
+    def cacher_chapeau(self):
+        if getattr(self, '_chapeau', None) is not None:
+            self._chapeau.hide()
+
     def file_loaded(self, obj, filename):
+        self.cacher_chapeau()
         if os.path.basename(filename).count('.') > 1:
             self.last_loaded_program = ""
             return

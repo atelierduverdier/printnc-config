@@ -199,6 +199,42 @@ Le `.ui` et le gestionnaire portent de vraies retouches : on ne les supprime
 donc pas. Les remettre à niveau demande de rejouer ces retouches sur la base
 1.6 — un vrai chantier, à faire sciemment, pas au détour d'autre chose.
 
+### Le chapeau de l'atelier, et les trois murs rencontrés
+
+`qtvcp/screens/qtdragon_hd/images/chapeau-verdier.png` s'affiche **au centre
+du panneau de gauche tant qu'aucun programme n'est chargé**, et disparaît au
+premier fichier. Règle reprise du visualiseur de parcours : une marque qui
+reste par-dessus le travail devient un tampon sur le pare-brise.
+
+L'image est **engendrée** par `outils/faire_theme.py` depuis
+`kit/chapeau.svg` du dépôt `site` — pas recopiée. En PNG et non en SVG parce
+que `PyQt5.QtSvg` est un paquet séparé sur Debian et n'est pas garanti sur le
+Raspberry Pi.
+
+Trois murs, tous payés :
+
+* **Il n'est pas dans la vue 3D, et ce n'est pas un choix.** `gcodegraphics`
+  est un `QGLWidget` — l'ancien widget OpenGL à fenêtre native — et la surface
+  GL peint **par-dessus** ses enfants. Hors écran l'étiquette se voyait ; sur
+  la vraie fenêtre elle avait disparu. L'y mettre demanderait de sous-classer
+  le widget et de le promouvoir dans le `.ui`.
+* **`HandlerClass` n'est pas un `QObject`.** `installEventFilter(self)` lève un
+  `TypeError` qui fait surgir la boîte d'erreur de qtvcp au démarrage. D'où
+  `RecentreurChapeau`, un vrai `QObject`, dont il faut **garder la référence**
+  sinon le ramasse-miettes l'emporte.
+* **Ni `__file__` ni `paths.IMAGEDIR` ne désignent le dossier de l'écran.**
+  qtvcp charge le gestionnaire autrement, et `IMAGEDIR` est
+  `/usr/share/qtvcp/images`, les icônes communes. Il faut chercher comme
+  qtvcp : `CONFIGPATH/qtvcp/screens/<écran>/images/` d'abord, `SCREENDIR`
+  ensuite.
+
+Et pour déboguer tout ça : **`print()` ne sert à rien ici.** Le script
+`/usr/bin/linuxcnc` ne redirige que stderr (`exec 2>>$DEBUG_FILE`), la sortie
+standard de l'affichage se perd, et Python la tamponne de toute façon. Même
+piège que la console de FreeCAD ailleurs dans l'atelier, même parade : écrire
+dans un fichier. C'est ce que fait `dire_chapeau()`, vers
+`/tmp/chapeau-diag.txt`, et **uniquement quand quelque chose manque**.
+
 ### Ne jamais arrêter qtvcp au signal
 
 **`pkill qtvcp` le fait planter par segfault, à tous les coups** — quatre
@@ -213,6 +249,12 @@ ressemble à une panne du thème alors que c'est un reste. Il faut alors un
 La sortie par le bouton **EXIT est propre** : aucun segfault, HAL et les
 segments NML libérés, zéro script résiduel. Mesuré le 13/08/2026, référence
 à 4 segfaults avant, 4 après.
+
+Et un `kill -9` laisse pire encore : **`/tmp/linuxcnc.lock` survit**. Le
+lancement suivant ouvre alors « LinuxCNC is still running. Restart it? » et
+attend une réponse — ce qui ressemble à une panne de la configuration alors
+qu'il suffit de `rm /tmp/linuxcnc.lock`. Vérifier aussi les segments partagés
+orphelins avec `ipcs -m`.
 
 Le bouton appelle `self.QTVCP_INSTANCE_.close()`
 (`qtvcp/widgets/action_button.py:687`), donc une demande de fermeture du
