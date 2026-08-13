@@ -199,6 +199,40 @@ Le `.ui` et le gestionnaire portent de vraies retouches : on ne les supprime
 donc pas. Les remettre à niveau demande de rejouer ces retouches sur la base
 1.6 — un vrai chantier, à faire sciemment, pas au détour d'autre chose.
 
+### Ne jamais arrêter qtvcp au signal
+
+**`pkill qtvcp` le fait planter par segfault, à tous les coups** — quatre
+tentatives, quatre `SIGSEGV` de `python3.14` dans `coredumpctl`, chacun à la
+seconde du signal, jamais au démarrage. Pire, le script `/usr/bin/linuxcnc`
+qui l'enveloppe **survit** au SIGTERM et reste bloqué : cinq scripts fantômes
+se sont accumulés en une session, et le lancement suivant a échoué en
+demandant « LinuxCNC is still running. Restart it? » — un dialogue Tk qui
+ressemble à une panne du thème alors que c'est un reste. Il faut alors un
+`kill -9` sur le script.
+
+La sortie par le bouton **EXIT est propre** : aucun segfault, HAL et les
+segments NML libérés, zéro script résiduel. Mesuré le 13/08/2026, référence
+à 4 segfaults avant, 4 après.
+
+Le bouton appelle `self.QTVCP_INSTANCE_.close()`
+(`qtvcp/widgets/action_button.py:687`), donc une demande de fermeture du
+gestionnaire de fenêtres passe par le même chemin — utile pour scripter un
+arrêt propre :
+
+```bash
+qdbus6 org.kde.KWin /Scripting loadScript /tmp/fermer.js f && \
+  qdbus6 org.kde.KWin /Scripting/Script0 org.kde.kwin.Script.run
+```
+
+où le script appelle `closeWindow()` sur la fenêtre de classe `qtvcp`. Une
+confirmation « Do you want to Shutdown now? » s'ouvre ensuite : **viser
+`Alt+Y`, jamais la touche Entrée** — le troisième bouton est « System
+Shutdown », qui éteint l'ordinateur.
+
+Sous Wayland, XTEST **ne peut pas** déplacer le pointeur (le compositeur le
+possède, vérifié : la position ne bouge pas d'un pixel). Les événements
+clavier XTEST, eux, arrivent bien à la fenêtre XWayland qui a le focus X.
+
 ## Ce qui a été payé
 
 * **Le mot `S` par bloc arrête la machine.** Prouvé par deux fichiers jumeaux.
