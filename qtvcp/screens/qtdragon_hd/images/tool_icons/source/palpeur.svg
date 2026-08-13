@@ -1,12 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 240"
      width="160" height="240" role="img" aria-label="Palpeur">
   <title>Palpeur</title>
-  <!-- Pince et queue, communes a tous les dessins : c'est ce qui rend la
-       partie basse comparable d'un outil a l'autre. -->
-  <path d="M28 12 h104 a6 6 0 0 1 6 6 v34 a6 6 0 0 1 -6 6 h-104
-           a6 6 0 0 1 -6 -6 v-34 a6 6 0 0 1 6 -6 z" fill="#7c8592"/>
-  <rect x="46" y="58" width="68" height="12" rx="3" fill="#7c8592"/>
-  <rect x="66" y="66" width="28" height="84" fill="#a8b0bc"/>
-  <rect x="74" y="150" width="12" height="52" fill="#a8b0bc"/>
-  <circle cx="80" cy="214" r="18" fill="#ff9a1f"/>
+  <!-- Pince commune a tous les dessins : c'est elle qui rend les outils
+       comparables entre eux. Grise, toujours : elle n'est pas l'outil. -->
+  <path d="M28 12 h104 a6 6 0 0 1 6 6 v30 a6 6 0 0 1 -6 6 h-104
+           a6 6 0 0 1 -6 -6 v-30 a6 6 0 0 1 6 -6 z" fill="#7c8592"/>
+  <rect x="44" y="54" width="72" height="14" rx="3" fill="#7c8592"/>
+
+  <rect x="58" y="68" width="44" height="60" rx="5" fill="#ff9a1f"/>
+  <!-- Le ressort : ce qui distingue un palpeur d'un outil coupant. -->
+  <path d="M68 130 l24 10 l-24 10 l24 10 l-24 10 l24 10" stroke="#ff9a1f"
+        stroke-width="7" fill="none" stroke-linejoin="round"
+        stroke-linecap="round"/>
+  <rect x="76" y="182" width="8" height="20" fill="#a8b0bc"/>
+  <circle cx="80" cy="212" r="18" fill="#ff9a1f"/>
+  <circle cx="74" cy="206" r="5" fill="#14171b" opacity="0.3"/>
 </svg>

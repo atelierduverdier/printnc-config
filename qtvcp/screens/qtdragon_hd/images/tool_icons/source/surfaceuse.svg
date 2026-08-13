@@ -1,14 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 240"
      width="160" height="240" role="img" aria-label="Fraise a surfacer">
   <title>Fraise a surfacer</title>
-  <!-- Pince et queue, communes a tous les dessins : c'est ce qui rend la
-       partie basse comparable d'un outil a l'autre. -->
-  <path d="M28 12 h104 a6 6 0 0 1 6 6 v34 a6 6 0 0 1 -6 6 h-104
-           a6 6 0 0 1 -6 -6 v-34 a6 6 0 0 1 6 -6 z" fill="#7c8592"/>
-  <rect x="46" y="58" width="68" height="12" rx="3" fill="#7c8592"/>
-  <rect x="66" y="66" width="28" height="110" fill="#a8b0bc"/>
-  <path d="M34 176 h92 a8 8 0 0 1 8 8 v28 a8 8 0 0 1 -8 8 h-92
-           a8 8 0 0 1 -8 -8 v-28 a8 8 0 0 1 8 -8 z" fill="#ff9a1f"/>
-  <path d="M52 176 v44 M80 176 v44 M108 176 v44" stroke="#14171b"
-        stroke-width="5" opacity="0.55"/>
+  <!-- Pince commune a tous les dessins : c'est elle qui rend les outils
+       comparables entre eux. Grise, toujours : elle n'est pas l'outil. -->
+  <path d="M28 12 h104 a6 6 0 0 1 6 6 v30 a6 6 0 0 1 -6 6 h-104
+           a6 6 0 0 1 -6 -6 v-30 a6 6 0 0 1 6 -6 z" fill="#7c8592"/>
+  <rect x="44" y="54" width="72" height="14" rx="3" fill="#7c8592"/>
+
+  <rect x="66" y="68" width="28" height="108" fill="#ff9a1f"/>
+  <path d="M20 176 h120 a10 10 0 0 1 10 10 v26 a10 10 0 0 1 -10 10 h-120
+           a10 10 0 0 1 -10 -10 v-26 a10 10 0 0 1 10 -10 z" fill="#ff9a1f"/>
+  <!-- Les plaquettes, en creux : quatre encoches sur le pourtour. -->
+  <path d="M28 222 v-34 h18 v34 z M62 222 v-34 h18 v34 z
+           M96 222 v-34 h18 v34 z M130 222 v-34 h14 v34 z"
+        fill="#14171b" opacity="0.45"/>
 </svg>

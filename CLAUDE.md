@@ -253,12 +253,23 @@ chemin que le logo, et pour la même raison : `PyQt5.QtSvg` est un paquet
 séparé sur Debian, pas garanti sur le Raspberry Pi. Le SVG reste la source,
 éditable à Inkscape ; le runtime ne voit que des PNG.
 
-Leur grammaire tient en une règle : **l'orange marque la partie coupante, et
-seulement quand on sait la nommer.** La pince et la queue sont communes à
-tous, ce qui rend la partie basse comparable d'un outil à l'autre — c'est la
-silhouette qui distingue, pas le détail, parce qu'à 160 px sur une ardoise
-une goujure ne se lit pas alors qu'un fond plat contre un fond rond, si.
+Leur grammaire tient en une règle : **l'outil est orange sur toute sa
+longueur quand on sait le nommer, gris quand on l'ignore** (`inconnu`). La
+pince reste grise partout — elle n'est pas l'outil — et elle est commune à
+tous les dessins, ce qui rend la partie basse comparable de l'un à l'autre.
+C'est la **silhouette** qui distingue, pas le détail : à 160 px sur une
+ardoise une goujure ne se lit pas, un fond plat contre un fond rond, si.
 Aucun dessin n'emploie de `<text>` : pas de police dont dépendre.
+
+Deux reprises après retour de l'atelier, toutes deux sur la silhouette :
+
+* **le foret se confondait avec la fraise droite.** Trois différences les
+  séparent désormais, chacune visible de loin : la largeur (18 contre 28),
+  la pointe conique contre le fond plat, et un pas de goujure deux fois plus
+  serré.
+* **la fraise en V était une aiguille** — 28 de large sur 78 de haut, soit
+  20° d'angle. Une vraie est large et courte : 60 sur 52, environ 60°, et
+  son diamètre de coupe **dépasse la queue**, ce qui la signe de loin.
 
 Neuf dessins : `fraise_droite`, `fraise_demi_ronde`, `fraise_v`, `foret`,
 `surfaceuse`, `palpeur`, `laser`, `inconnu`, `aucun`. Le **laser manquait
