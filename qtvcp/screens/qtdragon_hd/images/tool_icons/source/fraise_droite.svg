@@ -8,11 +8,15 @@
   <rect x="44" y="54" width="72" height="14" rx="3" fill="#7c8592"/>
 
   <rect x="66" y="68" width="28" height="160" fill="#ff9a1f"/>
-    <path d="M66 108 Q80 101 94 92" stroke="#14171b" stroke-width="8" fill="none" opacity="0.5" stroke-linecap="round"/>
-    <path d="M66 134 Q80 127 94 118" stroke="#14171b" stroke-width="8" fill="none" opacity="0.5" stroke-linecap="round"/>
-    <path d="M66 160 Q80 153 94 144" stroke="#14171b" stroke-width="8" fill="none" opacity="0.5" stroke-linecap="round"/>
-    <path d="M66 186 Q80 179 94 170" stroke="#14171b" stroke-width="8" fill="none" opacity="0.5" stroke-linecap="round"/>
-    <path d="M66 212 Q80 205 94 196" stroke="#14171b" stroke-width="8" fill="none" opacity="0.5" stroke-linecap="round"/>
-  <!-- L'arete de coupe en bout, ce qui signe le fond plat. -->
-  <rect x="66" y="220" width="28" height="8" fill="#14171b" opacity="0.55"/>
+  <path d="M66 108 Q80 101 94 94" stroke="#14171b" stroke-width="8"
+        fill="none" opacity="0.5" stroke-linecap="round"/>
+  <path d="M66 136 Q80 129 94 122" stroke="#14171b" stroke-width="8"
+        fill="none" opacity="0.5" stroke-linecap="round"/>
+  <path d="M66 164 Q80 157 94 150" stroke="#14171b" stroke-width="8"
+        fill="none" opacity="0.5" stroke-linecap="round"/>
+  <path d="M66 192 Q80 185 94 178" stroke="#14171b" stroke-width="8"
+        fill="none" opacity="0.5" stroke-linecap="round"/>
+  <!-- L'arete de bout : le trait le plus franc du dessin, parce que c'est
+       lui qui s'oppose a la bille de la demi-ronde. -->
+  <rect x="66" y="214" width="28" height="9" fill="#14171b" opacity="0.6"/>
 </svg>

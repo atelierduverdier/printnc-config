@@ -7,12 +7,11 @@
            a6 6 0 0 1 -6 -6 v-30 a6 6 0 0 1 6 -6 z" fill="#7c8592"/>
   <rect x="44" y="54" width="72" height="14" rx="3" fill="#7c8592"/>
 
-  <rect x="58" y="68" width="44" height="60" rx="5" fill="#ff9a1f"/>
+  <rect x="58" y="68" width="44" height="58" rx="5" fill="#ff9a1f"/>
   <!-- Le ressort : ce qui distingue un palpeur d'un outil coupant. -->
-  <path d="M68 130 l24 10 l-24 10 l24 10 l-24 10 l24 10" stroke="#ff9a1f"
+  <path d="M68 128 l24 10 l-24 10 l24 10 l-24 10 l24 10" stroke="#ff9a1f"
         stroke-width="7" fill="none" stroke-linejoin="round"
         stroke-linecap="round"/>
-  <rect x="76" y="182" width="8" height="20" fill="#a8b0bc"/>
-  <circle cx="80" cy="212" r="18" fill="#ff9a1f"/>
-  <circle cx="74" cy="206" r="5" fill="#14171b" opacity="0.3"/>
+  <rect x="77" y="180" width="6" height="34" fill="#a8b0bc"/>
+  <circle cx="80" cy="221" r="12" fill="#a8b0bc"/>
 </svg>

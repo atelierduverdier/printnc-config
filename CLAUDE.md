@@ -270,6 +270,20 @@ Deux reprises après retour de l'atelier, toutes deux sur la silhouette :
 * **la fraise en V était une aiguille** — 28 de large sur 78 de haut, soit
   20° d'angle. Une vraie est large et courte : 60 sur 52, environ 60°, et
   son diamètre de coupe **dépasse la queue**, ce qui la signe de loin.
+* **la demi-ronde ne se distinguait pas de la droite** : un bout rond de même
+  diamètre que le corps n'en diffère que par un rayon de 14 sur 160, ce qui
+  ne se voit pas. Son bout est désormais **plus large que le corps** (76 px
+  contre 56 au rendu) — géométriquement une hémisphérique à col dégagé, et la
+  seule exagération qui rende la différence lisible. Attention en la
+  retouchant : la première tentative en avait fait une bille au bout d'une
+  tige, et elle se confondait alors avec le **palpeur**. Celui-ci garde donc
+  une bille PETITE et GRISE au bout d'une tige fine, là où la fraise a un
+  bout rond ORANGE dans le prolongement de son corps.
+
+**Juger les dessins à la taille du cadre, 159×192, et pas agrandis.** Un
+montage à grande échelle m'a fait croire que la demi-ronde était plus étroite
+que la droite ; la mesure au pixel disait 56 contre 56. C'est l'œil qui se
+trompait, pas le fichier.
 
 Neuf dessins : `fraise_droite`, `fraise_demi_ronde`, `fraise_v`, `foret`,
 `surfaceuse`, `palpeur`, `laser`, `inconnu`, `aucun`. Le **laser manquait
