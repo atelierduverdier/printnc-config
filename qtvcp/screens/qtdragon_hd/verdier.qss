@@ -1,0 +1,569 @@
+/* Thème « Atelier du Verdier » pour qtdragon_hd.
+   ENGENDRÉ par outils/faire_theme.py depuis le dark.qss de LinuxCNC.
+   Ne pas éditer ici : corriger la palette du script et relancer.
+   Orange #ff9a1f sur ardoise #14171b — la charte du site.
+   Le couple rouge/vert de l'arrêt d'urgence et de la mise sous
+   tension est LAISSÉ INTACT : c'est un état machine, pas un
+   ornement. */
+
+QMainWindow {
+    background: #14171b;
+}
+
+QStatusBar {
+    background: #1a1e23;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
+}
+
+/** Pushbuttons **/
+QToolButton,
+QPushButton,
+ActionButton,
+SystemToolButton,
+AxisToolButton,
+QToolButton {
+    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #39414d,  stop:0.3 #14171b);
+    border: 1px solid brown;
+    border-radius: 4px;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
+}
+
+QToolButton:checked,
+QToolButton:pressed {
+    border-color: #ff9a1f;
+    color: #ff9a1f;
+}
+
+QPushButton:checked,
+QPushButton:pressed {
+    border-color: #ff9a1f;
+    color: #ff9a1f;
+}
+
+QPushButton:hover,
+ActionButton:hover,
+SystemToolButton:hover,
+AxisToolButton:hover {
+    border: 1px solid #ff9a1f;
+}
+
+QPushButton:disabled,
+ActionButton:disabled {
+    color: gray;
+}
+
+ActionButton#action_machine_on {
+/*    border: none;*/
+    color: #FF0000;
+}
+
+ActionButton#action_machine_on[isStateOn=true] {
+    color: #00FF00;
+}
+
+ActionButton#action_estop {
+    border-color: #00FF00;
+    color: #00FF00;
+}
+
+ActionButton#action_estop:checked {
+    border-color: #FF0000;
+    color: #FF0000;
+}
+
+QLabel {
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
+}
+
+DROLabel, 
+QLabel#label_axis_x,
+QLabel#label_axis_y,
+QLabel#label_axis_z,
+QLabel#label_axis_a,
+QLabel#label_axis_4,
+QLabel#label_axis_5 {
+    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #39414d,  stop:0.3 #14171b);
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+    font: bold 20pt "Noto Sans";
+    color: #ff9a1f;
+}
+
+DROLabel[isHomed=false] {
+    color: red;
+}
+
+QLabel#lbl_cycle_start,
+QLabel#lbl_home_all {
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
+}
+
+StatusLabel, StateLabel {
+    background: #2a3038;
+    border: 1px solid gray;
+    border-radius: 4px;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
+}
+
+QLineEdit {
+    background: #2a3038;
+    border: 1px solid gray;
+    border-radius: 4px;
+    font: bold 10pt "Noto Sans";
+    color:#e6e9ee;
+}
+
+CalculatorDialog QLineEdit {
+    font: bold 16pt "Noto Sans";
+}
+
+QLineEdit#mdiline{
+    background: #1a1e23;
+    color: #2a3038;
+}
+
+QTextEdit {
+    background: #1a1e23;
+    font: 10pt "Noto Sans";
+    color: #e6e9ee;
+}
+
+QCheckBox {
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
+    margin: 4px;
+}
+
+QCheckBox::disabled {
+    height: 14px;
+    width: 14px;
+}
+
+QCheckBox::indicator:checked {
+    image: url(:/buttons/images/checked.png);
+    background-color: #14171b;
+    height: 14px;
+    width: 14px;
+}
+
+QCheckBox::indicator:unchecked {
+    image: url(:/buttons/images/unchecked.png);
+    background-color: #e6e9ee;
+    height: 14px;
+    width: 14px;
+}
+
+QComboBox {
+    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #39414d,  stop:0.3 #14171b);
+    border: 1px solid #2a3038;
+    padding-left: 4px;
+    padding-right: 4px;
+    min-width: 100px;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;    
+}
+
+QComboBox QAbstractItemView {
+    background-color: #14171b;
+    color: #e6e9ee;
+}
+
+QComboBox:drop-down {
+    subcontrol-origin: margin;
+    subcontrol-position: top right;
+    width: 20px;
+}
+
+QComboBox::item {
+    background-color: #14171b;
+    color: #e6e9ee;
+}
+
+QComboBox::item:selected {
+    background-color: #22272e;
+    color: #ff9a1f;
+}
+
+QComboBox::Indicator {
+    background-color: transparent;
+    color: transparent;
+}
+
+QGroupBox {
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+    margin-top: 16px;
+    font: bold 10pt "Noto Sans";
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    padding: 0 3px;
+    color: #2a3038;
+}
+
+QProgressBar {
+    background-color: #a8b0bc;
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+    font: bold 9pt "Noto Sans";
+    color: #20160a;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1: 0, y1: 0.2, x2: 1, y2: 1,
+    stop: 0 #ffab45, stop: 1 #ff9a1f);
+}
+
+.QFrame {
+    background: #22272e;
+    border: 1px solid orange;
+}
+
+QFrame#frame_cycle_start,
+QFrame#frame_home_all {
+    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #39414d,  stop:0.3 #14171b);
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
+}
+
+QFrame#frame_cycle_start:hover,
+QFrame#frame_home_all:hover {
+    border: 1px solid #ff9a1f;
+}
+
+QHeaderView {
+    background-color: #22272e;
+    border: 0px transparent #2a3038;
+    padding: 0px;
+    margin: 0px;
+    border-radius: 0px;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
+}
+
+QHeaderView::section::vertical::first,
+QHeaderView::section::vertical::only-one {
+    width: 60px;
+}
+
+OriginOffsetView, ToolOffsetView {
+    font: bold 10pt "Noto Sans";
+}
+
+QSlider::groove:horizontal {
+    background: #22272e;
+    height: 12px;
+    border-radius: 4px;
+}
+
+QSlider::groove:vertical {
+    background: #22272e;
+    width: 12px;
+    border-radius: 4px;
+}
+
+QSlider::sub-page:horizontal {
+    background: qlineargradient(x1: 0, y1: 0.2, x2: 1, y2: 1, stop: 0 #ffab45, stop: 1 #ff9a1f);
+    border: 1px solid #2a3038;
+    height: 10px;
+    border-radius: 4px;
+}
+
+QSlider::sub-page:vertical {
+    background: #22272e;
+    border: 1px solid #2a3038;
+    width: 10px;
+    border-radius: 4px;
+}
+
+QSlider::add-page:horizontal {
+    background: #22272e;
+    border: 1px solid #2a3038;
+    height: 10px;
+    border-radius: 4px;
+}
+
+QSlider::add-page:vertical {
+    background: qlineargradient(x1: 0, y1: 0,    x2: 0, y2: 1, stop: 0 #ff9a1f, stop: 1 #ffab45);
+    border: 1px solid #2a3038;
+    width: 10px;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #e6e9ee, stop:1 #a8b0bc);
+    border: 1px solid #2a3038;
+    width: 14px;
+    margin-top: -4px;
+    margin-bottom: -4px;
+    border-radius: 4px;
+}
+
+QSlider::handle:vertical {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #e6e9ee, stop:1 #a8b0bc);
+    border: 1px solid #2a3038;
+    height: 14px;
+    margin-left: -4px;
+    margin-right: -4px;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal:hover, QSlider::handle:vertical:hover  {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #e6e9ee, stop:1 #a8b0bc);
+    border: 1px solid #353c46;
+    border-radius: 4px;
+}
+
+QSlider::sub-page:horizontal:disabled, QSlider::sub-page:vertical:disabled {
+    background: #7c8592;
+    border-color: #7c8592;
+}
+
+QSlider::add-page:horizontal:disabled,
+QSlider::add-page:vertical:disabled{
+    background: #22272e;
+    border-color: #7c8592;
+}
+
+QSlider::handle:horizontal:disabled,
+QSlider::handle:vertical:disabled{
+    background: #7c8592;
+    border: 1px solid #353c46;
+    border-radius: 4px;
+}
+
+/* warning colors for overrides if out of normal range*/
+
+    #slider_spindle_ovr[alertState='over'] {
+        background: red;
+    }
+    #slider_feed_ovr[alertState='over'] {
+        background: red;
+    }
+    #slider_feed_ovr[alertState='under'] {
+        background: yellow;
+    }
+
+QDialog,
+LcncDialog,
+ToolDialog,
+CloseDialog,
+EntryDialog,
+CalculatorDialog {
+background-color: gray;
+}
+
+LcncDialog QPushButton,
+ToolDialog QPushButton,
+AboutDialog QPushButton {
+    width: 100px;
+    height: 40px;
+}
+
+RunFromLineDialog QPushButton,
+CalculatorDialog QPushButton,
+EntryDialog QPushButton,
+CloseDialog QPushButton {
+    width: 80px;
+    height: 40px;
+}
+
+
+QMenu {
+    background-color: #1a1e23; /* sets background of the menu */
+    border: 1px solid #2a3038;
+    color: #e6e9ee;
+}
+
+QMenu::item {
+    /* sets background of menu item. set this to something non-transparent
+        if you want menu color and menu item color to be different */
+    background-color: gray;
+}
+
+QMenu::item:selected { /* when user selects item using mouse or keyboard */
+    background-color: darkblue;
+}
+
+QHeaderView::section {
+    background-color:  foregnd;
+    color: #e6e9ee;
+    border: 1px solid #2a3038;
+}
+
+QSpinBox {
+    padding-right: 15px; /* make room for the arrows */
+    border-width: 3px;
+    height: 40px;
+}
+
+QSpinBox::down-button {
+    width: 20px;
+    height: 20px;
+}
+
+QSpinBox::down-arrow {
+    width: 20px;
+    height: 20px;
+}
+
+QSpinBox::up-button {
+    width: 20px;
+    height: 20px;
+}
+
+QSpinBox::up-arrow {
+    width: 20px;
+    height: 20px;
+}
+
+/** Tab Widget **/
+QTabWidget::pane {
+  border: 1px solid gray;
+  top:-1px;
+background-color: #22272e;
+     
+}
+
+/* Style the tab using the tab sub-control. Note that
+    it reads QTabBar _not_ QTabWidget */
+QTabBar::tab {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #22272e, stop: 0.4 #22272e,
+                                stop: 0.5 #1a1e23, stop: 1.0 #1a1e23);
+    border: 2px solid #2a3038;
+    border-bottom-color: #2a3038; /* same as the pane color */
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    min-width: 8ex;
+    min-height: 3.5ex;
+    padding: 2px;
+    color: #a8b0bc;
+}
+
+QTabBar::tab:selected, QTabBar::tab:hover {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #22272e, stop: 0.4 #22272e,
+                                stop: 0.5 #39414d, stop: 1.0 #22272e);
+}
+
+QTabBar::tab:selected {
+    border-color: #ff9a1f;
+    border-bottom-color: #ff9a1f;; /* same as pane color */
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px; /* make non-selected tabs look smaller */
+}
+
+
+
+/* ================================================================
+   AJOUTÉ PAR faire_theme.py — absent de dark.qss
+   ================================================================ */
+
+/** Le visualiseur de G-code. QsciScintilla ignore les regles QSS
+    ordinaires : tout passe par des proprietes Qt. **/
+EditorBase {
+    /* Le cadre du QAbstractScrollArea, distinct du fond du texte : sans
+       cette ligne il reste en gris clair tout autour de l'editeur. */
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+    qproperty-styleColorBackground: #14171b;
+    qproperty-styleColorMarginBackground: #1a1e23;
+    qproperty-styleColorMarginText: #7c8592;        /* numeros de ligne */
+    qproperty-styleColorMarkerBackground: #22272e;   /* ligne courante */
+    qproperty-styleColorSelectionBackground: #ff9a1f;
+    qproperty-styleColorSelectionText: #20160a;
+    qproperty-styleFont: "DejaVu Sans Mono, 11";
+    qproperty-styleFont1: "DejaVu Sans Mono, 10";        /* commentaires */
+    qproperty-styleFontMargin: "DejaVu Sans Mono, 9";
+    qproperty-styleColor0: #e6e9ee;                   /* ordinaire */
+    qproperty-styleColor1: #7c8592;                 /* commentaires */
+    qproperty-styleColor2: #5cc7fa;               /* codes G */
+    qproperty-styleColor3: #ffd94d;              /* codes M */
+    qproperty-styleColor4: #a8b0bc;                 /* lettres d'axe */
+    qproperty-styleColor5: #a8b0bc;                 /* avance, broche... */
+    qproperty-styleColor6: #e6e9ee;                   /* valeurs d'axe */
+    qproperty-styleColor7: #e6e9ee;                   /* autres valeurs */
+}
+
+/** `gcode_description` : une plage blanche sans cette regle. **/
+QPlainTextEdit {
+    background: #1a1e23;
+    color: #e6e9ee;
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+}
+
+/** `gcode_list` : blanche elle aussi, sans cette regle. **/
+QListWidget {
+    background: #1a1e23;
+    color: #e6e9ee;
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+    outline: none;
+}
+
+QListWidget::item:selected {
+    background: #ff9a1f;
+    color: #20160a;
+}
+
+/** Les infobulles : QUATRE-VINGT-DIX-NEUF widgets en portent une, et sans
+    regle elles sortent en jaune pale sur toute l'interface. **/
+QToolTip {
+    background: #22272e;
+    color: #e6e9ee;
+    border: 1px solid #353c46;
+    border-radius: 4px;
+    padding: 4px 7px;
+}
+
+/** Barres de defilement. dark.qss n'en a AUCUNE : celle du visualiseur de
+    G-code ressort en gris clair au milieu de l'ardoise. **/
+QScrollBar:vertical {
+    background: #1a1e23;
+    width: 14px;
+    margin: 0;
+    border: none;
+}
+
+QScrollBar:horizontal {
+    background: #1a1e23;
+    height: 14px;
+    margin: 0;
+    border: none;
+}
+
+QScrollBar::handle:vertical,
+QScrollBar::handle:horizontal {
+    background: #353c46;
+    border-radius: 5px;
+    min-height: 28px;
+    min-width: 28px;
+    margin: 2px;
+}
+
+QScrollBar::handle:vertical:hover,
+QScrollBar::handle:horizontal:hover {
+    background: #ff9a1f;
+}
+
+/* Les fleches d'extremite : on les efface plutot que de les peindre. Sans
+   ces quatre regles Qt dessine ses fleches par defaut, en gris clair. */
+QScrollBar::add-line, QScrollBar::sub-line {
+    height: 0; width: 0; border: none; background: none;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page {
+    background: none;
+}
