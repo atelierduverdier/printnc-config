@@ -145,6 +145,12 @@ class HandlerClass:
         STATUS.connect('user-system-changed', lambda w, data: self.user_system_changed(data))
         STATUS.connect('metric-mode-changed', lambda w, mode: self.metric_mode_changed(mode))
         STATUS.connect('file-loaded', self.file_loaded)
+        # Le logo se retire des que la vue de gauche porte quelque chose, et
+        # elle se remplit SANS qu'un fichier soit charge : l'historique MDI en
+        # mode MDI, le journal machine en manuel. Voir reevaluer_logo.
+        for signal in ('mode-mdi', 'mode-manual', 'mode-auto',
+                       'mdi-history-changed'):
+            STATUS.connect(signal, self.reevaluer_logo_apres_coup)
         STATUS.connect('all-homed', self.all_homed)
         STATUS.connect('not-all-homed', self.not_all_homed)
         STATUS.connect('periodic', lambda w: self.periodic_update())
@@ -946,6 +952,58 @@ class HandlerClass:
     def cacher_logo(self):
         if getattr(self, '_logo', None) is not None:
             self._logo.hide()
+
+    def vue_gcode_vide(self):
+        """La vue de gauche est-elle reellement vide ?"""
+        vue = getattr(self.w, self.ANCRE_LOGO, None)
+        if vue is None:
+            return False
+        # GcodeEditor enveloppe l'editeur ; selon les versions on tombe sur
+        # l'un ou sur l'autre. On demande au plus interieur qui sache lire.
+        for cible in (getattr(vue, 'editor', None), vue):
+            if cible is not None and hasattr(cible, 'text'):
+                try:
+                    return not cible.text().strip()
+                except Exception:
+                    pass
+        return False
+
+    def reevaluer_logo(self, *_):
+        """Le logo ne se montre que sur une vue VIDE.
+
+        LE DEFAUT PAYE (photo de l'atelier, 17/08/2026) : le logo posait sur
+        l'historique MDI. Il ne suffit PAS de le cacher au chargement d'un
+        fichier, parce que la vue se remplit aussi TOUTE SEULE, sans qu'aucun
+        programme ne soit charge. `auto_show_mdi` vaut vrai par defaut sur ce
+        widget — le `gcode_editor` de la page FILE le met a false, le
+        `gcode_viewer` ne le fait pas — donc passer en MDI y deverse
+        l'historique des commandes, et `auto_show_manual` y met le journal
+        machine. Le signal `file-loaded` n'avait alors jamais ete emis, et le
+        logo restait affiche EN TOUTE LOGIQUE : c'est la regle qui etait
+        fausse, pas le code qui l'appliquait.
+
+        D'ou une regle qui ne depend d'AUCUN signal : on lit ce que la vue
+        CONTIENT. Un signal qu'on oublie de brancher redonne le defaut ; un
+        contenu, non.
+        """
+        if getattr(self, '_logo', None) is None:
+            return
+        if self.vue_gcode_vide():
+            self._logo.show()
+            self.placer_logo()
+        else:
+            self._logo.hide()
+
+    def reevaluer_logo_apres_coup(self, *_):
+        """Re-evaluer APRES que les autres destinataires du signal ont agi.
+
+        Le widget de la vue s'abonne lui aussi a `mode-mdi` pour y charger
+        l'historique. Si notre abonnement passe avant le sien, on lirait la
+        vue d'avant et on conclurait « vide » a tort. Un delai de zero
+        milliseconde suffit : il ne temporise pas, il place l'appel apres la
+        salve d'evenements en cours, quel que soit l'ordre d'abonnement.
+        """
+        QtCore.QTimer.singleShot(0, self.reevaluer_logo)
 
     # ------------------------------------------------------------------
     # Le bouton « MAJ DEPUIS SERVEUR », page FILE

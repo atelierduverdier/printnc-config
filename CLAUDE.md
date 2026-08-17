@@ -434,9 +434,32 @@ lui-même en refusant de démarrer.
 ### Le logo de la machine, et les trois murs rencontrés
 
 `qtvcp/screens/qtdragon_hd/images/logo-verdier.png` s'affiche **au centre du
-panneau de gauche tant qu'aucun programme n'est chargé**, et disparaît au
-premier fichier. Règle reprise du visualiseur de parcours : une marque qui
+panneau de gauche tant que cette vue est VIDE**, et se retire dès qu'elle porte
+quelque chose. Règle reprise du visualiseur de parcours : une marque qui
 reste par-dessus le travail devient un tampon sur le pare-brise.
+
+**La règle disait « tant qu'aucun programme n'est chargé » — et c'était faux.**
+Photo de l'atelier le 17/08/2026 : le logo posé en travers de l'historique MDI,
+alors qu'aucun fichier n'était chargé. Le code était juste, la règle ne l'était
+pas : **la vue se remplit toute seule**, sans qu'on charge quoi que ce soit.
+`auto_show_mdi` vaut vrai par défaut sur ce widget — le `gcode_editor` de la
+page FILE le met à `false`, le `gcode_viewer` ne le fait pas — donc passer en
+MDI y déverse l'historique des commandes, et `auto_show_manual` y met le
+journal machine. Le signal `file-loaded` n'était jamais parti, et le logo
+restait affiché **en toute logique**.
+
+D'où une visibilité qui **ne dépend d'aucun signal** : `reevaluer_logo()` lit ce
+que la vue *contient*. Un signal qu'on oublie de brancher redonne le défaut ;
+un contenu, non. Les signaux (`mode-mdi`, `mode-manual`, `mode-auto`,
+`mdi-history-changed`) ne servent plus qu'à *déclencher* la relecture, et elle
+passe par un `QTimer.singleShot(0, …)` : le widget de la vue s'abonne lui aussi
+à `mode-mdi` pour y charger l'historique, et sans ce report on lirait la vue
+d'avant selon l'ordre des abonnements. Zéro milliseconde ne temporise pas, ça
+place l'appel après la salve en cours.
+
+Éprouvé hors écran sur un vrai `GcodeEditor`, les quatre cas : vue neuve →
+visible, vue portant du G-code → caché, vue de blancs seulement → visible,
+vue revidée → il revient.
 
 C'est le **logo complet** — chapeau, « PrintNC », « Orange Mécanique » — et
 non le chapeau seul : la machine EST une PrintNC, et le dessin le dit. Le
