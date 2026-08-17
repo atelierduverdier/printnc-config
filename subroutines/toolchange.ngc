@@ -51,30 +51,31 @@ O<toolchange> sub
 
 ; =====================================================================
 ; APPROCHE RAPIDE — LASER UNIQUEMENT
-; Le nez du laser touche la pastille vers Z-48 (machine) : descendre
-; depuis Z0 a 400 mm/min faisait pres de 50 mm de palpage pour rien. On
-; tombe donc en G0 jusqu'a Z-40, et le palpage ne commence que la.
+; Le nez du laser touche la pastille a Z -51,11 (machine) : descendre
+; depuis Z0 a 400 mm/min faisait plus de 50 mm de palpage pour rien. On
+; tombe donc en G0 jusqu'a Z-45, et le palpage ne commence que la. Il
+; reste 6,1 mm a palper, une seconde.
 ;
-; -48 est MESURE, pas estime : suivi image par image d'une video de
-; palpage (17/08/2026), l'echelle prise sur le palier a 400 mm/min. Le
-; G0 s'arretait alors a -30 et il restait 18,9 mm a palper, pas 15. Le
-; -45 d'abord ecrit ici etait un chiffre de tete, et c'est lui qui avait
-; fait choisir -30 par prudence : la marge a -40 n'est pas de 5 mm mais
-; de 8 a 9. La ligne DEBUG "contact Z machine" plus bas donne le chiffre
-; exact a chaque palpage — s'y fier plutot qu'a ce commentaire.
+; -51,11 est MESURE, le 17/08/2026, et par deux chemins qui se
+; recoupent : la ligne DEBUG "contact Z machine" ci-dessous, et une
+; video de l'ecran ou le DRO passe -49,240 a 7 s puis -50,945 a 9 s.
+; Deux estimations anterieures etaient fausses -- un "vers -45" de tete,
+; puis un suivi video du nez a 7 % d'echelle pres qui donnait -47,6.
+; C'est le premier qui avait fait reculer l'approche a -30 par prudence,
+; pour une marge qui n'existait pas. Se fier au DEBUG, pas au souvenir.
 ;
 ; Reserve au laser, et ce n'est pas un oubli : sa geometrie est FIXE,
 ; celle d'une fraise ne l'est pas. Un outil court touche plus bas, un
-; outil long touche BIEN PLUS HAUT que -40 — une descente rapide en
+; outil long touche BIEN PLUS HAUT que -45 — une descente rapide en
 ; aveugle le planterait dans le palpeur. Les fraises gardent donc leur
 ; palpage depuis Z0.
 ;
 ; A REVERIFIER SI LE LASER BOUGE SUR SA GLISSIERE : descendre le laser
-; de plus de 8 mm sur son porte-broche ferait toucher AVANT la fin du
+; de plus de 6 mm sur son porte-broche ferait toucher AVANT la fin du
 ; G0, donc en rapide. Refaire un palpage, lire le "contact Z machine"
-; imprime plus bas et garder cette valeur au moins 8 mm au-dessus.
+; imprime plus bas et garder cette valeur au moins 6 mm au-dessus.
 ; =====================================================================
-#<z_approche_laser>   = -40.0   ; Z machine ou demarre le palpage laser
+#<z_approche_laser>   = -45.0   ; Z machine ou demarre le palpage laser
 
 ; =====================================================================
 ; CAPTURE DE L'OUTIL DEMANDE
@@ -215,7 +216,14 @@ G4 P0.3                        ; Pause de 300ms pour stabiliser l'entrée Probe
 ; On le ramene en machine avec les offsets actifs -- G54 (#5223) et G92
 ; (#5213). Attention si un G43 est actif : la longueur d'outil (#5403)
 ; s'y ajouterait, ce qui n'est pas le cas au palpage du premier outil.
-(DEBUG, touch_z = [#<touch_z>] -- contact Z machine = [#5063 + #5223 + #5213])
+;
+; Le calcul se fait AVANT, dans sa variable : (DEBUG,...) substitue les
+; parametres mais N'EVALUE PAS l'arithmetique. Ecrite dans le message,
+; l'addition s'imprimait telle quelle -- "[47.476638 + -98.589138 +
+; 0.000000]" -- soit trois nombres a soustraire de tete. Meme famille
+; que le (MSG,...) qui ne developpe rien. Mesure le 17/08/2026.
+#<contact_machine> = [#5063 + #5223 + #5213]
+(DEBUG, touch_z = [#<touch_z>] -- contact Z machine = [#<contact_machine>])
 M71                            ; Restore etat modal sauvegarde
 
 ; =====================================================================
