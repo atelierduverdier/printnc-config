@@ -947,6 +947,105 @@ class HandlerClass:
         if getattr(self, '_logo', None) is not None:
             self._logo.hide()
 
+    # ------------------------------------------------------------------
+    # Le bouton « MAJ DEPUIS SERVEUR », page FILE
+    # ------------------------------------------------------------------
+    # Le partage du serveur est la REFERENCE des G-code : il est sauvegarde,
+    # et surtout il est accessible quand la machine est eteinte, ce qui est
+    # l'etat normal de l'atelier. `nc_files` n'est qu'un CACHE JETABLE.
+    #
+    # Pourquoi copier plutot que graver depuis le partage : LinuxCNC lit le
+    # programme au fil de l'execution. Une coupure reseau au milieu d'un
+    # nuancier de 3 Mo — plusieurs heures — casserait la gravure.
+    #
+    # UN SEUL SENS, serveur -> machine. Le script sait aussi pousser, mais
+    # ce bouton ne le fait pas : deux sens automatiques, et la question de
+    # savoir quelle copie fait foi se poserait un jour, au mauvais moment.
+    #
+    # Le bouton est un QPushButton NU, et non un IndicatedPushButton comme
+    # ses voisins : ceux-la portent isOnSensitive / isAllHomedSensitive /
+    # isIdleSensitive et seraient grises tant que la machine n'est pas sous
+    # tension et referencee. Recopier des fichiers n'a aucune raison
+    # d'attendre une prise d'origine.
+
+    SCRIPT_SYNC = os.path.join('outils', 'sync-gcode.sh')
+
+    def chercher_script(self, relatif):
+        """Un script du depot, cherche comme qtvcp cherche ses fichiers.
+
+        Meme raison que pour chercher_image : ni __file__ ni IMAGEDIR ne
+        designent le dossier de la configuration.
+        """
+        chemin = os.path.join(PATH.CONFIGPATH, relatif)
+        return chemin if os.path.isfile(chemin) else None
+
+    def btn_sync_gcode_clicked(self, state=None):
+        # QProcess et non subprocess.run : rsync sur un montage CIFS peut
+        # durer plusieurs secondes sur les gros fichiers, et une attente
+        # bloquante figerait toute l'interface — y compris l'arret d'urgence.
+        if getattr(self, '_sync', None) is not None:
+            self.add_status("SYNC: deja en cours", WARNING)
+            return
+
+        script = self.chercher_script(self.SCRIPT_SYNC)
+        if script is None:
+            self.add_status("SYNC: %s introuvable dans la configuration"
+                            % self.SCRIPT_SYNC, CRITICAL)
+            return
+
+        self.w.btn_sync_gcode.setEnabled(False)
+        self.add_status("SYNC: recopie du serveur en cours...")
+
+        self._sync = QtCore.QProcess(self.w)
+        self._sync.setProcessChannelMode(QtCore.QProcess.MergedChannels)
+        self._sync.finished.connect(
+            lambda code, statut: self.sync_gcode_termine(code))
+        # « go » : sans lui le script s'arrete en mode essai et ne copie RIEN,
+        # ce qui ressemblerait a un succes.
+        self._sync.start('/bin/bash', [script, 'go'])
+
+    def sync_gcode_termine(self, code):
+        sortie = ''
+        try:
+            sortie = bytes(self._sync.readAll()).decode('utf-8', 'replace')
+        except Exception:
+            pass
+        self._sync = None
+        self.w.btn_sync_gcode.setEnabled(True)
+
+        if code != 0:
+            # Le cas courant est le partage non monte, serveur eteint : le
+            # script le dit lui-meme et sort en 1. On remonte SA phrase.
+            motif = next((l for l in sortie.splitlines() if 'ERREUR' in l),
+                         "code de sortie %s" % code)
+            self.add_status("SYNC: echec — %s" % motif, CRITICAL)
+            return
+
+        # Comptage heuristique : rsync -v liste un nom de fichier par ligne,
+        # au milieu de ses lignes de service. On ne retient que ce qui ressemble
+        # a un programme. Le chiffre est indicatif ; le verdict est le code de
+        # sortie ci-dessus.
+        repris = [l for l in sortie.splitlines()
+                  if l and not l.startswith((' ', '>', 'sending', 'sent',
+                                             'total', 'created'))
+                  and l.lower().endswith(('.ngc', '.nc', '.tap', '.gcode'))]
+        if repris:
+            self.add_status("SYNC: %d fichier(s) repris du serveur — %s"
+                            % (len(repris), ', '.join(repris[:3])
+                               + (' ...' if len(repris) > 3 else '')))
+        else:
+            self.add_status("SYNC: termine, rien de nouveau sur le serveur")
+
+        # Sans ce rafraichissement, les fichiers sont bien sur le disque mais
+        # la liste continue d'afficher l'ancien contenu : l'utilisateur croit
+        # que le bouton n'a rien fait.
+        fm = getattr(self.w, 'filemanager', None)
+        if fm is not None:
+            dossier = getattr(fm, 'currentFolder', None) or \
+                getattr(fm, 'user_path', None)
+            if dossier:
+                fm.updateDirectoryView(dossier, quiet=True)
+
     def file_loaded(self, obj, filename):
         self.cacher_logo()
         if os.path.basename(filename).count('.') > 1:

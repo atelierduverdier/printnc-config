@@ -241,6 +241,49 @@ Le `.ui` et le gestionnaire portent de vraies retouches : on ne les supprime
 donc pas. Les remettre à niveau demande de rejouer ces retouches sur la base
 1.6 — un vrai chantier, à faire sciemment, pas au détour d'autre chose.
 
+### Les G-code : le serveur fait foi, la machine a un cache
+
+**Le partage `/mnt/srv-partage/Gcode` est la RÉFÉRENCE.** LaserAtelier y écrit
+(`settings.gcode_dir`), il est sauvegardé par Borg, et surtout il est accessible
+**quand la machine est éteinte** — l'état normal de l'atelier. `~/linuxcnc/nc_files`
+n'est qu'un **cache jetable**.
+
+Le partage est déjà monté sur le Pi (CIFS + automontage, `//srv.local/Partage`), donc
+**il n'y a rien à synchroniser en tâche de fond** : un rsync périodique fabriquerait une
+seconde copie vivant sa vie, avec la question de savoir laquelle fait foi.
+
+Mais **on ne grave pas depuis le partage** : LinuxCNC lit le programme au fil de
+l'exécution, et une coupure réseau au milieu d'un nuancier de 3 Mo — plusieurs heures —
+casserait la gravure. D'où la copie locale, explicite, avant de graver. *(Prudence d'usage,
+pas encore mesurée : à vérifier pendant une vraie gravure avec
+`ls -l /proc/$(pgrep milltask)/fd`.)*
+
+D'où le bouton **« MAJ DEPUIS SERVEUR »**, page FILE, à côté de `GCODE EDIT` :
+
+- il appelle `outils/sync-gcode.sh go` — le script de Christophe, **remonté dans le dépôt**
+  le 17/08/2026. Il vivait dans `~/Scripts/` sur le Pi seulement ; cette copie-là est
+  désormais un doublon, et un doublon de script finit par diverger de celui qu'on appelle.
+  Le `go` n'est pas décoratif : sans lui le script reste en mode essai et ne copie **rien**,
+  ce qui ressemble à un succès.
+- **un seul sens, serveur → machine.** Le script sait aussi pousser, mais pas le bouton :
+  deux sens automatiques et la question du « qui fait foi » se poserait un jour.
+- `QProcess` et non `subprocess.run` : rsync sur CIFS peut durer, et une attente bloquante
+  figerait toute l'interface, arrêt d'urgence compris.
+- **`QPushButton` nu, pas `IndicatedPushButton`.** Ses voisins portent `isOnSensitive`,
+  `isAllHomedSensitive`, `isIdleSensitive` et seraient grisés tant que la machine n'est pas
+  sous tension et référencée. Recopier des fichiers n'a aucune raison d'attendre une prise
+  d'origine — c'est même l'inverse : on prépare avant d'allumer.
+- il rafraîchit la vue du gestionnaire de fichiers en fin de course. Sans ça les fichiers
+  sont bien sur le disque mais la liste montre l'ancien contenu, et le bouton a l'air inerte.
+- l'échec le plus courant est le serveur éteint : le script sort en 1 avec sa propre phrase,
+  et le bouton la remonte telle quelle dans la barre d'état.
+
+**Un bouton se raccorde dans le `<connections>` du `.ui`**, pas par convention de nom :
+`sender` / `clicked()` / `receiver MainWindow` / `slot btn_xxx_clicked()`. Une connexion
+vers un slot absent fait **échouer le chargement du `.ui`** — donc l'écran entier. Éprouvé
+hors écran avant de pousser : les 54 connexions se résolvent, le bouton existe, il est
+actif, et un clic simulé appelle bien `btn_sync_gcode_clicked`.
+
 ### Le voyant LASER ARME
 
 Panneau **INPUTS**, juste sous PROBE, rouge et non vert : un laser sous

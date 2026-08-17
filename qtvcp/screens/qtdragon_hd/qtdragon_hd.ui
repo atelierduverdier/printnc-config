@@ -2053,6 +2053,39 @@ GCODE</string>
                          </property>
                         </widget>
                        </item>
+                       <item>
+                        <widget class="QPushButton" name="btn_sync_gcode">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="minimumSize">
+                          <size>
+                           <width>80</width>
+                           <height>50</height>
+                          </size>
+                         </property>
+                         <property name="maximumSize">
+                          <size>
+                           <width>80</width>
+                           <height>50</height>
+                          </size>
+                         </property>
+                         <property name="toolTip">
+                          <string>Recopie les G-code du serveur vers le dossier local. Sens unique : serveur vers machine.</string>
+                         </property>
+                         <property name="text">
+                          <string>MAJ
+DEPUIS
+SERVEUR</string>
+                         </property>
+                         <property name="checkable">
+                          <bool>false</bool>
+                         </property>
+                        </widget>
+                       </item>
                       </layout>
                      </widget>
                     </item>
@@ -17119,6 +17152,12 @@ ANGULAR</string>
   <include location="../qtdragon/qtdragon.qrc"/>
  </resources>
  <connections>
+  <connection>
+   <sender>btn_sync_gcode</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>btn_sync_gcode_clicked()</slot>
+  </connection>
   <connection>
    <sender>btn_load_file</sender>
    <signal>clicked()</signal>
