@@ -1,11 +1,25 @@
+/* Thème « Atelier du Verdier » pour qtdragon_hd.
+   ENGENDRÉ par outils/faire_theme.py depuis le dark.qss de LinuxCNC.
+   Ne pas éditer ici : corriger la palette du script et relancer.
+   Orange #ff9a1f sur ardoise #14171b — la charte du site.
+   Le couple rouge/vert de l'arrêt d'urgence et de la mise sous
+   tension est LAISSÉ INTACT : c'est un état machine, pas un
+   ornement.
+   
+   MÊME CONTENU que verdier.qss, sous le nom de l'ÉCRAN : c'est ce
+   nom-là que qtvcp charge seul au démarrage, ce qui fait du thème
+   le défaut sans rien demander au fichier de préférences (lequel
+   n'est pas versionné). Le supprimer ferait retomber l'interface
+   sur le thème du système, en silence. */
+
 QMainWindow {
-    background: #404040;
+    background: #14171b;
 }
 
 QStatusBar {
-    background: #606060;
-    font: 10pt "Lato Heavy";
-    color: #FFFFD0;
+    background: #1a1e23;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
 }
 
 /** Pushbuttons **/
@@ -15,35 +29,35 @@ ActionButton,
 SystemToolButton,
 AxisToolButton,
 QToolButton {
-    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(120, 140, 180, 255),  stop:0.3 rgba(11, 22, 33, 255));
-    border: 1px solid brown;
+    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #39414d,  stop:0.3 #14171b);
+    border: 1px solid #2a3038;
     border-radius: 4px;
-    font: 10pt "Lato Heavy";
-    color: white;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
 }
 
 QToolButton:checked,
 QToolButton:pressed {
-    border-color: #00FF00;
-    color: #00FF00;
+    border-color: #ff9a1f;
+    color: #ff9a1f;
 }
 
 QPushButton:checked,
 QPushButton:pressed {
-    border-color: #00FF00;
-    color: #00FF00;
+    border-color: #ff9a1f;
+    color: #ff9a1f;
 }
 
 QPushButton:hover,
 ActionButton:hover,
 SystemToolButton:hover,
 AxisToolButton:hover {
-    border: 1px solid #00FF00;
+    border: 1px solid #ff9a1f;
 }
 
 QPushButton:disabled,
 ActionButton:disabled {
-    color: gray;
+    color: #7c8592;
 }
 
 ActionButton#action_machine_on {
@@ -66,66 +80,68 @@ ActionButton#action_estop:checked {
 }
 
 QLabel {
-    font: 10pt "Lato Heavy";
-    color: white;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
 }
 
 DROLabel, 
 QLabel#label_axis_x,
 QLabel#label_axis_y,
 QLabel#label_axis_z,
+QLabel#label_axis_a,
 QLabel#label_axis_4,
-QLabel#label_axis_5  {
-    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(120, 140, 180, 255),  stop:0.3 rgba(11, 22, 33, 255));
-    border: 1px solid black;
+QLabel#label_axis_5 {
+    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #39414d,  stop:0.3 #14171b);
+    border: 1px solid #2a3038;
     border-radius: 4px;
-    font: 20pt "Lato Heavy";
-    color: #00FF00;
+    font: bold 20pt "Noto Sans";
+    color: #ff9a1f;
 }
 
 DROLabel[isHomed=false] {
-    color: red;
+    color: #ff4040;
 }
 
 QLabel#lbl_cycle_start,
 QLabel#lbl_home_all {
-    font: 10pt "Lato Heavy";
-    color: white;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
 }
 
 StatusLabel, StateLabel {
-    background: black;
-    border: 1px solid gray;
+    background: #1a1e23;
+    border: 1px solid #2a3038;
     border-radius: 4px;
-    font: 10pt "Lato Heavy";
-    color: white;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
 }
 
 QLineEdit {
-    background: black;
-    border: 1px solid gray;
+    background: #1a1e23;
+    border: 1px solid #2a3038;
     border-radius: 4px;
-    font: 10pt "Lato Heavy";
-    color:white;
+    font: bold 10pt "Noto Sans";
+    color:#e6e9ee;
 }
 
 CalculatorDialog QLineEdit {
-    font: 16pt "Lato Heavy";
+    font: bold 16pt "Noto Sans";
 }
 
 QLineEdit#mdiline{
-    background: rgb(250, 250, 250);
-    color: black;
+    background: #1a1e23;
+    color: #e6e9ee;
 }
 
 QTextEdit {
-    background: rgb(250,250,250);
-    font: 10pt "Lato";
+    background: #1a1e23;
+    font: 10pt "Noto Sans";
+    color: #e6e9ee;
 }
 
 QCheckBox {
-    font: 10pt "Lato Heavy";
-    color: white;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
     margin: 4px;
 }
 
@@ -136,31 +152,31 @@ QCheckBox::disabled {
 
 QCheckBox::indicator:checked {
     image: url(:/buttons/images/checked.png);
-    background-color: #404040;
+    background-color: #14171b;
     height: 14px;
     width: 14px;
 }
 
 QCheckBox::indicator:unchecked {
     image: url(:/buttons/images/unchecked.png);
-    background-color: white;
+    background-color: #22272e;
     height: 14px;
     width: 14px;
 }
 
 QComboBox {
-    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(120, 140, 180, 255),  stop:0.3 rgba(11, 22, 33, 255));
-    border: 1px solid black;
+    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #39414d,  stop:0.3 #14171b);
+    border: 1px solid #2a3038;
     padding-left: 4px;
     padding-right: 4px;
     min-width: 100px;
-    font: 10pt "Lato Heavy";
-    color: white;    
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;    
 }
 
 QComboBox QAbstractItemView {
-    background-color: #404040;
-    color: white;
+    background-color: #14171b;
+    color: #e6e9ee;
 }
 
 QComboBox:drop-down {
@@ -170,13 +186,13 @@ QComboBox:drop-down {
 }
 
 QComboBox::item {
-    background-color: #404040;
-    color: white;
+    background-color: #14171b;
+    color: #e6e9ee;
 }
 
 QComboBox::item:selected {
-    background-color: #303030;
-    color: #00FF00;
+    background-color: #22272e;
+    color: #ff9a1f;
 }
 
 QComboBox::Indicator {
@@ -185,56 +201,58 @@ QComboBox::Indicator {
 }
 
 QGroupBox {
-    border: 1px solid black;
+    border: 1px solid #2a3038;
     border-radius: 4px;
     margin-top: 16px;
-    font: 10pt "Lato Heavy";
+    font: bold 10pt "Noto Sans";
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
     padding: 0 3px;
-    color: black;
+    color: #e6e9ee;
 }
 
 QProgressBar {
-    background-color: rgb(250, 250, 250);
-    border: 1px solid black;
+    background-color: #a8b0bc;
+    border: 1px solid #2a3038;
     border-radius: 4px;
-    font: 9 pt "Lato Heavy";
+    font: bold 9pt "Noto Sans";
+    color: #20160a;
 }
 
 QProgressBar::chunk {
     background: qlineargradient(x1: 0, y1: 0.2, x2: 1, y2: 1,
-    stop: 0 #bbf, stop: 1 #55f);
+    stop: 0 #ffab45, stop: 1 #ff9a1f);
 }
 
 .QFrame {
-    background: #505050;
-    border: 1px solid orange;
+    background: #22272e;
+    border: 1px solid #ff9a1f;
 }
 
 QFrame#frame_cycle_start,
 QFrame#frame_home_all {
-    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(120, 140, 180, 255),  stop:0.3 rgba(11, 22, 33, 255));
-    border: 1px solid black;
+    background: qlineargradient(spread:reflect, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #39414d,  stop:0.3 #14171b);
+    border: 1px solid #2a3038;
     border-radius: 4px;
-    font: 10pt "Lato Heavy";
-    color: white;
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
 }
 
 QFrame#frame_cycle_start:hover,
 QFrame#frame_home_all:hover {
-    border: 1px solid #00FF00;
+    border: 1px solid #ff9a1f;
 }
 
 QHeaderView {
-    background-color: #B0B0D0;
-    border: 0px transparent #32414B;
+    background-color: #22272e;
+    border: 0px transparent #2a3038;
     padding: 0px;
     margin: 0px;
     border-radius: 0px;
-    font: 10pt "Lato Heavy";
+    font: bold 10pt "Noto Sans";
+    color: #e6e9ee;
 }
 
 QHeaderView::section::vertical::first,
@@ -243,52 +261,52 @@ QHeaderView::section::vertical::only-one {
 }
 
 OriginOffsetView, ToolOffsetView {
-    font: 10pt "Lato Heavy";
+    font: bold 10pt "Noto Sans";
 }
 
 QSlider::groove:horizontal {
-    background: white;
+    background: #22272e;
     height: 12px;
     border-radius: 4px;
 }
 
 QSlider::groove:vertical {
-    background: white;
+    background: #22272e;
     width: 12px;
     border-radius: 4px;
 }
 
 QSlider::sub-page:horizontal {
-    background: qlineargradient(x1: 0, y1: 0.2, x2: 1, y2: 1, stop: 0 #bbf, stop: 1 #55f);
-    border: 1px solid black;
+    background: qlineargradient(x1: 0, y1: 0.2, x2: 1, y2: 1, stop: 0 #ffab45, stop: 1 #ff9a1f);
+    border: 1px solid #2a3038;
     height: 10px;
     border-radius: 4px;
 }
 
 QSlider::sub-page:vertical {
-    background: white;
-    border: 1px solid black;
+    background: #22272e;
+    border: 1px solid #2a3038;
     width: 10px;
     border-radius: 4px;
 }
 
 QSlider::add-page:horizontal {
-    background: #fff;
-    border: 1px solid black;
+    background: #22272e;
+    border: 1px solid #2a3038;
     height: 10px;
     border-radius: 4px;
 }
 
 QSlider::add-page:vertical {
-    background: qlineargradient(x1: 0, y1: 0,    x2: 0, y2: 1, stop: 0 #66e, stop: 1 #bbf);
-    border: 1px solid black;
+    background: qlineargradient(x1: 0, y1: 0,    x2: 0, y2: 1, stop: 0 #ff9a1f, stop: 1 #ffab45);
+    border: 1px solid #2a3038;
     width: 10px;
     border-radius: 4px;
 }
 
 QSlider::handle:horizontal {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #eee, stop:1 #ccc);
-    border: 1px solid black;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #e6e9ee, stop:1 #a8b0bc);
+    border: 1px solid #2a3038;
     width: 14px;
     margin-top: -4px;
     margin-bottom: -4px;
@@ -296,8 +314,8 @@ QSlider::handle:horizontal {
 }
 
 QSlider::handle:vertical {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #eee, stop:1 #ccc);
-    border: 1px solid black;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #e6e9ee, stop:1 #a8b0bc);
+    border: 1px solid #2a3038;
     height: 14px;
     margin-left: -4px;
     margin-right: -4px;
@@ -305,39 +323,39 @@ QSlider::handle:vertical {
 }
 
 QSlider::handle:horizontal:hover, QSlider::handle:vertical:hover  {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #fff, stop:1 #ddd);
-    border: 1px solid #444;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #e6e9ee, stop:1 #a8b0bc);
+    border: 1px solid #353c46;
     border-radius: 4px;
 }
 
 QSlider::sub-page:horizontal:disabled, QSlider::sub-page:vertical:disabled {
-    background: #bbb;
-    border-color: #999;
+    background: #7c8592;
+    border-color: #7c8592;
 }
 
 QSlider::add-page:horizontal:disabled,
 QSlider::add-page:vertical:disabled{
-    background: #eee;
-    border-color: #999;
+    background: #22272e;
+    border-color: #7c8592;
 }
 
 QSlider::handle:horizontal:disabled,
 QSlider::handle:vertical:disabled{
-    background: #eee;
-    border: 1px solid #aaa;
+    background: #7c8592;
+    border: 1px solid #353c46;
     border-radius: 4px;
 }
 
 /* warning colors for overrides if out of normal range*/
 
     #slider_spindle_ovr[alertState='over'] {
-        background: red;
+        background: #ff4040;
     }
     #slider_feed_ovr[alertState='over'] {
-        background: red;
+        background: #ff4040;
     }
     #slider_feed_ovr[alertState='under'] {
-        background: yellow;
+        background: #ffd94d;
     }
 
 QDialog,
@@ -346,7 +364,7 @@ ToolDialog,
 CloseDialog,
 EntryDialog,
 CalculatorDialog {
-background-color: gray;
+background-color: #1a1e23;
 }
 
 LcncDialog QPushButton,
@@ -366,14 +384,15 @@ CloseDialog QPushButton {
 
 
 QMenu {
-    background-color: #ABABAB; /* sets background of the menu */
-    border: 1px solid black;
+    background-color: #1a1e23; /* sets background of the menu */
+    border: 1px solid #2a3038;
+    color: #e6e9ee;
 }
 
 QMenu::item {
     /* sets background of menu item. set this to something non-transparent
         if you want menu color and menu item color to be different */
-    background-color: gray;
+    background-color: #1a1e23;
 }
 
 QMenu::item:selected { /* when user selects item using mouse or keyboard */
@@ -382,8 +401,8 @@ QMenu::item:selected { /* when user selects item using mouse or keyboard */
 
 QHeaderView::section {
     background-color:  foregnd;
-    color: white;
-    border: 1px solid #6c6c6c;
+    color: #e6e9ee;
+    border: 1px solid #2a3038;
 }
 
 QSpinBox {
@@ -414,9 +433,9 @@ QSpinBox::up-arrow {
 
 /** Tab Widget **/
 QTabWidget::pane {
-  border: 1px solid gray;
+  border: 1px solid #2a3038;
   top:-1px;
-background-color: #505050;
+background-color: #22272e;
      
 }
 
@@ -424,55 +443,133 @@ background-color: #505050;
     it reads QTabBar _not_ QTabWidget */
 QTabBar::tab {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
-                                stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
-    border: 2px solid black;
-    border-bottom-color: black; /* same as the pane color */
+                                stop: 0 #22272e, stop: 0.4 #22272e,
+                                stop: 0.5 #1a1e23, stop: 1.0 #1a1e23);
+    border: 2px solid #2a3038;
+    border-bottom-color: #2a3038; /* same as the pane color */
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
     min-width: 8ex;
     min-height: 3.5ex;
     padding: 2px;
+    color: #a8b0bc;
 }
 
 QTabBar::tab:selected, QTabBar::tab:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #fafafa, stop: 0.4 #f4f4f4,
-                                stop: 0.5 #e7e7e7, stop: 1.0 #fafafa);
+                                stop: 0 #22272e, stop: 0.4 #22272e,
+                                stop: 0.5 #39414d, stop: 1.0 #22272e);
 }
 
 QTabBar::tab:selected {
-    border-color: #00FF00;
-    border-bottom-color: #00FF00;; /* same as pane color */
+    border-color: #ff9a1f;
+    border-bottom-color: #ff9a1f;; /* same as pane color */
 }
 
 QTabBar::tab:!selected {
     margin-top: 2px; /* make non-selected tabs look smaller */
 }
-/** GCode Display **/
+
+
+
+/* ================================================================
+   AJOUTÉ PAR faire_theme.py — absent de dark.qss
+   ================================================================ */
+
+/** Le visualiseur de G-code. QsciScintilla ignore les regles QSS
+    ordinaires : tout passe par des proprietes Qt. **/
 EditorBase {
-    qproperty-styleColorBackground: #202020;
-    qproperty-styleColorMarginBackground: #303030;
-    qproperty-styleColorMarginText: #00aaff;
-    qproperty-styleColorMarkerBackground: #505050;
-    qproperty-styleColorSelectionBackground: #006aff;
-    qproperty-styleColorSelectionText: #ffffff;
-    qproperty-styleFont: "DejaVu Sans Mono,12,-1,5,50,0,0,0,1,0"; /* default */
-    qproperty-styleFont0: "DejaVu Sans Mono,12,-1,5,50,0,0,0,1,0";
-    qproperty-styleFont1: "DejaVu Sans Mono,12,-1,5,50,1,0,0,1,0";
-    qproperty-styleFont2: "DejaVu Sans Mono,12,-1,5,90,0,0,0,1,0";
-    qproperty-styleFont3: "DejaVu Sans Mono,12,-1,5,90,0,0,0,1,0";
-    qproperty-styleFont4: "DejaVu Sans Mono,12,-1,5,90,0,0,0,1,0";
-    qproperty-styleFont5: "DejaVu Sans Mono,12,-1,5,90,0,0,0,1,0";
-    qproperty-styleFont6: "DejaVu Sans Mono,12,-1,5,90,0,0,0,1,0";
-    qproperty-styleFont7: "DejaVu Sans Mono,12,-1,5,90,0,0,0,1,0";
-    qproperty-styleFontMargin: "DejaVu Sans Mono,8,-1,5,50,0,0,0,1,0";    
-    qproperty-styleColor0: #efefef;	/* default */
-    qproperty-styleColor1: white; 	/* LineNo & Comments */
-    qproperty-styleColor2: blue;  	/* Gcodes */     
-    qproperty-styleColor3: lightgreen;	/* Mcodes */
-    qproperty-styleColor4: yellow;	/* Axes */
-    qproperty-styleColor5: red;	/* Other (feed, spindle, radius, etc) */
-    qproperty-styleColor6: #8282aa;	/* Axes Values */
-    qproperty-styleColor7: #cd6197;	/* Other Values */
+    /* Le cadre du QAbstractScrollArea, distinct du fond du texte : sans
+       cette ligne il reste en gris clair tout autour de l'editeur. */
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+    qproperty-styleColorBackground: #14171b;
+    qproperty-styleColorMarginBackground: #1a1e23;
+    qproperty-styleColorMarginText: #7c8592;        /* numeros de ligne */
+    qproperty-styleColorMarkerBackground: #22272e;   /* ligne courante */
+    qproperty-styleColorSelectionBackground: #ff9a1f;
+    qproperty-styleColorSelectionText: #20160a;
+    qproperty-styleFont: "DejaVu Sans Mono, 11";
+    qproperty-styleFont1: "DejaVu Sans Mono, 10";        /* commentaires */
+    qproperty-styleFontMargin: "DejaVu Sans Mono, 9";
+    qproperty-styleColor0: #e6e9ee;                   /* ordinaire */
+    qproperty-styleColor1: #7c8592;                 /* commentaires */
+    qproperty-styleColor2: #5cc7fa;               /* codes G */
+    qproperty-styleColor3: #ffd94d;              /* codes M */
+    qproperty-styleColor4: #a8b0bc;                 /* lettres d'axe */
+    qproperty-styleColor5: #a8b0bc;                 /* avance, broche... */
+    qproperty-styleColor6: #e6e9ee;                   /* valeurs d'axe */
+    qproperty-styleColor7: #e6e9ee;                   /* autres valeurs */
+}
+
+/** `gcode_description` : une plage blanche sans cette regle. **/
+QPlainTextEdit {
+    background: #1a1e23;
+    color: #e6e9ee;
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+}
+
+/** `gcode_list` : blanche elle aussi, sans cette regle. **/
+QListWidget {
+    background: #1a1e23;
+    color: #e6e9ee;
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+    outline: none;
+}
+
+QListWidget::item:selected {
+    background: #ff9a1f;
+    color: #20160a;
+}
+
+/** Les infobulles : QUATRE-VINGT-DIX-NEUF widgets en portent une, et sans
+    regle elles sortent en jaune pale sur toute l'interface. **/
+QToolTip {
+    background: #22272e;
+    color: #e6e9ee;
+    border: 1px solid #353c46;
+    border-radius: 4px;
+    padding: 4px 7px;
+}
+
+/** Barres de defilement. dark.qss n'en a AUCUNE : celle du visualiseur de
+    G-code ressort en gris clair au milieu de l'ardoise. **/
+QScrollBar:vertical {
+    background: #1a1e23;
+    width: 14px;
+    margin: 0;
+    border: none;
+}
+
+QScrollBar:horizontal {
+    background: #1a1e23;
+    height: 14px;
+    margin: 0;
+    border: none;
+}
+
+QScrollBar::handle:vertical,
+QScrollBar::handle:horizontal {
+    background: #353c46;
+    border-radius: 5px;
+    min-height: 28px;
+    min-width: 28px;
+    margin: 2px;
+}
+
+QScrollBar::handle:vertical:hover,
+QScrollBar::handle:horizontal:hover {
+    background: #ff9a1f;
+}
+
+/* Les fleches d'extremite : on les efface plutot que de les peindre. Sans
+   ces quatre regles Qt dessine ses fleches par defaut, en gris clair. */
+QScrollBar::add-line, QScrollBar::sub-line {
+    height: 0; width: 0; border: none; background: none;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page {
+    background: none;
 }

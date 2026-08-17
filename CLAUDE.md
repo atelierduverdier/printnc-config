@@ -104,9 +104,52 @@ plage claire au milieu de l'ardoise. Corriger la palette **dans le script**,
 jamais dans le `.qss`, et relancer.
 
 ```bash
-python3 outils/faire_theme.py      # engendre verdier.qss
+python3 outils/faire_theme.py      # engendre le theme, sous ses DEUX noms
 python3 outils/apercu_theme.py     # le rend hors ecran, dans /tmp
 ```
+
+### Il s'allume seul, et voici par quoi
+
+Le thème est écrit **deux fois, sous deux noms**, dans le même dossier :
+`verdier.qss` — le nom parlant, celui qui apparaît dans le sélecteur — et
+`qtdragon_hd.qss`, **le nom de l'écran**. C'est ce second nom que qtvcp
+charge de lui-même au démarrage, et c'est tout le mécanisme : ni fichier de
+préférences, ni option de ligne de commande, ni geste après une
+réinstallation.
+
+L'ordre de choix, lu dans `qt_makegui.py:apply_styles` :
+
+| | source | pourquoi on ne s'en sert pas |
+|---|---|---|
+| 1 | l'option `-t` de la ligne `DISPLAY` | elle **court-circuite le sélecteur** : le choix fait en F12 ne survivrait plus au redémarrage |
+| 2 | `style_QSS_Path` du `.pref` | `qtdragon.pref` **n'est pas dans ce dépôt** — rien à en attendre après une réinstallation |
+| 3 | le `.qss` **portant le nom de l'écran** | ← celui-là. Cherché dans le dossier de config **avant** celui du système (`qt_pstat.py:188-205`) |
+
+Le fichier `qtdragon_hd.qss` remplacé était la copie mot pour mot de celui
+du système — vérifié identique — donc rien n'est perdu : le thème d'origine
+reste servi depuis `/usr/share` et listé dans le sélecteur.
+
+**Le seul réglage qui puisse encore battre ce défaut est le niveau 2.** Un
+thème choisi une fois par le sélecteur écrit son chemin dans
+`style_QSS_Path` et y reste, régénération ou pas. Pour revenir au thème de
+l'atelier : le remettre à `DEFAULT`, ou choisir `verdier.qss` dans le
+sélecteur. `qtdragon.pref.reference` porte cette ligne et la raison.
+
+Deux pièges à connaître :
+
+* **`-t verdier` ne marche pas**, et pas par notre faute : `apply_styles`
+  construit bien `<écran>/verdier.qss` puis le **jette aussitôt**, son
+  second test rejouant `os.path.isfile(fname)` au lieu de tester le chemin
+  qu'il vient de construire (LinuxCNC 2.9.10). Un nom nu ne se résout
+  jamais dans le dossier de l'écran ; seul un vrai chemin passe.
+* **supprimer `qtdragon_hd.qss` du dépôt ferait retomber l'interface sur le
+  thème du système, en silence** — l'écran s'ouvrirait, simplement pas aux
+  bonnes couleurs. Son en-tête le dit sur place.
+
+Le sélecteur reste utile pour essayer autre chose sans rien réécrire :
+**F12** (`qtdragon_hd_handler.py:94` → `on_keycall_F12`), le Style Sheet
+Editor. Son combo liste les `.qss` du dossier système **et** ceux de la
+config, donc `verdier.qss` y figure.
 
 L'aperçu existe parce que **Qt n'annonce pas les erreurs de syntaxe d'une
 feuille QSS** : une accolade en trop et tout ce qui suit est ignoré, sans un
@@ -170,9 +213,7 @@ Reste une question ouverte : l'état **critique** de cette barre est
 `rgb(255,144,0)`, à un cheveu de l'orange d'accent `#ff9a1f`. Une alerte qui a
 la couleur de la décoration alerte moins.
 
-Pour l'allumer : onglet **Settings**, sélecteur de thème, « verdier ». Le
-choix s'écrit dans `style_QSS_Path`, section `[BOOK_KEEPING]` de
-`qtdragon.pref` — qui n'est pas dans ce dépôt.
+Rien à allumer : voir « Il s'allume seul » plus haut.
 
 ### Le dossier de surcharge fige l'écran — et retient un correctif
 
@@ -188,6 +229,7 @@ Relevé le 13/08/2026, copie contre `/usr/share/qtvcp/screens/qtdragon_hd/` :
 | `qtdragon_hd.ui` | **modifié**, 263 lignes d'écart — textes, géométries, `lbl_tool_image` |
 | `qtdragon_hd_handler.py` | **modifié**, 116 lignes d'écart |
 | les 5 `.qss` livrés, `.qrc`, `_ABOUT` | **identiques** — poids mort |
+| `qtdragon_hd.qss` | **le nôtre depuis le 17/08/2026** : le thème sous le nom de l'écran, c'est ce qui l'allume au démarrage |
 | `resources.py`, `images/` | absents du système : à garder |
 
 Et `version.txt` dit le prix : la copie est en **1.5**, le système livre la

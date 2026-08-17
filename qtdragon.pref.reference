@@ -1,3 +1,12 @@
+[BOOK_KEEPING]
+# LAISSER SUR DEFAULT. Le thème de l'atelier est engendré sous le nom de
+# l'écran (qtvcp/screens/qtdragon_hd/qtdragon_hd.qss), et c'est ce nom que
+# qtvcp charge tout seul au démarrage. Toute autre valeur ici BAT ce défaut :
+# un thème choisi une fois par le sélecteur F12 s'écrit à cette ligne et
+# reste, y compris après une régénération du thème. Le remettre à DEFAULT
+# est la façon de revenir au thème de l'atelier.
+style_QSS_Path = DEFAULT
+
 [CUSTOM_FORM_ENTRIES]
 Tool to load = 0
 Laser X = 100.0

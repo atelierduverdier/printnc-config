@@ -37,8 +37,37 @@
 # UTILISATION :
 #   python3 outils/faire_theme.py
 #
-# Écrit qtvcp/screens/qtdragon_hd/verdier.qss. Pour l'employer, choisir
-# « verdier » dans le sélecteur de thème de qtdragon (onglet Settings).
+# Écrit le thème DEUX FOIS, sous deux noms, dans
+# qtvcp/screens/qtdragon_hd/ :
+#
+#   verdier.qss       le nom parlant. C'est lui qui apparaît dans le
+#                     sélecteur de thème (F12) à côté de dark, argentium…
+#   qtdragon_hd.qss   LE MÊME CONTENU, sous le nom de l'écran. C'est ce
+#                     nom-là que qtvcp charge TOUT SEUL au démarrage.
+#
+# Pourquoi le doublon, alors qu'un lien symbolique suffirait : le dépôt part
+# sur un Raspberry Pi par git, et un lien est un fichier de plus à ne pas
+# casser au clonage pour un gain de 13 ko. Deux fichiers ENGENDRÉS par le
+# même script ne peuvent pas divergent — c'est précisément ce que la
+# génération garantit.
+#
+# L'ORDRE DE CHOIX de qtvcp, lu dans qt_makegui.py:apply_styles :
+#   1. l'option -t de la ligne DISPLAY  (on ne s'en sert pas : elle
+#      court-circuite le sélecteur F12, dont le choix ne survivrait plus
+#      au redémarrage. Et un nom nu n'y marche pas, voir plus bas.)
+#   2. style_QSS_Path du fichier de préférences, s'il vaut autre chose que
+#      DEFAULT — or qtdragon.pref n'est PAS dans ce dépôt, donc rien à en
+#      attendre après une réinstallation.
+#   3. le .qss PORTANT LE NOM DE L'ÉCRAN, cherché dans le dossier de config
+#      AVANT celui du système (qt_pstat.py:188-205).
+# C'est le 3 qu'on emploie : versionné, sans fichier hors dépôt, sans
+# option de ligne de commande, identique sur les deux machines.
+#
+# LE PIÈGE DU -t, pour qui serait tenté : `-t verdier` NE MARCHE PAS.
+# apply_styles construit bien le chemin <écran>/verdier.qss, puis le jette
+# aussitôt — son second test rejoue os.path.isfile(fname) au lieu de tester
+# le chemin construit (LinuxCNC 2.9.10). Un nom nu ne se résout donc jamais
+# dans le dossier de l'écran ; seul un vrai chemin passe.
 # =========================================================================
 
 import re
@@ -48,6 +77,9 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent.parent
 SOURCE = Path('/usr/share/qtvcp/screens/qtdragon_hd/dark.qss')
 SORTIE = RACINE / 'qtvcp' / 'screens' / 'qtdragon_hd' / 'verdier.qss'
+# Le même thème sous le nom de l'écran : c'est ce nom que qtvcp charge de
+# lui-même au démarrage, sans préférence ni option. Voir l'en-tête.
+SORTIE_DEFAUT = SORTIE.with_name('qtdragon_hd.qss')
 
 # Les jetons de la charte, version sombre — les mêmes que `kit/verdier-jetons.css`
 # du dépôt `site`. Une interface d'atelier se regarde sous une lampe et à côté
@@ -609,17 +641,39 @@ def main() -> int:
 
     resultat += SUPPLEMENT
 
-    entete = (
-        "/* Thème « Atelier du Verdier » pour qtdragon_hd.\n"
-        "   ENGENDRÉ par outils/faire_theme.py depuis le dark.qss de LinuxCNC.\n"
-        "   Ne pas éditer ici : corriger la palette du script et relancer.\n"
-        f"   Orange {ORANGE} sur ardoise {FOND} — la charte du site.\n"
-        "   Le couple rouge/vert de l'arrêt d'urgence et de la mise sous\n"
-        "   tension est LAISSÉ INTACT : c'est un état machine, pas un\n"
-        "   ornement. */\n\n"
-    )
+    def entete_de(*apartes: str) -> str:
+        """L'en-tête du fichier, plus ce qui n'est vrai que de CE nom-là."""
+        lignes = [
+            "/* Thème « Atelier du Verdier » pour qtdragon_hd.",
+            "   ENGENDRÉ par outils/faire_theme.py depuis le dark.qss de LinuxCNC.",
+            "   Ne pas éditer ici : corriger la palette du script et relancer.",
+            f"   Orange {ORANGE} sur ardoise {FOND} — la charte du site.",
+            "   Le couple rouge/vert de l'arrêt d'urgence et de la mise sous",
+            "   tension est LAISSÉ INTACT : c'est un état machine, pas un",
+            "   ornement.",
+        ]
+        lignes += [f"   {a}" for a in apartes]
+        return '\n'.join(lignes) + " */\n\n"
+
+    entete = entete_de()
     SORTIE.parent.mkdir(parents=True, exist_ok=True)
     SORTIE.write_text(entete + resultat, encoding='utf-8')
+
+    # Le même thème sous le nom de l'écran. Ce nom-là, qtvcp le charge de
+    # lui-même au démarrage : c'est ce qui fait du thème le DÉFAUT, sans
+    # rien demander au fichier de préférences qui, lui, n'est pas versionné.
+    # Le fichier remplacé était la copie mot pour mot de celui du système —
+    # vérifié identique le 17/08/2026 — donc rien n'est perdu : le thème
+    # d'origine reste servi depuis /usr/share et listé dans le sélecteur.
+    SORTIE_DEFAUT.write_text(
+        entete_de(
+            "",
+            "MÊME CONTENU que verdier.qss, sous le nom de l'ÉCRAN : c'est ce",
+            "nom-là que qtvcp charge seul au démarrage, ce qui fait du thème",
+            "le défaut sans rien demander au fichier de préférences (lequel",
+            "n'est pas versionné). Le supprimer ferait retomber l'interface",
+            "sur le thème du système, en silence.",
+        ) + resultat, encoding='utf-8')
 
     # --- Contrôles --------------------------------------------------------
     # Une couleur d'origine oubliée se voit à l'écran, mais pas dans un diff.
@@ -639,6 +693,8 @@ def main() -> int:
     apres = len(REGLE.findall(resultat))
 
     print(f"  {SORTIE.relative_to(RACINE)}")
+    print(f"  {SORTIE_DEFAUT.relative_to(RACINE)}  (le nom que qtvcp "
+          f"charge au demarrage)")
     print(f"  {avant} regles reprises, {ajoutees} ajoutees, "
           f"{compte['epargne']} epargnees")
     print(f"  {compte['particulier']} corrections particulieres, "
