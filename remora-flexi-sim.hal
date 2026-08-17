@@ -16,6 +16,7 @@
 	loadrt toggle names=hold_button_toggle
 	loadrt toggle2nist names=hold_toggle,paused_toggle
 	loadrt or2 names=aux0_or,aux1_or,aux2_or,aux3_or
+	loadrt comp names=palpeur_sim
 
 # ---- Fonctions dans le thread servo ----
 	addf motion-command-handler servo-thread
@@ -28,6 +29,7 @@
 	addf aux3_not servo-thread
 	addf flood_not servo-thread
 	addf mist_not servo-thread
+	addf palpeur_sim servo-thread
 	addf estop_latch servo-thread
 	addf run_and servo-thread
 	addf step_and servo-thread
@@ -62,8 +64,32 @@
 	setp joint.2.home-sw-in 0
 	setp joint.3.home-sw-in 0
 
-# Probe simule
-	setp motion.probe-input 0
+# =========================================================================
+# PALPEUR SIMULE
+# =========================================================================
+# `motion.probe-input` etait fige a 0. Un G38.2 partait donc pour toute sa
+# course et finissait en erreur « probe move finished without tripping » :
+# le banc ne pouvait pas eprouver un palpage, donc pas toolchange.ngc,
+# qui n'est presque QUE ca.
+#
+# Le comparateur declenche le palpeur quand la broche descend sous un
+# niveau fixe. `comp.out` est vrai quand in1 > in0 (man 9 comp) : on met
+# donc le NIVEAU en in1 et la position en in0, et la sortie passe a vrai
+# des que Z est plus bas que le niveau.
+#
+# -51.1 n'est pas un chiffre rond : c'est le contact MESURE du nez du
+# laser sur la pastille, le 17/08/2026, imprime par le palpage lui-meme
+# en coordonnees machine. Le banc rend ainsi des touch_z du meme ordre
+# que la machine.
+#
+# Ce que ce palpeur simule N'EST PAS : il ne regarde ni X ni Y, donc il
+# se declencherait aussi bien loin de la pastille, et il ignore la
+# longueur de l'outil monte. Il sert a derouler la sequence, pas a
+# valider une cote. Ce que la simulation ne peut pas dire, elle ne doit
+# pas faire semblant de le dire.
+	setp palpeur_sim.in1 -51.1
+	net z-machine-sim  axis.z.pos-cmd  => palpeur_sim.in0
+	net palpeur-touche palpeur_sim.out => motion.probe-input
 
 # =========================================================================
 # SIMULATION BROCHE (remplace le VFD hy_vfd)
