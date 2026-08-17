@@ -345,6 +345,28 @@ QListWidget::item:selected {{
     color: {SUR_ORANGE};
 }}
 
+/** La TABLE D'OUTILS. Sans cette regle, la ligne choisie sort dans le
+    bleu-cyan de Qt : une barre criarde en travers de l'ardoise, vue sur
+    une capture d'ecran de la page TOOL. Les autres listes avaient leur
+    regle (`QListWidget::item:selected`), pas les tableaux -- et le
+    `qproperty-styleColorSelection*` plus haut ne les concerne pas, il
+    n'habille que le visualiseur de G-code. **/
+QTableView, QTableWidget {{
+    background: {FOND_2};
+    color: {ENCRE};
+    border: 1px solid {TRAIT};
+    border-radius: 4px;
+    gridline-color: {TRAIT};
+    selection-background-color: {ORANGE};
+    selection-color: {SUR_ORANGE};
+    outline: none;
+}}
+
+QTableView::item:selected, QTableWidget::item:selected {{
+    background: {ORANGE};
+    color: {SUR_ORANGE};
+}}
+
 /** Les infobulles : QUATRE-VINGT-DIX-NEUF widgets en portent une, et sans
     regle elles sortent en jaune pale sur toute l'interface. **/
 QToolTip {{
