@@ -37,22 +37,18 @@ O<palper_outil> sub
 #<probe_y>            =  60.0   ; Position Y du palpeur (G53 machine)
 #<search_feed>        = 400     ; Vitesse premier palpage (mm/min)
 #<latch_feed>         =  25     ; Vitesse second palpage lent (mm/min)
-; ATTENTION, dist_palpeur_table N'EST PAS la distance qu'on mesurerait
-; au pied a coulisse entre le haut du palpeur et le martyre. Le zero est
-; pose plus bas dans ce fichier par G10 L20, et a ce moment l'outil est
-; deja DEGAGE de 3 mm au-dessus du contact : la valeur porte donc ces
-; 3 mm en plus. Verifie sur la machine le 17/08/2026 -- le zero tombe
-; juste sur la surface, sans decalage.
+#<dist_palpeur_table> = 50.525  ; Distance haut palpeur -> martyre (mm)
 ;
-; Consequences, les deux :
-;   - remesurer la vraie distance (~47,5) et l'ecrire ici poserait 3 mm
-;     d'erreur sur TOUTES les gravures. Ne pas "corriger" ce nombre.
-;   - changer le degagement de 3 mm apres la mesure decalerait le zero
-;     d'autant. Les deux valeurs sont liees ; toucher l'une oblige a
-;     recaler l'autre sur du bois.
-; Le degagement de 1 mm ENTRE les deux passes, lui, est sans effet ici :
-; il precede le palpage final, donc pas la position ou le zero est pose.
-#<dist_palpeur_table> = 50.525  ; Contact + 3 mm -> martyre (voir ci-dessus)
+; Le degagement ci-dessous n'est pas qu'une securite : le G10 L20 qui
+; pose le zero martyre s'execute APRES lui, donc a contact + degagement.
+; Il entre dans le calcul du zero, et c'est pourquoi il porte un nom au
+; lieu d'etre ecrit en dur a deux endroits qui pourraient diverger.
+;
+; Il a longtemps manque de ce calcul : le zero martyre est sorti 3 mm
+; TROP HAUT jusqu'au 17/08/2026 (constate a l'atelier). Personne ne s'en
+; est apercu au laser parce que le mode PIECE (#1001 = 1), zero pris a
+; la feuille de papier, ne passe pas par ce G10 L20.
+#<degagement_palpeur> =   3.0   ; Remontee apres mesure, AVANT le G10 L20
 
 ; =====================================================================
 ; OFFSET LASER (mesure manuellement, glissiere sur porte-broche)
@@ -180,10 +176,7 @@ G90                            ; Retour mode absolu
 
 ; --- AJOUT DE SECURITE ---
 G91
-G0 Z3.0                        ; Remontee explicite de 3mm pour BIEN liberer le palpeur
-; Ces 3 mm entrent dans le zero martyre : le G10 L20 plus bas s'execute
-; ICI, pas au contact. dist_palpeur_table les porte deja -- voir sa note
-; en tete. Changer cette remontee sans recaler ce nombre decale le zero.
+G0 Z#<degagement_palpeur>      ; Remontee explicite de 3mm pour BIEN liberer le palpeur
 G90
 G4 P0.3                        ; Pause de 300ms pour stabiliser l'entree Probe
 #<touch_z> = #5063             ; Capture position Z au contact (repere piece)
@@ -219,7 +212,10 @@ O200 IF [#1001 EQ 0]
         ; --- PREMIER OUTIL DE LA SESSION ---
         #1000 = #<touch_z>     ; Memorise sa position de contact
         G10 L1 P#<tool_num> Z0                 ; Offset outil de ref = 0
-        G10 L20 P1 Z#<dist_palpeur_table>      ; Definit Z zero G54 sur martyre
+        ; + degagement : on est remonte depuis le contact, donc la
+        ; position courante est plus haute que le palpeur d'autant.
+        ; Sans ce terme le zero sortait 3 mm trop haut.
+        G10 L20 P1 Z[#<dist_palpeur_table> + #<degagement_palpeur>]
         (MSG, Premier outil reference - Zero martyre defini)
     O201 ELSE
         ; --- OUTILS SUIVANTS ---
