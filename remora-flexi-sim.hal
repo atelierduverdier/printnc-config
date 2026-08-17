@@ -93,5 +93,24 @@
 	net aux2-gcode motion.digital-out-02 => aux2_or.in0
 	net aux3-gcode motion.digital-out-03 => aux3_or.in0
 
-# ---- Manual toolchange (identique a la config reelle, qtdragon_hd) ----
+# ---- Changement d'outil : DEUX boucles de retour, et pas comme la machine ----
+# Le commentaire disait ici « identique a la config reelle » : c'etait faux, et
+# ca coutait cher. La machine reelle passe par hal_manualtoolchange
+# (qtdragon_hd.hal), qui ouvre une boite de dialogue et repond quand
+# l'operateur a monte l'outil. Ce composant n'est PAS charge en simulation, si
+# bien que personne ne repondait a `tool-change` : la premiere boucle etait la,
+# la seconde manquait.
+#
+# Consequence mesuree le 17/08/2026 : un `T100 M6` figeait la tache dans
+# WAITING_FOR_MOTION_AND_IO, pour toujours, SANS UN MOT. Et pas seulement le
+# M6 -- plus rien ne s'executait ensuite, pas meme un (DEBUG, ...). L'ecran
+# restait normal, la machine repondait, le journal ne disait rien. Autrement
+# dit, le banc ne pouvait pas eprouver toolchange.ngc, qui est justement le
+# sous-programme qu'on y modifie le plus.
+#
+# La boucle rend la main tout de suite : en simulation, le changement est
+# repute fait. La difference avec la machine reste visible la ou il faut --
+# toolchange.ngc porte son propre M1 (« Verifiez que l outil est bien monte »),
+# qui lui s'arrete dans les deux cas.
 	net tool-prepare-loopback iocontrol.0.tool-prepare => iocontrol.0.tool-prepared
+	net tool-changed-loopback iocontrol.0.tool-change  => iocontrol.0.tool-changed
