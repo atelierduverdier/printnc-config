@@ -47,6 +47,26 @@ O<palper_outil> sub
 #<laser_y_offset>     = -90.0   ; Laser = broche - 90.0 en Y
 
 ; =====================================================================
+; APPROCHE RAPIDE — LASER UNIQUEMENT
+; Le nez du laser touche la pastille vers Z-45 (machine) : descendre
+; depuis Z0 a 400 mm/min faisait 45 mm de palpage pour rien. On tombe
+; donc en G0 jusqu'a Z-30, et le palpage ne commence que la — 30 mm
+; gagnes sur 45, en gardant 15 mm de marge avant le contact.
+;
+; Reserve au laser, et ce n'est pas un oubli : sa geometrie est FIXE,
+; celle d'une fraise ne l'est pas. Un outil court touche plus bas, un
+; outil long touche BIEN PLUS HAUT que -30 — une descente rapide en
+; aveugle le planterait dans le palpeur. Les fraises gardent donc leur
+; palpage depuis Z0.
+;
+; A REVERIFIER SI LE LASER BOUGE SUR SA GLISSIERE : descendre le laser
+; de plus de 15 mm sur son porte-broche ferait toucher AVANT la fin du
+; G0, donc en rapide. Refaire un palpage, lire le touch_z et garder
+; cette valeur au moins 10 mm au-dessus.
+; =====================================================================
+#<z_approche_laser>   = -30.0   ; Z machine ou demarre le palpage laser
+
+; =====================================================================
 ; RESET AUTOMATIQUE AU PREMIER M6 DU JOB
 ; #1002 sert de flag :
 ;   - 0 -> premier M6 de la session, on reinitialise la reference Z
@@ -86,9 +106,16 @@ O210 ENDIF
 ; =====================================================================
 #<eff_probe_x> = #<probe_x>
 #<eff_probe_y> = #<probe_y>
+#<z_approche>  = 0              ; Fraises : palpage depuis Z0
+#<course_recherche> = -140      ; Course max du premier palpage (relatif)
 O230 IF [#<tool_num> GE 100]
     #<eff_probe_x> = [#<probe_x> - #<laser_x_offset>]
     #<eff_probe_y> = [#<probe_y> - #<laser_y_offset>]
+    ; Approche rapide reservee au laser (voir en tete de fichier).
+    ; La course de recherche est raccourcie d'autant : le bas de course
+    ; machine est a -140, on ne veut pas depasser en limite logicielle.
+    #<z_approche>  = #<z_approche_laser>
+    #<course_recherche> = [-140 - #<z_approche_laser>]
     (MSG, Laser detecte - decalage palpage applique)
     ; =================================================================
     ; GARDE-FOU LIMITE MACHINE (branche laser UNIQUEMENT)
@@ -109,6 +136,7 @@ O230 ENDIF
 ; =====================================================================
 G53 G0 Z0                      ; Toujours remonter avant deplacement XY
 G53 G0 X#<eff_probe_x> Y#<eff_probe_y> ; Position au-dessus du palpeur
+G53 G0 Z#<z_approche>          ; Approche rapide (laser seul ; Z0 sinon)
 
 ; =====================================================================
 ; PALPAGE EN DEUX PASSES
@@ -117,7 +145,7 @@ G53 G0 X#<eff_probe_x> Y#<eff_probe_y> ; Position au-dessus du palpeur
 ; =====================================================================
 M70                            ; Sauvegarde etat modal courant
 G91                            ; Mode relatif pour la descente
-G38.2 Z-140 F#<search_feed>    ; Premier palpage rapide (max 140mm)
+G38.2 Z#<course_recherche> F#<search_feed> ; Premier palpage rapide
 G0 Z2.0                        ; Remontee de 2mm
 G38.2 Z-5.0 F#<latch_feed>     ; Second palpage lent (max 5mm)
 G90                            ; Retour mode absolu
