@@ -188,7 +188,12 @@ G53 G0 Z#<z_approche>          ; Approche rapide (laser seul ; Z0 sinon)
 M70                            ; Sauvegarde etat modal courant
 G91                            ; Mode relatif pour la descente
 G38.2 Z#<course_recherche> F#<search_feed> ; Premier palpage rapide
-G0 Z2.0                        ; Remontee de 2mm
+G0 Z1.0                        ; Remontee de 1mm entre les deux passes
+; 1 mm et non 2 : cette remontee se repalpe a 25 mm/min, donc chaque
+; millimetre coute 2,4 s -- le plus gros poste du cycle une fois
+; l'approche rapide en place. C'est la VITESSE de cette passe qui fait
+; la precision, pas la distance parcourue. On ne descend pas en dessous
+; de 1 mm : il faut que le contacteur se relache franchement.
 G38.2 Z-5.0 F#<latch_feed>     ; Second palpage lent (max 5mm)
 G90                            ; Retour mode absolu
 
