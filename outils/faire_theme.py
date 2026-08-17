@@ -446,6 +446,62 @@ OUTILS_SOURCE = RACINE / 'qtvcp' / 'screens' / 'qtdragon_hd' / 'images' / 'tool_
 OUTILS_SORTIE = OUTILS_SOURCE.parent
 OUTILS_LARGEUR = 320
 
+# Certains outils ne sont plus dessines a la main mais RENDUS depuis leur
+# modele FreeCAD (~/Projets/archives/Conception/FreeCAD/Outils, hors depot) :
+# construction du solide, trait par Freestyle, aureole orange au montage.
+# Le resultat arrive ici en PNG a fond transparent, deja fini — on ne fait
+# que le mettre a l'echelle.
+#
+# HAUTEUR ET NON LARGEUR. Ces outils sont tres elances (une fraise de 38 mm
+# pour 3,17 de diametre), et le cadre les ajuste sur leur HAUTEUR. C'est donc
+# elle qui doit valoir 480 px comme les dessins vectoriels — les caler sur la
+# largeur les rendrait deux fois plus fins que le reste du jeu.
+OUTILS_RENDUS = OUTILS_SOURCE / 'rendus'
+OUTILS_HAUTEUR = 480
+
+
+def poser_rendus_outils() -> str:
+    """Met a l'echelle les PNG rendus depuis FreeCAD. Compte rendu d'une ligne."""
+    if not OUTILS_RENDUS.is_dir():
+        return "outils rendus : aucun dossier rendus/, rien a poser"
+    sources = sorted(OUTILS_RENDUS.glob('*.png'))
+    if not sources:
+        return "outils rendus : dossier vide, rien a poser"
+
+    # DEUX SOURCES POUR UNE MEME ICONE, c'est le piege qu'on refuse : le SVG
+    # serait rendu, puis le PNG poserait par-dessus, et l'ordre deciderait en
+    # silence de ce qu'on voit. On s'arrete plutot que de trancher tout seul.
+    doublons = sorted(p.stem for p in sources
+                      if (OUTILS_SOURCE / f"{p.stem}.svg").is_file())
+    if doublons:
+        return ("ECHEC outils rendus : " + ', '.join(doublons)
+                + " existe(nt) en .svg ET en rendu — en retirer un")
+
+    from PyQt5 import QtCore, QtGui
+
+    faits, vides = [], []
+    for png in sources:
+        image = QtGui.QImage(str(png))
+        if image.isNull():
+            return f"ECHEC outils rendus : Qt ne lit pas {png.name}"
+        image = image.scaledToHeight(OUTILS_HAUTEUR,
+                                     QtCore.Qt.SmoothTransformation)
+        # Meme verdict que pour les SVG : on compte les pixels peints. Une
+        # image transparente se sauve sans erreur et ne se voit jamais.
+        peints = sum(1 for y in range(0, image.height(), 3)
+                     for x in range(0, image.width(), 3)
+                     if QtGui.QColor.fromRgba(image.pixel(x, y)).alpha() > 8)
+        if peints < 150:
+            vides.append(f"{png.stem} ({peints})")
+            continue
+        image.save(str(OUTILS_SORTIE / f"{png.stem}.png"))
+        faits.append(png.stem)
+
+    if vides:
+        return f"ECHEC outils rendus : image vide pour {', '.join(vides)}"
+    return (f"outils rendus : {len(faits)} poses a {OUTILS_HAUTEUR} px de haut"
+            f" ({', '.join(faits)})")
+
 
 def poser_dessins_outils() -> str:
     """Rend les SVG d'outils en PNG. Rend un compte rendu d'une ligne."""
@@ -589,7 +645,8 @@ def main() -> int:
           f"{compte['encre']} couleurs de texte, {polices} polices nommees")
 
     faute = 0
-    for compte_rendu in (poser_logo(), poser_dessins_outils()):
+    for compte_rendu in (poser_logo(), poser_dessins_outils(),
+                         poser_rendus_outils()):
         print(f"  {compte_rendu}")
         if compte_rendu.startswith('ECHEC'):
             faute = 1

@@ -12,14 +12,55 @@
 # qu'il coupe ». Dire « pas d'outil » pour un outil qu'on ne sait pas nommer
 # serait une fausse alarme. `aucun.png` est reserve a T0, ou il est exact.
 #
-# LES DESSINS SONT LES NOTRES, en vectoriel dans source/*.svg, rendus en PNG
-# par `python3 outils/faire_theme.py`. Editer le SVG a Inkscape puis relancer.
-# Leur grammaire : l'ORANGE marque la partie coupante, et seulement quand on
-# sait la nommer ; la pince et la queue sont communes a tous les dessins,
-# c'est ce qui rend la partie basse comparable d'un outil a l'autre.
+# LES DESSINS SONT LES NOTRES, et ils viennent de DEUX sources. Les deux
+# passent par `python3 outils/faire_theme.py`, qui refuse de continuer si un
+# meme nom existe des deux cotes.
 #
-# Disponibles : fraise_droite, fraise_demi_ronde, fraise_v, foret,
-#               surfaceuse, palpeur, laser, inconnu, aucun.
+#   source/*.svg        dessins au trait, a editer a Inkscape. Leur
+#                       grammaire : l'ORANGE marque la partie coupante, et
+#                       seulement quand on sait la nommer ; la pince et la
+#                       queue sont communes, c'est ce qui rend la partie
+#                       basse comparable d'un outil a l'autre.
+#
+#   source/rendus/*.png outils MODELISES puis rendus — solide FreeCAD, trait
+#                       par Freestyle, aureole orange au montage. La chaine
+#                       vit dans ~/Projets/archives/Conception/FreeCAD/Outils
+#                       (hors depot), voir son LISEZMOI. Aujourd'hui :
+#                       fraise_droite      2 dents DROITES 6 mm, bout plat
+#                       fraise_fishtail    FishTail 3,17, dents helicoidales
+#                       fraise_vcarving    V-Carving Inlay 10 deg
+#                       fraise_chanfrein   a chanfreiner 4 mm, pointe 90 deg
+#                       fraise_demi_ronde  hemispherique 6 mm, utile 22
+#                       fraise_v_60/90/120/150  jeu de fraises en V a
+#                            plaquettes brasees, Ø32 sur queue de 6
+#                       surfaceuse       tete a 4 plaquettes Ø25,4
+#                       laser            module LaserTree LT-80W-AA-PRO
+#                       foret            carbure monobloc DLC Ø6, DIN 6535HA
+#                                        (MC6-28-6-DLC : pointe 120, helice 55)
+#                       palpeur          sonde 3D DE BROCHE TP06C, queue 6.
+#                                        A NE PAS confondre avec le VersaProbe
+#                                        FIXE de la table, celui de la
+#                                        pastille de 20 mm — voir README.
+#                       fraise_vcarving et fraise_fishtail forment le pack
+#                       incrustations.
+#
+#                       ATTENTION : `fraise_v` n'existe plus. C'etait la
+#                       V-Carving Inlay 10 deg, devenue fraise_vcarving le
+#                       jour ou le jeu de fraises en V est arrive — garder
+#                       les deux sens du meme nom aurait fini par tromper.
+#
+# CES DEUX-LA S'AFFICHENT PLUS ETROITS que les dessins au trait — 73 px de
+# large contre 128 dans un cadre de 159x192 — et ce n'est pas un defaut de
+# mise a l'echelle : ces fraises sont reellement elancees (38 mm pour 3,17 de
+# diametre). Les elargir mentirait sur l'outil.
+#
+# Disponibles : fraise_droite, fraise_fishtail, fraise_chanfrein,
+#               fraise_demi_ronde, fraise_vcarving, fraise_v_60,
+#               fraise_v_90, fraise_v_120, fraise_v_150, foret, surfaceuse,
+#               palpeur, laser, inconnu, aucun.
+#
+# Seule fraise_droite est associee a un numero. Toutes les autres fraises
+# attendent leur emplacement : elles ne sont pas dans la table de l'atelier.
 #
 # --- table de l'atelier (tool.tbl, 13/08/2026) ---------------------------
 #   T0    pas d'outil            -> aucun.png, pose par le code
