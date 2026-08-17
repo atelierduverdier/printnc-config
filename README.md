@@ -6,7 +6,7 @@ macros G-code et interface QtDragon) utilises pour piloter ma fraiseuse CNC
 d'une broche 2.2 kW et d'un module laser amovible (voir section Laser).
 
 La machine est controlee via l'architecture **Flexi-HAL** (firmware Remora) sur
-base Raspberry Pi, avec l'interface graphique **QtDragon HD** (LinuxCNC 2.9.8).
+base Raspberry Pi 5, avec l'interface graphique **QtDragon HD** (LinuxCNC 2.9.10).
 
 ---
 
@@ -90,7 +90,9 @@ FLOOD (pas sur une AUX). AUX3 est pilotee directement par `spindle.1.on`
   de refroidissement automobile (anti-oxydation / anti-algues).
 
 ### 3. Controle, Electronique & Securite
-* **Calculateur :** Raspberry Pi executant LinuxCNC 2.9.8.
+* **Calculateur :** Raspberry Pi 5 Model B executant LinuxCNC 2.9.10
+  (releve sur la machine le 17/08/2026 : linuxcnc-uspace 1:2.9.10, Debian 12
+  aarch64). Le PC de developpement tourne la MEME version, 2.9.10 (AUR).
 * **Carte d'interface :** Expatria Flexi-HAL (firmware Remora).
 * **Puissance :** contacteur ABB AF09-30-10-11, bobine 24V.
 * **Capteurs de limites (Homing) :** proximite inductifs NPN NC, alimentes 5V.
