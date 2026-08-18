@@ -36,6 +36,16 @@ BANC = {
 # justement celle qui visse. Le banc n'a rien a casser.
 ESSAI_BANC = "0"
 
+# Meme raisonnement pour les pauses de verification. A l'atelier elles
+# valent leur pesant : on regarde l'outil retomber dans son poste, on
+# verifie qu'il est serre avant de fraiser. Au banc il n'y a rien a
+# regarder, et elles obligent a relancer trois fois par cycle -- de quoi
+# passer son temps a fermer au lieu d'observer le parcours.
+#
+# L'interrupteur EXISTE DEJA dans le vrai fichier (#<_atc_confirmer>) et
+# les deux M0 sont sous sa garde. On ne fait que le baisser ici.
+CONFIRMER_BANC = "0"
+
 BANDEAU = """; =====================================================================
 ; ENGENDRE PAR outils/faire_config_banc.py -- NE PAS EDITER ICI.
 ; Corriger le vrai subroutines/atc_config.ngc, ou les valeurs de banc
@@ -64,6 +74,12 @@ def main():
             sys.exit(f"{nom} : plus de sentinelle dans le vrai fichier — releve fait ?"
                      " Alors ce script n'a plus lieu d'etre.")
         texte = motif.sub(rf"\g<1>= {valeur}   ; [BANC] {pourquoi}", texte)
+
+    motif_conf = re.compile(r"^(#<_atc_confirmer>\s*)=\s*1", re.M)
+    if not motif_conf.search(texte):
+        sys.exit("_atc_confirmer n'est plus a 1 dans le vrai fichier :"
+                 " verifier ce que le banc doit faire avant de forcer.")
+    texte = motif_conf.sub(rf"\g<1>= {CONFIRMER_BANC}   ; [BANC] rien a verifier a l'oeil ici", texte)
 
     motif_essai = re.compile(r"^(#<_atc_essai>\s*)=\s*1", re.M)
     if not motif_essai.search(texte):

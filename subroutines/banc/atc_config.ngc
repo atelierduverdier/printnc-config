@@ -252,7 +252,7 @@ O<atc_config> sub
                              ; sans rien casser. Passer a 0 quand les
                              ; trajectoires sont validees a l'oeil.
 
-#<_atc_confirmer>  = 1       ; 1 = pause M0 apres chaque depose et chaque
+#<_atc_confirmer>  = 0   ; [BANC] rien a verifier a l'oeil ici       ; 1 = pause M0 apres chaque depose et chaque
                              ; prise, le temps de verifier a l'oeil.
                              ; Greilick s'en passe grace a un capteur IR
                              ; de reconnaissance d'outil ; sans capteur,
