@@ -7,6 +7,26 @@
 # est la façon de revenir au thème de l'atelier.
 style_QSS_Path = DEFAULT
 
+[SCREEN_OPTIONS]
+# desktop_notify = False, et c'est ICI que ca se regle, pas dans le .ui.
+# qtvcp envoie chaque (MSG,...) et chaque (DEBUG,...) au service de
+# notifications du bureau -- c'est KDE qui affiche la fenetre « notify »,
+# avec ses boutons Clear All / Close. Un changement d'outil en emet une
+# demi-douzaine, a fermer une par une.
+#
+# LE .PREF BAT LE .UI : screen_options.py ligne 207 lit cette cle et ne
+# retombe sur la propriete notify_option de l'ecran QUE si elle est
+# absente. Passer le .ui a false ne suffit donc pas -- teste, et les
+# boites revenaient au demarrage suivant. Meme famille que style_QSS_Path
+# ci-dessus.
+#
+# Rien n'est perdu : le texte va toujours dans la barre d'etat et dans le
+# journal machine de la page STATUS, horodate.
+#
+# qtvcp ne REECRIT jamais cette cle, seulement la lit : on peut donc
+# l'editer a la main sans craindre qu'une fermeture propre l'ecrase.
+desktop_notify = False
+
 [CUSTOM_FORM_ENTRIES]
 Tool to load = 0
 Laser X = 100.0
