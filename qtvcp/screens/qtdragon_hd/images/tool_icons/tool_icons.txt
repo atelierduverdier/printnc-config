@@ -66,6 +66,7 @@
 #   T0    pas d'outil            -> aucun.png, pose par le code
 #   T1    manuel, non decrit     -> inconnu
 2:fraise_droite.png             # Fraise 6 mm
+3:fraise_fishtail.png           # Fraise fishtail 3,175 mm
 #   T3    manuel, non decrit     -> inconnu
 #   T4    manuel, non decrit     -> inconnu
 #   T5    manuel, non decrit     -> inconnu
