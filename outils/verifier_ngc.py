@@ -111,6 +111,18 @@ def verifier(chemin):
     for p, n in sorted(lus.items()):
         if p in ecrits or p in systeme:
             continue
+        # Les variables d'INI, #<_ini[SECTION]CLE>, sont posees par
+        # LinuxCNC au chargement : elles ne sont ecrites nulle part dans
+        # le G-code, et c'est normal. Sans cette exception le controle
+        # criait au loup sur la position du palpeur, qui se lit
+        # desormais dans [VERSA_TOOLSETTER] au lieu d'etre recopiee.
+        #
+        # Ce n'est PAS un trou dans le filet : une section ou une cle
+        # absente de l'ini fait echouer le chargement du programme, donc
+        # bruyamment. C'est le silence qui etait a craindre, et il ne
+        # concerne que les parametres ordinaires.
+        if p.startswith('_ini['):
+            continue
         orphelins[p] = n
 
     return erreurs, avertis, [a[0] for a in appels], ecrits, orphelins

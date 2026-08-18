@@ -33,8 +33,24 @@ O<palper_outil> sub
 ; =====================================================================
 ; PARAMETRES DU PALPAGE
 ; =====================================================================
-#<probe_x>            = -50.0   ; Position X du palpeur (G53 machine)
-#<probe_y>            =  60.0   ; Position Y du palpeur (G53 machine)
+; La position du palpeur est LUE DANS L'INI, elle n'est pas ecrite ici.
+; Elle vivait a quatre endroits : ces deux lignes, leur jumelle dans
+; l'autre sous-programme, et la section [VERSA_TOOLSETTER] de l'ini. Or
+; c'est cette section-la que l'interface consulte pour ses boutons « Tool
+; Sensor » et « Go to Sensor » (qtvcp/widgets/versa_probe.py). Le jour ou
+; la pastille bouge, un oubli enverrait la broche a l'ancienne place tout
+; en promettant la nouvelle a l'ecran.
+;
+; Le G-code sait lire l'ini depuis LinuxCNC 2.8 : #<_ini[SECTION]CLE>.
+; Verifie sur le banc le 17/08/2026 -- la valeur remonte bien.
+;
+; ATTENTION : la section [PROBE] porte des TOOLSET_X / TOOLSET_Y qui ont
+; les memes valeurs et que PERSONNE ne lit dans cette config. C'est un
+; reste du sous-programme d'exemple qt_auto_probe_tool.ngc, que notre
+; REMAP a remplace. Ne pas s'y fier -- et surtout ne pas n'y toucher
+; QU'ELLE en croyant deplacer le palpeur.
+#<probe_x>            = #<_ini[VERSA_TOOLSETTER]X>
+#<probe_y>            = #<_ini[VERSA_TOOLSETTER]Y>
 #<search_feed>        = 400     ; Vitesse premier palpage (mm/min)
 #<latch_feed>         =  25     ; Vitesse second palpage lent (mm/min)
 #<dist_palpeur_table> = 50.525  ; Distance haut palpeur -> martyre (mm)
