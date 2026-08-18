@@ -169,6 +169,21 @@ O117 IF [#<montage_manuel> EQ 1]
     G53 G0 X150 Y0             ; devant l'operateur
     (MSG, Verifiez que l outil est bien monte - RESUME pour continuer)
     M1                         ; Pause - attente confirmation operateur
+O117 ELSE
+    ; =================================================================
+    ; L'OUTIL EST AU MAGASIN : ON DELEGUE, ET ON S'ARRETE LA
+    ; =================================================================
+    ; atc_toolchange.ngc fait TOUT le reste -- depose de l'outil present,
+    ; prise du demande, vissage, serrage -- et finit par appeler
+    ; palper_outil.ngc, qui pose l'offset, le M61 et le G43. Continuer
+    ; apres lui rejouerait le palpage une seconde fois.
+    ;
+    ; C'est aussi pourquoi la delegation est ICI et pas plus bas : tout
+    ; ce qui suit (reset de reference, position de palpage, palpage,
+    ; offsets) appartient au chemin manuel. Le magasin a le sien.
+    (DEBUG, Outil T[#<tool_num>] au magasin - delegation a atc_toolchange)
+    o<atc_toolchange> call [#<tool_num>]
+    O<toolchange> endsub
 O117 ENDIF
 
 ; =====================================================================
