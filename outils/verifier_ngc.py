@@ -129,7 +129,22 @@ def verifier(chemin):
 
 
 def main(chemins):
-    dossier = os.path.dirname(os.path.abspath(chemins[0]))
+    # TOUS les dossiers recus, pas seulement celui du premier fichier.
+    # LinuxCNC resout un o<nom> call en parcourant le SUBROUTINE_PATH, qui
+    # en compte plusieurs -- dont banc/, place en tete par l'ini de
+    # simulation. Ne regarder que le premier dossier faisait crier ce
+    # controle sur un appel parfaitement resolu, des qu'on lancait la
+    # verification sur banc/ seul.
+    dossiers = []
+    for c in chemins:
+        d = os.path.dirname(os.path.abspath(c))
+        for candidat in (d, os.path.dirname(d)):
+            # Le dossier PARENT aussi : banc/ vit sous subroutines/, et
+            # l'ini de simulation les enchaine dans cet ordre. Verifier
+            # banc/ seul doit donc trouver les sous-programmes du dessus,
+            # comme LinuxCNC les trouve.
+            if candidat not in dossiers and os.path.isdir(candidat):
+                dossiers.append(candidat)
     total = 0
     tous_appels = []
     resultats = {}
@@ -160,14 +175,16 @@ def main(chemins):
         total += len(err)
 
     for nom, depuis in tous_appels:
-        cible = os.path.join(dossier, nom + ".ngc")
-        if not os.path.exists(cible):
+        trouve = next((os.path.join(d, nom + ".ngc") for d in dossiers
+                       if os.path.exists(os.path.join(d, nom + ".ngc"))), None)
+        if trouve is None:
             print("   ERREUR  %s appelle o<%s> : %s.ngc introuvable"
                   % (os.path.basename(depuis), nom, nom))
             total += 1
         else:
-            print("appel o<%s> depuis %s -> %s.ngc present"
-                  % (nom, os.path.basename(depuis), nom))
+            ou = os.path.basename(os.path.dirname(trouve))
+            print("appel o<%s> depuis %s -> %s.ngc present (%s/)"
+                  % (nom, os.path.basename(depuis), nom, ou))
     return 1 if total else 0
 
 
