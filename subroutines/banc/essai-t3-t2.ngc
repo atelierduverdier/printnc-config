@@ -1,0 +1,39 @@
+; =====================================================================
+; ESSAI DE BANC : T3 PUIS T2
+; PrintNC Flexi-HAL 6000 - Atelier du Verdier
+; =====================================================================
+; Deux changements d'outil, rien d'autre. Il existe parce qu'une ligne
+; tapee au MDI ne laisse AUCUN trait dans la vue de parcours : elle fait
+; bien bouger le cone en direct, mais seul un programme CHARGE est
+; dessine. Pour voir par ou passe un T3 M6 puis un T2 M6, il faut donc
+; les ecrire dans un fichier -- celui-ci.
+;
+; Ce que la vue montrera DEPEND DE L'ENDROIT, et c'est instructif :
+;
+;   AU BANC -- la config de banc reputant le magasin pret, les poches 3
+;   et 2 sont au magasin : pas de passage devant l'operateur, pas de
+;   pause. Le trajet file droit au palpeur et plonge. Verifie : 271
+;   points en 38 s, X -50 a 53, Y 1038 a 1185, Z 0 a -51,4.
+;
+;   SUR LA MACHINE -- les [ETABLI] sont a -9999, donc le magasin est
+;   repute absent et TOUT outil est manuel : la broche vient a X150 Y0,
+;   marque la pause, et ne repart au palpeur qu'apres reprise.
+;
+; Le meme fichier montre donc deux trajets differents. C'est voulu, et
+; c'est la ce que le banc a de plus utile a dire aujourd'hui.
+;
+; Le G43 apres chaque M6 n'est pas decoratif : c'est lui qui applique la
+; longueur qui vient d'etre palpee. Sans lui le trajet serait dessine,
+; mais a la mauvaise hauteur.
+; =====================================================================
+G21 G90 G17 G94
+G53 G0 Z0
+
+T3 M6
+G43 H3
+
+T2 M6
+G43 H2
+
+G53 G0 Z0
+M2
