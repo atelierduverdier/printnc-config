@@ -1752,11 +1752,17 @@ View</string>
                     <property name="_dtg" stdset="0">
                      <bool>false</bool>
                     </property>
+                    <!-- Bas du degrade de fond, #22272e : le jeton bg-3 de
+                         la charte. Cette propriete ne regle QUE le bas : dans
+                         qtvcp, le haut est fige a noir et aucune propriete ne
+                         l'expose (gcode_graphics.py, gradient_color2). Le gris
+                         80,80,80 d'origine tirait vers le bleu-gris neutre au
+                         milieu de l'ardoise. -->
                     <property name="background_color" stdset="0">
                      <color>
-                      <red>80</red>
-                      <green>80</green>
-                      <blue>80</blue>
+                      <red>34</red>
+                      <green>39</green>
+                      <blue>46</blue>
                      </color>
                     </property>
                     <property name="_use_gradient_background" stdset="0">
