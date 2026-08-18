@@ -15,7 +15,22 @@ O<atc_config> sub
 ; pose EN X, parallele aux tubes, il tient dans un vide avec 139 mm de
 ; marge de chaque cote et garde ses six postes.
 ; =====================================================================
-(MSG, ATC : configuration de BANC - valeurs provisoires, aucune machine)
+; La banniere ne part QU'UNE FOIS par session. atc_config est appele a
+; chaque changement d'outil -- et deux fois quand toolchange delegue au
+; magasin -- donc sans ce garde elle s'empilait quatre fois par cycle
+; dans le panneau de notifications.
+;
+; Le drapeau est un parametre NUMEROTE, pas un nomme : lire un
+; #<_nomme> jamais ecrit est une ERREUR LinuxCNC (« parametre nomme non
+; defini »), la ou un numerote jamais ecrit vaut simplement zero.
+; Paye a l'ecriture de ce garde.
+;
+; #1010 : au-dessus des #1000-#1002 de toolchange.ngc, qui ne s'en
+; approchent pas.
+O900 IF [#1010 NE 1]
+    #1010 = 1
+    (MSG, ATC : configuration de BANC - valeurs provisoires, aucune machine)
+O900 ENDIF
 
 ; =====================================================================
 ; MAGASIN ATC ER20 - PARAMETRES

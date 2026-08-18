@@ -161,7 +161,6 @@ O115 ENDIF
 #<montage_manuel> = 1
 O116 IF [[#<magasin_pret> EQ 1] AND [#<_selected_pocket> GE 1] AND [#<_selected_pocket> LE #<_atc_postes>]]
     #<montage_manuel> = 0
-    (DEBUG, Outil T[#<tool_num>] en poche [#<_selected_pocket>] - au magasin, pas de montage manuel)
 O116 ENDIF
 
 O117 IF [#<montage_manuel> EQ 1]
@@ -181,7 +180,11 @@ O117 ELSE
     ; C'est aussi pourquoi la delegation est ICI et pas plus bas : tout
     ; ce qui suit (reset de reference, position de palpage, palpage,
     ; offsets) appartient au chemin manuel. Le magasin a le sien.
-    (DEBUG, Outil T[#<tool_num>] au magasin - delegation a atc_toolchange)
+    ; Un seul message pour le magasin, pas deux : le precedent disait
+    ; « en poche N, pas de montage manuel » et celui-ci « delegation »,
+    ; c'etait la meme nouvelle deux fois. Chaque ligne s'empile dans le
+    ; panneau de notifications, qu'il faut ensuite vider a la main.
+    (DEBUG, Outil T[#<tool_num>] en poche [#<_selected_pocket>] - pris au magasin)
     o<atc_toolchange> call [#<tool_num>]
     O<toolchange> endsub
 O117 ENDIF
@@ -251,7 +254,7 @@ O130 IF [#<tool_num> GE 100]
     ; machine est a -140, on ne veut pas depasser en limite logicielle.
     #<z_approche>  = #<z_approche_laser>
     #<course_recherche> = [#<_ini[AXIS_Z]MIN_LIMIT> + #<marge_butee> - #<z_approche_laser>]
-    (MSG, Laser detecte - decalage palpage applique)
+    (DEBUG, Laser detecte - decalage palpage applique)
     ; =================================================================
     ; GARDE-FOU LIMITE MACHINE (branche laser UNIQUEMENT)
     ; La pastille (diametre 20mm) est au ras de la limite X (-50.0).

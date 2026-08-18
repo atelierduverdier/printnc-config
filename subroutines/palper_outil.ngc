@@ -165,7 +165,7 @@ O230 IF [#<tool_num> GE 100]
     ; machine est a -140, on ne veut pas depasser en limite logicielle.
     #<z_approche>  = #<z_approche_laser>
     #<course_recherche> = [#<_ini[AXIS_Z]MIN_LIMIT> + #<marge_butee> - #<z_approche_laser>]
-    (MSG, Laser detecte - decalage palpage applique)
+    (DEBUG, Laser detecte - decalage palpage applique)
     ; =================================================================
     ; GARDE-FOU LIMITE MACHINE (branche laser UNIQUEMENT)
     ; La pastille (diametre 20mm) est au ras de la limite X (-50.0).
