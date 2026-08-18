@@ -12,11 +12,12 @@
 # Les composants logiques de la config reelle sont conserves a l'identique
 	loadrt not names=stepen_not,stepen_z_not,aux0_not,aux1_not,aux2_not,aux3_not,flood_not,mist_not
 	loadrt estop_latch names=estop_latch
-	loadrt and2 names=run_and,step_and
+	loadrt and2 names=run_and,step_and,palpeur_et1,palpeur_et2
 	loadrt toggle names=hold_button_toggle
 	loadrt toggle2nist names=hold_toggle,paused_toggle
 	loadrt or2 names=aux0_or,aux1_or,aux2_or,aux3_or
 	loadrt comp names=palpeur_sim
+	loadrt wcomp names=palpeur_x,palpeur_y
 
 # ---- Fonctions dans le thread servo ----
 	addf motion-command-handler servo-thread
@@ -30,6 +31,10 @@
 	addf flood_not servo-thread
 	addf mist_not servo-thread
 	addf palpeur_sim servo-thread
+	addf palpeur_x servo-thread
+	addf palpeur_y servo-thread
+	addf palpeur_et1 servo-thread
+	addf palpeur_et2 servo-thread
 	addf estop_latch servo-thread
 	addf run_and servo-thread
 	addf step_and servo-thread
@@ -69,27 +74,48 @@
 # =========================================================================
 # `motion.probe-input` etait fige a 0. Un G38.2 partait donc pour toute sa
 # course et finissait en erreur « probe move finished without tripping » :
-# le banc ne pouvait pas eprouver un palpage, donc pas toolchange.ngc,
-# qui n'est presque QUE ca.
+# le banc ne pouvait pas eprouver un palpage, donc pas toolchange.ngc, qui
+# n'est presque QUE ca.
 #
-# Le comparateur declenche le palpeur quand la broche descend sous un
-# niveau fixe. `comp.out` est vrai quand in1 > in0 (man 9 comp) : on met
-# donc le NIVEAU en in1 et la position en in0, et la sortie passe a vrai
-# des que Z est plus bas que le niveau.
+# Le palpeur se declenche quand la broche est AU-DESSUS DE LA PASTILLE et
+# descend sous un niveau donne. Les trois conditions sont necessaires, et
+# la troisieme a ete apprise a la dure.
 #
-# -51.1 n'est pas un chiffre rond : c'est le contact MESURE du nez du
-# laser sur la pastille, le 17/08/2026, imprime par le palpage lui-meme
-# en coordonnees machine. Le banc rend ainsi des touch_z du meme ordre
-# que la machine.
+# Z : `comp.out` est vrai quand in1 > in0 (man 9 comp). On met donc le
+# NIVEAU en in1 et la position en in0, et la sortie passe a vrai des que Z
+# est plus bas que le niveau. -51.1 n'est pas un chiffre rond : c'est le
+# contact MESURE du nez du laser sur la pastille, le 17/08/2026, imprime
+# par le palpage lui-meme en coordonnees machine.
 #
-# Ce que ce palpeur simule N'EST PAS : il ne regarde ni X ni Y, donc il
-# se declencherait aussi bien loin de la pastille, et il ignore la
-# longueur de l'outil monte. Il sert a derouler la sequence, pas a
-# valider une cote. Ce que la simulation ne peut pas dire, elle ne doit
-# pas faire semblant de le dire.
+# X ET Y : un palpeur qui ne juge que Z ne se contente pas de se declencher
+# au mauvais endroit -- LinuxCNC REFUSE TOUT MOUVEMENT ordinaire tant que
+# l'entree est active (« Probe tripped during non-probe move »). La
+# sequence du magasin, qui plonge sous -51 pour visser, s'arretait donc net
+# au premier poste. Trouve en repetant l'ATC au banc : le defaut etait dans
+# le banc, pas dans l'ATC.
+#
+# La fenetre Y couvre les DEUX visees, 60 pour une fraise et 150 pour le
+# laser (son nez pend 90 mm en avant de la broche), et s'arrete avant le
+# magasin suppose a Y200.
+#
+# Ce que ce palpeur ne simule pas : la longueur de l'outil monte. Il sert a
+# derouler la sequence, pas a valider une cote.
 	setp palpeur_sim.in1 -51.1
-	net z-machine-sim  axis.z.pos-cmd  => palpeur_sim.in0
-	net palpeur-touche palpeur_sim.out => motion.probe-input
+	net z-machine-sim axis.z.pos-cmd => palpeur_sim.in0
+
+	setp palpeur_x.min -53.0
+	setp palpeur_x.max -46.0
+	setp palpeur_y.min  50.0
+	setp palpeur_y.max 160.0
+	net x-machine-sim axis.x.pos-cmd => palpeur_x.in
+	net y-machine-sim axis.y.pos-cmd => palpeur_y.in
+
+# au-dessus de la pastille (X ET Y), puis sous le niveau (Z)
+	net palpeur-sur-x  palpeur_x.out   => palpeur_et1.in0
+	net palpeur-sur-y  palpeur_y.out   => palpeur_et1.in1
+	net palpeur-sur-xy palpeur_et1.out => palpeur_et2.in0
+	net palpeur-sous-z palpeur_sim.out => palpeur_et2.in1
+	net palpeur-touche palpeur_et2.out => motion.probe-input
 
 # =========================================================================
 # SIMULATION BROCHE (remplace le VFD hy_vfd)

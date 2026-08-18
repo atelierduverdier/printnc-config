@@ -1,0 +1,269 @@
+O<atc_config> sub
+; =====================================================================
+; ENGENDRE PAR outils/faire_config_banc.py -- NE PAS EDITER ICI.
+; Corriger le vrai subroutines/atc_config.ngc, ou les valeurs de banc
+; dans le script, puis relancer.
+;
+; CONFIGURATION DE BANC : elle ne pilote AUCUNE machine. Seules les
+; quatre valeurs [ETABLI] different du vrai fichier ; tout le reste en
+; sort tel quel, pour que le banc et l'atelier ne racontent pas deux
+; geometries.
+;
+; IMPLANTATION SUPPOSEE : sous le lit, des tubes acier de 100 de large
+; courent selon X au pas de 450 (100 de tube, 350 de vide). Le bloc fait
+; 450 x 71,2 : pose EN Y il couvrirait un tube et perdrait un poste ;
+; pose EN X, parallele aux tubes, il tient dans un vide avec 139 mm de
+; marge de chaque cote et garde ses six postes.
+; =====================================================================
+(MSG, ATC : configuration de BANC - valeurs provisoires, aucune machine)
+
+; =====================================================================
+; MAGASIN ATC ER20 - PARAMETRES
+; PrintNC Flexi-HAL 6000 - Atelier du Verdier
+; =====================================================================
+; Copyright (C) 2026 Christophe Le Verdier
+; Portage de la LOGIQUE des macros RapidChange ATC de Greilick
+; Industries LLC (rcatc-scripts-grblhal, GPL-3.0), reecrites en
+; sous-programmes O-word LinuxCNC. Aucun fichier copie.
+;
+; Ce programme est un logiciel libre : vous pouvez le redistribuer
+; et/ou le modifier selon les termes de la Licence Publique Generale
+; GNU, version 3, telle que publiee par la Free Software Foundation.
+; Distribue SANS AUCUNE GARANTIE. Voir <https://www.gnu.org/licenses/>.
+; =====================================================================
+;
+; Appele au debut de chaque atc_toolchange : les reglages sont donc
+; toujours frais. C'est ce qui remplace le drapeau d'initialisation
+; #1001 de Greilick — qui de toute facon entrerait en collision ici,
+; #1001 etant deja le mode Z de toolchange.ngc (0 = martyre, 1 = piece).
+;
+; TOUS les parametres sont des globales #<_atc_*>. Aucun parametre
+; numerote : #1000 #1001 #1002 appartiennent a toolchange.ngc.
+;
+; Geometrie : les valeurs marquees [MODELE] sortent de
+; ~/Projets/machine/magasin-atc/code/magasin_er20.py, source de verite du
+; magasin. Celles marquees [ETABLI] doivent etre relevees machine
+; montee — elles valent 999 tant que ce n'est pas fait, pour que
+; le controle de coherence refuse de tourner.
+; =====================================================================
+
+; =====================================================================
+; MAGASIN : implantation
+; =====================================================================
+#<_atc_postes>    = 6        ; nombre de postes du magasin (x6 imprime)
+#<_atc_poste1_x>  = 37.5   ; [BANC] bloc de X0 a X450, poste 1 a 37,5 du bout
+#<_atc_poste1_y>  = 200.0   ; [BANC] milieu du premier vide entre tubes (Y100-Y450)
+#<_atc_pas>       = 75.0     ; [MODELE] PAS_POSTES, entraxe de deux postes
+#<_atc_axe>       = 0        ; 0 = postes alignes en X, 1 = en Y
+#<_atc_sens>      = 1        ; 1 = poste 2 apres poste 1, -1 = avant
+
+; =====================================================================
+; LA COTE QUI COMMANDE TOUT : engage_z
+; =====================================================================
+; Z machine du FOND de plongee. Le modele ne peut pas la donner en
+; absolu — elle depend de l'endroit ou le bloc est boulonne. Il donne
+; la RECETTE et la TOLERANCE :
+;
+;   Ecrou visse a fond sur la broche. Descendre jusqu'a ce qu'il touche
+;   le cone du siege (siege en butee haute, il ne s'enfonce pas encore).
+;   Descendre 1,00 mm de plus. Ce Z est engage_z.
+;
+; TOLERANCE +/- 1,00 mm, et pas un dixieme de plus. La fenetre vaut
+; COURSE - FILETAGE_ENGAGE = 12 - 10 = 2,00 mm, c'est tout ce que le
+; ressort peut rattraper. Recalculee depuis le modele le 09/08/2026.
+;
+; Exprimee autrement : le bout libre du filetage du nez de broche doit
+; finir a 11,00 mm au-dessus du plan d'appui de l'ecrou AU REPOS.
+;
+; NE PAS CONFONDRE avec "enfoncer le siege de 10 a 12 mm" — une note du
+; 07/08 disait ca, et c'est faux. A engage_z le siege n'est enfonce que
+; de 1,00 mm. Les 11 mm ne sont atteints qu'en FIN de devissage. Regler
+; engage_z pour 11 mm d'ecrasement taperait le fond de poche 9 mm trop
+; tot, broche en rotation contre une butee dure.
+;
+; ATTENTION : le chanfrein de pied de l'ecrou (trouve sur piece le
+; 08/08/2026, 1,5 mm de haut) descend ce plan de 1,50 mm. Tout chiffre
+; d'avant cette date est HORS FENETRE — le decalage est plus grand que
+; la demi-tolerance.
+#<_atc_engage_z>  = -60.0   ; [BANC] ARBITRAIRE : la vraie se releve ecrou en main
+
+#<_atc_z_sur>     = -10.0   ; [BANC] transit XY au-dessus du magasin
+                             ; du magasin. Doit degager le dessus du
+                             ; couvercle ET l'outil le plus long
+                             ; (le modele admet jusqu'a 65,94 mm sous la
+                             ; face d'appui de l'ecrou).
+                             ;
+                             ; A VERIFIER AVANT DE PERCER LA TABLE : la
+                             ; course Z vient d'etre reduite, [AXIS_Z]
+                             ; MIN_LIMIT est passe de -185 a -140 le
+                             ; 09/08/2026. Le magasin empile 91,5 mm
+                             ; au-dessus du martyre (plaque 38 + bloc
+                             ; 43,5 + couvercle 10) [MODELE], et le bec
+                             ; de l'outil doit passer AU-DESSUS de ca en
+                             ; transit. Avec un outil de 60 mm il faut
+                             ; donc environ 151 mm de degagement sur le
+                             ; martyre. Si la course ne suffit pas,
+                             ; c'est l'implantation du magasin qui doit
+                             ; bouger, pas ce parametre.
+
+; =====================================================================
+; FILETAGE : ce qui lie la plongee a la rotation
+; =====================================================================
+; Un filetage est une liaison cinematique : a N tr/min l'ecrou monte ou
+; descend de pas*N mm/min par rapport a la broche, sans discussion. La
+; plongee doit donc suivre EXACTEMENT ce rythme ; le ressort n'absorbe
+; que l'ecart.
+#<_atc_pas_filet> = 1.5      ; [ETABLI 09/08/2026] M25x1,5, 6 creux
+                             ; comptes sur 10 mm de filetage
+#<_atc_filetage>  = 10.0     ; [MODELE] FILETAGE_ENGAGE, mesure au pied a
+                             ; coulisse sur le nez de broche le 06/08/2026
+
+; =====================================================================
+; DEUX PHASES, DEUX REGIMES — et ce n'est pas un raffinement
+; =====================================================================
+; Le couple de serrage ne vient PAS du moteur : une broche de 2,4 kW
+; prevue pour 24 000 tr/min ne donne presque rien a 500. Il vient de
+; l'INERTIE, dumpee quand la broche lancee s'arrete net sur les billes.
+; Cette energie vaut 1/2.J.w^2 : elle varie comme le CARRE du regime.
+; 500 contre 1500, c'est un facteur NEUF. D'ou deux reglages separes —
+; Greilick en a deux aussi (_rc_load_rpm / _rc_unload_rpm).
+;
+; Ce qui plafonne l'un ne plafonne pas l'autre :
+;
+;   VISSAGE — la broche plonge PENDANT que le filet avance, les deux
+;   sont lies par le pas. Pendant la rampe d'acceleration Z le filet
+;   prend v^2/2a d'avance, a payer sur la precharge de 1,00 mm. Avec
+;   MAX_ACCELERATION = 180, le plafond est 1138 mm/min, soit
+;   759 tr/min au pas de 1,5. AUCUN moyen de contourner : a 1500 il
+;   faudrait 3,91 mm de precharge, il y en a 1,00.
+;
+;   DEVISSAGE — le choc a lieu quand le six-pans TOMBE dans les billes,
+;   AVANT que le filet ait commence a sortir : hors de la phase liee.
+;   Et une fois qu'il sort, il pousse le siege vers le BAS, contre le
+;   ressort, qui cede toujours. Aucun plafond de regime ici.
+;
+;   SERRAGE — le choc a lieu quand le filet talonne, donc au bout du
+;   vissage, EN PLEINE phase liee. On ne peut pas y monter en regime.
+;   D'ou les COUPS : on ressort le six-pans des billes, on lance la
+;   broche a vide, on replonge. C'est exactement la boucle
+;   `plunge_count` de Greilick, et c'est une clé à chocs.
+;
+#<_atc_rpm_prise>   = 500    ; vissage lie. PLAFOND 759 (controle plus bas)
+#<_atc_rpm_serrage> = 800    ; coups de serrage, broche lancee a vide
+#<_atc_rpm_depose>  = 800    ; devissage, choc a l'entree des billes
+#<_atc_coups>       = 2      ; nombre de coups de serrage apres le vissage
+
+; POURQUOI 800 ET NON 1500 : le 1500 du README du magasin est une
+; ASSERTION, pas un calcul — la note de calcul a d'ailleurs refuse de
+; porter le chiffre, elle dit seulement « l'arret sec de la broche
+; lancee fournit le couple ». Et la piece qui encaisse le coup est un
+; siege imprime en PETG, jamais essaye sous choc : le gabarit a tenu
+; A LA MAIN, pas sous une broche lancee. Le regime est donc borne EN
+; BAS par le couple qu'il faut et EN HAUT par ce que le PETG survit, et
+; aucune des deux bornes n'est connue. MONTER PAR PALIERS depuis 800,
+; en regardant le siege entre les essais. Un siege fendu se voit ; un
+; ecrou mal serre, non — il se voit au premier passage, dans le bois.
+
+; =====================================================================
+; DEGAGEMENTS, tous comptes DEPUIS engage_z
+; =====================================================================
+#<_atc_deg_billes> = 10.0    ; [MODELE] 9,06 arrondi. Levee qui sort le
+                             ; six-pans de la couronne de billes. En
+                             ; dessous, l'ecrou est encore captif.
+#<_atc_deg_sortie> = 28.0    ; [MODELE] 26,56 arrondi. Levee qui sort
+                             ; l'ecrou du canal du couvercle : AUCUN
+                             ; mouvement XY avant d'y etre.
+#<_atc_z_rotation> = 20.0    ; hauteur au-dessus d'engage_z ou la broche
+                             ; est lancee pour la DEPOSE. Il faut que le
+                             ; six-pans tourne DEJA quand il aborde les
+                             ; billes, sinon il se presente angle en
+                             ; avant et n'entre pas (34,64 sur angles
+                             ; pour 32,60 de passage entre billes).
+                             ; [MODELE] le six-pans touche la couronne a
+                             ; engage_z + 9,06 ; 20 laisse 11 mm pour
+                             ; trouver le creneau.
+
+; =====================================================================
+; VITESSES
+; =====================================================================
+#<_atc_f_approche> = 300     ; descente douce jusqu'au contact, broche
+                             ; a l'arret
+#<_atc_f_degage>   = 600     ; remontee dans la zone des billes : la came
+                             ; de sortie fait tourner l'ecrou de ~23 deg
+                             ; sur la calotte des billes, on ne l'arrache
+                             ; pas en G0
+#<_atc_f_coup>     = 600     ; descente qui fait ENTRER le six-pans dans
+                             ; les billes — coups de serrage et depose.
+                             ; DECOUPLEE du filetage (le filet ne bouge
+                             ; pas pendant un coup, l'ecrou est deja a
+                             ; fond). C'est elle qui donne au six-pans le
+                             ; temps de trouver son creneau : a 800 tr/min
+                             ; il s'en presente un toutes les 12 ms, et
+                             ; 600 mm/min laisse ~10 chances sur le
+                             ; millimetre de capture. Si le six-pans
+                             ; reste assis sur les billes sans y tomber,
+                             ; c'est CE chiffre qu'il faut baisser.
+#<_atc_dwell>      = 0.3     ; attente au fond, broche tournante, qui
+                             ; garantit que le filetage a fini sa course.
+                             ; Sans danger : filet libere, la rotation ne
+                             ; fait plus rien.
+
+; =====================================================================
+; ARRET DE BROCHE — le parametre qui n'a l'air de rien
+; =====================================================================
+; JAMAIS remonter le six-pans a travers les billes broche tournante.
+; L'ecrou est serre sur la broche : tire vers le haut EN TOURNANT, ses
+; 6 angles martellent les 3 billes au lieu de passer UNE fois par la
+; came. A 800 tr/min ca fait 80 chocs par seconde sur un siege imprime,
+; la ou il en faut un seul.
+;
+; Et LinuxCNC ne nous attendra PAS : `spindle.0.at-speed` est force a
+; VRAI des que la broche est a l'arret commande (atspeed_or.in1 dans
+; remora-flexi.hal, le correctif laser de juillet). Apres un M5, plus
+; aucun signal ne dit que le rotor tourne encore. Il faut donc temporiser
+; a la main — c'est exactement ce que fait deja toolchange.ngc avec son
+; « G4 P1.0 ; Attente 1s que la broche s'arrete ».
+;
+; A CALER SUR LE VFD : ce delai doit couvrir la descente en vitesse du
+; Huanyang depuis _atc_rpm_serrage. Sur les HY classiques c'est PD015
+; (temps de deceleration, PD014 pour l'acceleration) — a lire sur le
+; clavier, et attention : ce temps est compte sur la PLEINE echelle, donc
+; la descente depuis 800 tr/min n'en prend qu'une fraction. Chronometrer
+; a l'oreille plutot que de calculer : la broche siffle en descendant.
+#<_atc_arret_broche> = 1.0   ; secondes ; 1.0 = la valeur eprouvee de
+                             ; toolchange.ngc
+
+; =====================================================================
+; MISE EN SERVICE
+; =====================================================================
+#<_atc_essai>      = 0   ; [BANC] rotation exercee, rien a casser ici       ; 1 = A BLANC : tous les mouvements, AUCUNE
+                             ; rotation de broche. C'est le mode des
+                             ; premiers essais — un engage_z faux se voit
+                             ; sans rien casser. Passer a 0 quand les
+                             ; trajectoires sont validees a l'oeil.
+
+#<_atc_confirmer>  = 1       ; 1 = pause M0 apres chaque depose et chaque
+                             ; prise, le temps de verifier a l'oeil.
+                             ; Greilick s'en passe grace a un capteur IR
+                             ; de reconnaissance d'outil ; sans capteur,
+                             ; c'est l'oeil ou rien. Passer a 0 quand la
+                             ; confiance sera faite — et alors seulement
+                             ; le changement devient vraiment automatique.
+
+; =====================================================================
+; DERIVES — ne pas editer
+; =====================================================================
+; La plongee vaut EXACTEMENT la longueur de filetage : la broche part de
+; engage_z + filetage et descend jusqu'a engage_z pendant que l'ecrou
+; remonte d'autant. Le ressort revient ou il etait.
+#<_atc_z_vissage>  = [#<_atc_engage_z> + #<_atc_filetage>]
+
+; Ne concerne QUE le vissage : c'est la seule phase ou la plongee et la
+; rotation sont liees. Les coups et la depose ont leur propre avance.
+#<_atc_feed>       = [#<_atc_pas_filet> * #<_atc_rpm_prise>]
+
+; Plafond impose par l'acceleration Z et la precharge du ressort.
+; 180 = [AXIS_Z]MAX_ACCELERATION, 1.0 = precharge disponible a engage_z.
+#<_atc_feed_max>   = [60.0 * SQRT[2.0 * 180.0 * 1.0]]
+
+O<atc_config> endsub
