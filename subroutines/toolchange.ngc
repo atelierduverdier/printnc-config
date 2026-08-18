@@ -133,14 +133,43 @@ O120 IF [#<tool_num> EQ 0]
 O120 ENDIF
 
 ; =====================================================================
-; POSITION D'ACCES POUR MONTAGE MANUEL DE L'OUTIL
-; On amene la broche en X150 Y0 (devant l'operateur) pour faciliter
-; le montage manuel de l'outil dans la pince ER
+; MONTAGE MANUEL : SEULEMENT SI L'OUTIL N'EST PAS AU MAGASIN
 ; =====================================================================
-G53 G0 Z0
-G53 G0 X150 Y0
-(MSG, Verifiez que l outil est bien monte - RESUME pour continuer)
-M1                             ; Pause - attente confirmation operateur
+; Venir devant l'operateur coute 1,2 m aller-retour. Ca n'a de sens que
+; pour un outil qu'une MAIN doit monter. Un outil du magasin, lui, se
+; prend tout seul : la broche n'a rien a faire devant.
+;
+; Ce qui distingue les deux est deja dans la TABLE D'OUTILS : la POCHE.
+; Les poches 1 a N sont les N postes du magasin ; toute autre poche --
+; dont la 0 et celle du laser -- veut une main. LinuxCNC donne la poche
+; demandee au G-code, #<_selected_pocket>, donc rien de nouveau a tenir
+; a jour ailleurs.
+;
+; ET TANT QUE LE MAGASIN N'EXISTE PAS, TOUT EST MANUEL. C'est la meme
+; sentinelle qui le dit : les [ETABLI] a 999 d'atc_config.ngc. Elles
+; refusent deja de laisser tourner le changeur ; elles servent ici a
+; refuser de croire qu'un outil se prendrait tout seul. Le comportement
+; d'aujourd'hui est donc INCHANGE tant qu'aucune cote n'est relevee.
+; =====================================================================
+o<atc_config> call             ; pose les globales #<_atc_*>
+
+#<magasin_pret> = 1
+O115 IF [[#<_atc_engage_z> GE 900] OR [#<_atc_z_sur> GE 900] OR [#<_atc_poste1_x> GE 900] OR [#<_atc_poste1_y> GE 900]]
+    #<magasin_pret> = 0
+O115 ENDIF
+
+#<montage_manuel> = 1
+O116 IF [[#<magasin_pret> EQ 1] AND [#<_selected_pocket> GE 1] AND [#<_selected_pocket> LE #<_atc_postes>]]
+    #<montage_manuel> = 0
+    (DEBUG, Outil T[#<tool_num>] en poche [#<_selected_pocket>] - au magasin, pas de montage manuel)
+O116 ENDIF
+
+O117 IF [#<montage_manuel> EQ 1]
+    G53 G0 Z0
+    G53 G0 X150 Y0             ; devant l'operateur
+    (MSG, Verifiez que l outil est bien monte - RESUME pour continuer)
+    M1                         ; Pause - attente confirmation operateur
+O117 ENDIF
 
 ; =====================================================================
 ; RESET AUTOMATIQUE AU PREMIER M6 DU JOB
