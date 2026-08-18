@@ -1,0 +1,27 @@
+; =====================================================================
+; ESSAI DE BANC : ECHANGES AU MAGASIN, SANS LASER
+; PrintNC Flexi-HAL 6000 - Atelier du Verdier
+; =====================================================================
+; Trois prises de suite entre postes du magasin. Aucun T100 : on ne veut
+; voir ici que le va-et-vient du changeur, sans le detour de 90 mm en Y
+; qu'impose le nez du laser.
+;
+; L'appel est DIRECT -- o<atc_toolchange> call -- et non par M6. Le
+; REMAP de M6 vise toolchange.ngc, le changement SEMI-AUTOMATIQUE ; le
+; magasin est un autre chemin, qui ne sera greffe sur M6 que le jour ou
+; il tournera. En attendant, l'appeler par son nom est le seul moyen de
+; le voir travailler.
+;
+; NE TOURNE QU'AU BANC tant que les [ETABLI] sont a 999 : la vraie
+; atc_config.ngc les porte, et atc_toolchange.ngc refuse de bouger tant
+; qu'il en reste une. C'est voulu.
+; =====================================================================
+G21 G90 G17 G94
+G53 G0 Z0
+
+o<atc_toolchange> call [2]     ; broche vide -> poste 2
+o<atc_toolchange> call [5]     ; echange : depose 2, prend 5
+o<atc_toolchange> call [3]     ; echange : depose 5, prend 3
+
+G53 G0 Z0
+M2
