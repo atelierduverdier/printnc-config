@@ -90,8 +90,16 @@
         <height>16777215</height>
        </size>
       </property>
+      <!-- Notifications du BUREAU coupees. Chaque (MSG,...) et chaque
+           (DEBUG,...) en declenchait une, marquee critique donc
+           persistante : un changement d'outil en emet une demi-douzaine,
+           qu'il fallait fermer une par une. Rien n'est perdu pour autant,
+           et c'est ce qui rend le reglage acceptable : le texte va
+           toujours dans la BARRE D'ETAT en bas et dans le JOURNAL MACHINE
+           (page STATUS), qui les garde tous et horodates. On lit au lieu
+           de fermer. -->
       <property name="notify_option" stdset="0">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
       <property name="notify_max_messages" stdset="0">
        <number>10</number>
