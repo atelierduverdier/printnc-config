@@ -197,6 +197,27 @@ M71                            ; Restore etat modal sauvegarde
 
 ; =====================================================================
 ; CALCUL DES OFFSETS SELON LE MODE
+;
+; LA REFERENCE #1000 EST EN COORDONNEES MACHINE, ET C'EST TOUT L'INTERET.
+; Elle a longtemps porte #<touch_z>, une valeur lue dans le repere PIECE --
+; et le mode martyre DEPLACE ce repere trois lignes plus bas, par G10 L20.
+; Le premier outil etait donc mesure avant le deplacement, les suivants
+; apres : la soustraction melangeait deux origines et rendait l'ecart du
+; ZERO au lieu de l'ecart des OUTILS.
+;
+; Mesure sur le banc le 17/08/2026 : deux outils touchant le meme point a
+; 0,03 mm pres sortaient avec 6,136 mm d'ecart -- exactement de combien le
+; zero G54 avait bouge (101,626 - 95,490).
+;
+; Invisible pendant des mois : tant que le zero martyre retombait a sa
+; place, il ne bougeait que de quelques centiemes. Le vrai danger n'est pas
+; la : une session en mode PIECE laisse le zero sur le dessus de la piece,
+; et la session suivante en mode martyre le fait descendre de TOUTE
+; L'EPAISSEUR. C'est cette valeur-la qui serait passee dans l'offset de
+; l'outil suivant.
+;
+; Le repere machine, lui, ne bouge pas sous les pieds. #<contact_machine>
+; est calcule plus haut, sous G49 -- donc sans longueur d'outil melee.
 ; #1001 determine le comportement :
 ;   - 0 -> MODE MARTYRE : zero Z sur le dessus du martyre (automatique)
 ;   - 1 -> MODE PIECE   : zero Z deja pris manuellement sur la piece
@@ -210,7 +231,7 @@ O200 IF [#1001 EQ 0]
     ; =================================================================
     O201 IF [#1000 EQ 0]
         ; --- PREMIER OUTIL DE LA SESSION ---
-        #1000 = #<touch_z>     ; Memorise sa position de contact
+        #1000 = #<contact_machine>  ; Reference EN MACHINE (voir note)
         G10 L1 P#<tool_num> Z0                 ; Offset outil de ref = 0
         ; + degagement : on est remonte depuis le contact, donc la
         ; position courante est plus haute que le palpeur d'autant.
@@ -220,7 +241,7 @@ O200 IF [#1001 EQ 0]
     O201 ELSE
         ; --- OUTILS SUIVANTS ---
         ; Offset = difference entre cette mesure et la reference
-        #<tool_offset> = [#<touch_z> - #1000]
+        #<tool_offset> = [#<contact_machine> - #1000]
         G10 L1 P#<tool_num> Z#<tool_offset>
         (MSG, Offset outil calcule - Mode martyre)
     O201 ENDIF
@@ -234,12 +255,12 @@ O200 ELSE
     O202 IF [#1000 EQ 0]
         ; --- PREMIER OUTIL DE LA SESSION ---
         ; C'est lui qui a servi a prendre le zero manuel
-        #1000 = #<touch_z>
+        #1000 = #<contact_machine>  ; Reference EN MACHINE (voir note)
         G10 L1 P#<tool_num> Z0
         (MSG, Premier outil reference - Mode piece)
     O202 ELSE
         ; --- OUTILS SUIVANTS ---
-        #<tool_offset> = [#<touch_z> - #1000]
+        #<tool_offset> = [#<contact_machine> - #1000]
         G10 L1 P#<tool_num> Z#<tool_offset>
         (MSG, Offset outil calcule - Mode piece)
     O202 ENDIF
