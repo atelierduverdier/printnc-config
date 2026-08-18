@@ -1,0 +1,96 @@
+; =====================================================================
+; ESSAI DE BANC : LE CYCLE COMPLET
+; PrintNC Flexi-HAL 6000 - Atelier du Verdier
+; =====================================================================
+; Une piece simple, volontairement petite, pour voir D'UN SEUL PARCOURS :
+;   1. changement d'outil T2 (fraise 6) + palpage de sa longueur
+;   2. ebauche d'une poche 50 x 40, profondeur 2, en zigzag
+;   3. changement d'outil T3 (fraise 3,17) + palpage
+;   4. finition du contour de la poche, en deux passes de profondeur
+;   5. degagement propre
+;
+; ELLE N'EST PAS FAITE POUR DU BOIS. Aucune de ces valeurs de coupe n'a
+; ete eprouvee sur matiere : elles sont choisies pour que la simulation
+; se deroule vite et que le trajet se lise. La piece n'existe pas.
+;
+; Repere : zero piece G54, Z0 sur le dessus de la matiere. En mode
+; MARTYRE le palpage l'a pose sur le martyre, donc une poche a Z-2 se
+; creuse dans le martyre lui-meme -- sans consequence au banc, mais
+; c'est un rappel de plus que ce fichier ne va pas a l'atelier.
+;
+; Le G43 apres chaque M6 applique la longueur qui vient d'etre palpee.
+; Sans lui, tout le reste serait a la mauvaise hauteur.
+; =====================================================================
+G21 G90 G17 G94 G40 G49
+G54
+G53 G0 Z0
+
+; =====================================================================
+; 1. FRAISE 6 mm : ebauche de la poche
+; =====================================================================
+T2 M6
+G43 H2
+M3 S12000
+G4 P0.5
+
+; Poche exterieure X10-60 Y10-50. Fraise de 6 : l'axe reste a 3 mm des
+; bords, donc X13-57 et Y13-47. Pas de 4 mm, soit neuf passes.
+G0 X13 Y13
+G0 Z2
+G1 Z-2 F300
+
+G1 X57 F1500
+G1 Y17
+G1 X13
+G1 Y21
+G1 X57
+G1 Y25
+G1 X13
+G1 Y29
+G1 X57
+G1 Y33
+G1 X13
+G1 Y37
+G1 X57
+G1 Y41
+G1 X13
+G1 Y45
+G1 X57
+G1 Y47
+G1 X13
+
+G0 Z5
+M5
+
+; =====================================================================
+; 2. FRAISE 3,17 mm : finition du contour de la poche
+; =====================================================================
+T3 M6
+G43 H3
+M3 S16000
+G4 P0.5
+
+; Axe a 1,59 mm des bords : X11.59-58.41, Y11.59-48.41. Deux passes de
+; profondeur pour voir la descente se repeter.
+G0 X11.59 Y11.59
+G0 Z2
+G1 Z-1 F300
+G1 X58.41 F800
+G1 Y48.41
+G1 X11.59
+G1 Y11.59
+
+G1 Z-2 F300
+G1 X58.41 F800
+G1 Y48.41
+G1 X11.59
+G1 Y11.59
+
+G0 Z5
+M5
+
+; =====================================================================
+; 3. DEGAGEMENT
+; =====================================================================
+G53 G0 Z0
+M2
