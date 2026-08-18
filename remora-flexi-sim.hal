@@ -94,9 +94,11 @@
 # au premier poste. Trouve en repetant l'ATC au banc : le defaut etait dans
 # le banc, pas dans l'ATC.
 #
-# La fenetre Y couvre les DEUX visees, 60 pour une fraise et 150 pour le
-# laser (son nez pend 90 mm en avant de la broche), et s'arrete avant le
-# magasin suppose a Y200.
+# La fenetre Y couvre les DEUX visees : 1185 pour une fraise, et 1275 pour
+# le laser, dont le nez pend 90 mm en avant de la broche. Elle est calee
+# sur [VERSA_TOOLSETTER] de l'ini -- si la pastille bouge la, cette
+# fenetre doit suivre, sinon le banc palpe dans le vide et le G38.2 va au
+# bout de sa course.
 #
 # Ce que ce palpeur ne simule pas : la longueur de l'outil monte. Il sert a
 # derouler la sequence, pas a valider une cote.
@@ -105,8 +107,8 @@
 
 	setp palpeur_x.min -53.0
 	setp palpeur_x.max -46.0
-	setp palpeur_y.min  50.0
-	setp palpeur_y.max 160.0
+	setp palpeur_y.min 1175.0
+	setp palpeur_y.max 1285.0
 	net x-machine-sim axis.x.pos-cmd => palpeur_x.in
 	net y-machine-sim axis.y.pos-cmd => palpeur_y.in
 
