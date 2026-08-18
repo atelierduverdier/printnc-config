@@ -142,7 +142,21 @@ O210 ENDIF
 #<eff_probe_x> = #<probe_x>
 #<eff_probe_y> = #<probe_y>
 #<z_approche>  = 0              ; Fraises : palpage depuis Z0
-#<course_recherche> = -140      ; Course max du premier palpage (relatif)
+; Course maximale du premier palpage, en RELATIF. Elle vise le bas de
+; course MOINS UNE MARGE, et les deux comptent.
+;
+; Le bas de course se lit dans l'ini, il n'est plus ecrit ici : c'est la
+; meme regle que la position du palpeur. Une course machine recopiee dans
+; un sous-programme survit a la vraie.
+;
+; La marge de 1 mm n'est pas de la coquetterie. Sans elle le mouvement
+; finissait EXACTEMENT sur la butee, et le moindre offset actif le
+; poussait de l'autre cote : « le mouvement Linear va depasser la limite
+; negative », palpage refuse, changement d'outil mort. Vu le 18/08/2026 --
+; et invisible jusque-la, parce que ca dependait de la longueur de
+; l'outil en broche.
+#<marge_butee>      = 1.0
+#<course_recherche> = [#<_ini[AXIS_Z]MIN_LIMIT> + #<marge_butee>]
 O230 IF [#<tool_num> GE 100]
     #<eff_probe_x> = [#<probe_x> - #<laser_x_offset>]
     #<eff_probe_y> = [#<probe_y> - #<laser_y_offset>]
@@ -150,7 +164,7 @@ O230 IF [#<tool_num> GE 100]
     ; La course de recherche est raccourcie d'autant : le bas de course
     ; machine est a -140, on ne veut pas depasser en limite logicielle.
     #<z_approche>  = #<z_approche_laser>
-    #<course_recherche> = [-140 - #<z_approche_laser>]
+    #<course_recherche> = [#<_ini[AXIS_Z]MIN_LIMIT> + #<marge_butee> - #<z_approche_laser>]
     (MSG, Laser detecte - decalage palpage applique)
     ; =================================================================
     ; GARDE-FOU LIMITE MACHINE (branche laser UNIQUEMENT)
@@ -160,11 +174,41 @@ O230 IF [#<tool_num> GE 100]
     ; pastille, largement dans son rayon de 10mm. Les outils normaux
     ; ne passent jamais ici et palpent a -50.0 comme avant.
     ; =================================================================
-    O235 IF [#<eff_probe_x> LT -49.5]
-        (MSG, Decalage laser hors course X - palpage plafonne a -49.5)
-        #<eff_probe_x> = -49.5
-    O235 ENDIF
+
 O230 ENDIF
+
+; =====================================================================
+; GARDE-FOU DE COURSE : ON NE VISE JAMAIS LA BUTEE
+; =====================================================================
+; Le palpeur est a X-50, soit EXACTEMENT la butee X de la machine. Un
+; G53 G0 X-50 finit donc pile sur la limite, et le moindre decalage
+; actif le pousse de l'autre cote : « le mouvement Linear va depasser la
+; limite negative », mouvement refuse, changement d'outil mort. Vu le
+; 18/08/2026 -- et intermittent, ce qui est pire : ca dependait de
+; l'outil en broche.
+;
+; On rentre donc la cible d'un millimetre a l'interieur, dans les deux
+; sens et sur les deux axes. Les bornes viennent de l'ini, jamais
+; recopiees ici.
+;
+; Ce garde-fou REMPLACE le plafond a -49.5 qui ne protegeait que la
+; branche laser, et il le fait mieux : il vaut pour tous les outils,
+; dans les deux sens, et il suit la machine si sa course change. La
+; pastille faisant 20 mm de diametre, un millimetre de decalage laisse
+; le nez tres loin de son bord.
+#<marge_course> = 1.0
+O240 IF [#<eff_probe_x> LT [#<_ini[AXIS_X]MIN_LIMIT> + #<marge_course>]]
+    #<eff_probe_x> = [#<_ini[AXIS_X]MIN_LIMIT> + #<marge_course>]
+    (MSG, Palpage rentre d un millimetre : la cible X touchait la butee.)
+O240 ENDIF
+O241 IF [#<eff_probe_y> LT [#<_ini[AXIS_Y]MIN_LIMIT> + #<marge_course>]]
+    #<eff_probe_y> = [#<_ini[AXIS_Y]MIN_LIMIT> + #<marge_course>]
+    (MSG, Palpage rentre d un millimetre : la cible Y touchait la butee basse.)
+O241 ENDIF
+O242 IF [#<eff_probe_y> GT [#<_ini[AXIS_Y]MAX_LIMIT> - #<marge_course>]]
+    #<eff_probe_y> = [#<_ini[AXIS_Y]MAX_LIMIT> - #<marge_course>]
+    (MSG, Palpage rentre d un millimetre : la cible Y touchait la butee haute.)
+O242 ENDIF
 
 ; =====================================================================
 ; DEPLACEMENT VERS LE PALPEUR FIXE
