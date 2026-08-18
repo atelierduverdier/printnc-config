@@ -25,16 +25,26 @@ O<atc_config> sub
 ; Geometrie : les valeurs marquees [MODELE] sortent de
 ; ~/Projets/machine/magasin-atc/code/magasin_er20.py, source de verite du
 ; magasin. Celles marquees [ETABLI] doivent etre relevees machine
-; montee — elles valent 999 tant que ce n'est pas fait, pour que
+; montee — elles valent -9999 tant que ce n'est pas fait, pour que
 ; le controle de coherence refuse de tourner.
+;
+; POURQUOI -9999 ET PLUS 999. Le seuil du controle etait « au-dessus de
+; 900 », ce qui supposait qu'aucune cote reelle n'y monte. Faux ici :
+; l'axe Y fait 1286 mm de course, et le magasin se pose au FOND, vers
+; Y1275. La sentinelle prenait alors une coordonnee parfaitement
+; legitime pour un oubli, et le changeur refusait de tourner en accusant
+; l'etabli. Trouve au banc le 17/08/2026 en deplacant le magasin au fond.
+;
+; -9999 ne peut etre confondu avec rien : aucune course de cette machine
+; ne descend sous -140.
 ; =====================================================================
 
 ; =====================================================================
 ; MAGASIN : implantation
 ; =====================================================================
 #<_atc_postes>    = 6        ; nombre de postes du magasin (x6 imprime)
-#<_atc_poste1_x>  = 999      ; [ETABLI] X machine du poste 1 (G53)
-#<_atc_poste1_y>  = 999      ; [ETABLI] Y machine du poste 1 (G53)
+#<_atc_poste1_x>  = -9999      ; [ETABLI] X machine du poste 1 (G53)
+#<_atc_poste1_y>  = -9999      ; [ETABLI] Y machine du poste 1 (G53)
 #<_atc_pas>       = 75.0     ; [MODELE] PAS_POSTES, entraxe de deux postes
 #<_atc_axe>       = 0        ; 0 = postes alignes en X, 1 = en Y
 #<_atc_sens>      = 1        ; 1 = poste 2 apres poste 1, -1 = avant
@@ -67,9 +77,9 @@ O<atc_config> sub
 ; 08/08/2026, 1,5 mm de haut) descend ce plan de 1,50 mm. Tout chiffre
 ; d'avant cette date est HORS FENETRE — le decalage est plus grand que
 ; la demi-tolerance.
-#<_atc_engage_z>  = 999      ; [ETABLI] voir la recette ci-dessus
+#<_atc_engage_z>  = -9999      ; [ETABLI] voir la recette ci-dessus
 
-#<_atc_z_sur>     = 999      ; [ETABLI] Z machine de transit XY au-dessus
+#<_atc_z_sur>     = -9999      ; [ETABLI] Z machine de transit XY au-dessus
                              ; du magasin. Doit degager le dessus du
                              ; couvercle ET l'outil le plus long
                              ; (le modele admet jusqu'a 65,94 mm sous la

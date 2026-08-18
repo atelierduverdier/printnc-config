@@ -24,7 +24,7 @@ CIBLE = RACINE / "subroutines" / "banc" / "atc_config.ngc"
 # pas pouvoir les confondre avec un releve.
 BANC = {
     "_atc_poste1_x": ("37.5", "bloc de X0 a X450, poste 1 a 37,5 du bout"),
-    "_atc_poste1_y": ("200.0", "milieu du premier vide entre tubes (Y100-Y450)"),
+    "_atc_poste1_y": ("1275.0", "au fond, dans le vide Y1000-Y1350 entre tubes"),
     "_atc_engage_z": ("-60.0", "ARBITRAIRE : la vraie se releve ecrou en main"),
     "_atc_z_sur": ("-10.0", "transit XY au-dessus du magasin"),
 }
@@ -59,9 +59,9 @@ BANDEAU = """; =================================================================
 def main():
     texte = SOURCE.read_text()
     for nom, (valeur, pourquoi) in BANC.items():
-        motif = re.compile(rf"^(#<{nom}>\s*)=\s*999.*$", re.M)
+        motif = re.compile(rf"^(#<{nom}>\s*)=\s*-9999.*$", re.M)
         if not motif.search(texte):
-            sys.exit(f"{nom} : plus de 999 dans le vrai fichier — releve fait ?"
+            sys.exit(f"{nom} : plus de sentinelle dans le vrai fichier — releve fait ?"
                      " Alors ce script n'a plus lieu d'etre.")
         texte = motif.sub(rf"\g<1>= {valeur}   ; [BANC] {pourquoi}", texte)
 
@@ -77,8 +77,8 @@ def main():
     lignes.insert(1, BANDEAU)
     texte = "\n".join(lignes)
 
-    if "999" in re.sub(r"^;.*$", "", texte, flags=re.M):
-        sys.exit("il reste un 999 hors commentaire — le banc refuserait de tourner")
+    if "-9999" in re.sub(r"^;.*$", "", texte, flags=re.M):
+        sys.exit("il reste une sentinelle hors commentaire — le banc refuserait de tourner")
 
     CIBLE.parent.mkdir(parents=True, exist_ok=True)
     CIBLE.write_text(texte)

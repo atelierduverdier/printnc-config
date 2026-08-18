@@ -45,14 +45,19 @@ O<atc_config> call
 ; =====================================================================
 ; CONTROLES DE COHERENCE
 ; Le modele du magasin refuse de se construire si un controle echoue ;
-; ce fichier fait pareil. Un parametre d'etabli oublie a 999 enverrait
-; la broche a 999 mm.
+; ce fichier fait pareil. Un parametre d'etabli oublie enverrait la
+; broche n'importe ou.
+;
+; Le seuil regarde vers le BAS, -9000, et pas vers le haut comme avant :
+; « au-dessus de 900 » supposait qu'aucune cote reelle n'y monte, ce qui
+; est faux sur un axe Y de 1286 mm. Un magasin pose au fond, vers Y1275,
+; etait pris pour un oubli d'etabli.
 ; =====================================================================
 #<config_ok> = 1
 
-O300 IF [[#<_atc_engage_z> GE 900] OR [#<_atc_z_sur> GE 900] OR [#<_atc_poste1_x> GE 900] OR [#<_atc_poste1_y> GE 900]]
+O300 IF [[#<_atc_engage_z> LE -9000] OR [#<_atc_z_sur> LE -9000] OR [#<_atc_poste1_x> LE -9000] OR [#<_atc_poste1_y> LE -9000]]
     #<config_ok> = 0
-    (MSG, ATC ABANDON - un parametre d etabli est encore a 999 dans atc_config.ngc)
+    (MSG, ATC ABANDON - un parametre d etabli est encore a -9999 dans atc_config.ngc)
 O300 ENDIF
 
 O305 IF [#<_atc_feed> GT #<_atc_feed_max>]
