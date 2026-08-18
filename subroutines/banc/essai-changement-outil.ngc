@@ -1,0 +1,40 @@
+; =====================================================================
+; ESSAI DE BANC : VOIR LE TRAJET D'UN CHANGEMENT D'OUTIL
+; PrintNC Flexi-HAL 6000 - Atelier du Verdier
+; =====================================================================
+; Ce fichier n'usine rien. Il ne fait que des changements d'outil, pour
+; que la vue de parcours dessine la sequence entiere -- montee, trajet,
+; palpage, retour.
+;
+; POURQUOI IL EST ICI, alors que le depot a sorti le G-code de la config
+; (commit « Sortir le G-code de la config machine ») : ce n'est pas une
+; piece a usiner, c'est du materiel de banc, au meme titre que
+; l'atc_config.ngc voisin. Il vit donc dans banc/, jamais dans
+; subroutines/.
+;
+; A QUOI IL SERT, et c'est la la vraie raison : une commande MDI ne
+; TRACE RIEN dans la vue de QtDragon. Seul un programme charge est
+; dessine -- son apercu interprete le REMAP de M6, sous-programme
+; compris. Sans ce fichier, on execute un changement d'outil sans jamais
+; voir par ou il passe.
+;
+; Le visualiseur de parcours de l'atelier le rend mieux encore : il
+; resout les sous-programmes par le SUBROUTINE_PATH et dessine a plat.
+;
+; A LIRE AVANT DE LE LANCER SUR LA MACHINE : il n'a rien de dangereux
+; en soi -- trois changements d'outil et leurs palpages -- mais il fera
+; venir la broche devant vous deux fois pour rien. Sa place est au banc.
+; =====================================================================
+G21 G90 G17 G94
+G53 G0 Z0
+
+T2 M6                          ; poche 2 : au magasin sur le banc
+G43 H2
+
+T100 M6                        ; poche 100 : hors magasin, montage manuel
+G43 H100
+
+T2 M6                          ; retour au poste 2
+
+G53 G0 Z0
+M2
