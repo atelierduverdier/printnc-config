@@ -1,0 +1,19 @@
+O<aller_zero_machine> sub
+; =====================================================================
+; ALLER AU ZERO MACHINE, EN SECURITE
+; PrintNC Flexi-HAL 6000 - Atelier du Verdier
+; =====================================================================
+; Appele par Fn + M-HOME sur la pendante WHB04B-6.
+;
+; Meme raison d'etre que aller_zero_piece.ngc : halui n'execute qu'une
+; commande, le ';' du bouton QtDragon y serait un commentaire.
+;
+; Z EN PREMIER, toujours : G53 G0 X0 Y0 Z0 sur une seule ligne ferait
+; bouger les trois axes ensemble et trainerait l'outil dans la piece si
+; le Z est bas.
+; =====================================================================
+
+G53 G0 Z0
+G53 G0 X0 Y0
+O<aller_zero_machine> endsub
+M2

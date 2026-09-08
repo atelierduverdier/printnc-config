@@ -2,3 +2,8 @@
 # Charge les postgui specifiques a la simulation.
 source qtdragon_hd_sim.hal
 source custom_postgui_sim.hal
+
+# Pendante sans fil XHC WHB04B-6. DECOMMENTER pour la tester : avec cette
+# ligne active, LinuxCNC refuse de demarrer si la pendante est eteinte ou
+# le dongle debranche (loadusr -W attend le composant).
+source pendant-whb04b6.hal
