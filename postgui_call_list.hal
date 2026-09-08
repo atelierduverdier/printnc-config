@@ -8,3 +8,18 @@ source qtdragon_hd.hal
 
 
 source custom_postgui.hal
+
+# Pendante sans fil XHC WHB04B-6.
+#
+# DECOMMENTER SEULEMENT APRES avoir pose la regle udev SUR LA MACHINE :
+#   echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="10ce", ATTR{idProduct}=="eb93", MODE="0666", TAG+="uaccess"' \
+#     | sudo tee /etc/udev/rules.d/99-xhc-whb04b-6.rules
+#   sudo udevadm control --reload && sudo udevadm trigger
+# puis debrancher/rebrancher le dongle, et verifier que le composant le
+# TIENT vraiment -- un loadusr -W qui reussit ne prouve rien :
+#   ls -l /proc/$(pgrep -x xhc-whb04b-6)/fd | grep /dev/bus/usb
+#
+# Une fois active, LinuxCNC NE DEMARRE PLUS si la pendante est eteinte ou
+# le dongle absent : loadusr -W l'attend. Sur la machine de production
+# c'est un vrai risque d'atelier -- d'ou cette ligne laissee commentee.
+#source pendant-whb04b6.hal

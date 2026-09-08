@@ -51,11 +51,25 @@
 # ######################################################################
 # programme
 # ######################################################################
-	net pdnt.program.is-idle    halui.program.is-idle       => whb.halui.program.is-idle
+# LA PENDANTE ARRETE ET REGARDE, ELLE NE LANCE PAS.
+#
+# halui.program.{run,pause,resume,is-idle} sont DEJA PORTES sur la vraie
+# machine (remora-flexi.hal 399-407) par les boutons physiques FEED_HOLD
+# et CYCLE_START. Les cabler ici ferait DEUX SOURCES sur un meme signal :
+# HAL refuse, et la config de l'atelier ne chargerait plus. En simulation
+# ces pins sont libres -- la faute ne se serait vue qu'a l'etabli, parce
+# que ces boutons-la n'existent que sur la FlexiHAL.
+#
+# Les retirer n'est pas qu'un contournement, c'est le bon choix : lancer
+# un programme au bout d'une liaison radio qui tombe est le geste a ne
+# pas offrir. Arreter, si -- le sens sur. Le cycle se lance depuis
+# l'ecran ou le bouton CYCLE_START, comme avant.
+#
+# Si un jour la pause depuis la pendante devient necessaire, elle passe
+# par un or2 en amont de hold_toggle, PAS par un second net -- et se
+# mesure a l'etabli : cette logique-la porte deja un bug paye (le
+# programme qui redemarrait en boucle, remora-flexi.hal 408-419).
 	net pdnt.program.is-running halui.program.is-running    => whb.halui.program.is-running
-	net pdnt.program.run        whb.halui.program.run       => halui.program.run
-	net pdnt.program.pause      whb.halui.program.pause     => halui.program.pause
-	net pdnt.program.resume     whb.halui.program.resume    => halui.program.resume
 	net pdnt.program.stop       whb.halui.program.stop      => halui.program.stop
 # halui.program.is-paused porte deja le signal program-is-paused
 # (remora-flexi-sim.hal, vers hold_toggle.is-on) : on s'y raccroche au lieu
@@ -161,19 +175,50 @@
 	net pdnt.mist.off           whb.halui.mist.off          => halui.mist.off
 
 # ######################################################################
+# les gestes des boutons
+# ######################################################################
+# Chaque touche garde sa famille : seule elle fait le geste courant, avec
+# Fn elle fait le reglage correspondant. L'INDEX SUIT L'ORDRE DES LIGNES
+# MDI_COMMAND de [HALUI] dans le .ini -- deplacer une ligne la-bas
+# deplace le bouton ici, sans que rien ne proteste.
+#
+#   Safe-Z          degage en haut de course        Fn+  mode martyre
+#   W-HOME          zero piece (Z d'abord)          Fn+  mode piece
+#   Probe-Z         palpe l'outil courant           Fn+  reset ref
+#   M-HOME          prise d'origine (halui.home-all) Fn+ zero machine
+	net pdnt.button.safe-z      whb.button.safe-z   => halui.mdi-command-00
+	net pdnt.button.w-home      whb.button.w-home   => halui.mdi-command-01
+	net pdnt.button.probe-z     whb.button.probe-z  => halui.mdi-command-02
+	net pdnt.macro-5            whb.button.macro-5  => halui.mdi-command-03
+	net pdnt.macro-6            whb.button.macro-6  => halui.mdi-command-04
+	net pdnt.macro-7            whb.button.macro-7  => halui.mdi-command-05
+	net pdnt.macro-9            whb.button.macro-9  => halui.mdi-command-06
+
+# ######################################################################
 # boutons laisses en signaux libres -- observables dans halshow
 # ######################################################################
-# Aucun MDI_COMMAND n'est declare dans [HALUI] de remora-flexi-sim.ini,
-# donc les pins halui.mdi-command-NN N'EXISTENT PAS : les cabler ferait
-# echouer le chargement. Les boutons sont ici exposes en signaux nus, ce
-# qui suffit a verifier qu'ils repondent (halshow > Signals > pdnt.button.*).
+# RESET REARME, il ne declenche PAS. La difference est le sens de la
+# panne. Declencher l'arret d'urgence depuis une pendante SANS FIL est
+# une fausse securite : liaison tombee -- elle tombe --, le bouton ne
+# fait plus rien sans le dire, et le reflexe s'est pris sur un objet
+# mort. Rearmer, au contraire, tombe du bon cote : sans liaison on ne
+# rearme pas, la machine reste a l'arret. Le champignon cable demeure le
+# seul organe pour ARRETER.
+#
+# Et surtout PAS O<reset_ref> ici, meme si le nom appelle : RESET est le
+# bouton du reflexe, celui que la main trouve sans regarder quand ca part
+# de travers. Il effacerait #1000, la reference de longueur d'outil de la
+# session, en plein job -- sans rien dire d'autre qu'un message qui
+# passe. Ce geste-la est derriere Fn + Probe-Z, la touche qui a pose
+# cette reference.
+	net pdnt.button.reset       whb.button.reset    => halui.estop.reset
+
+# Les autres restent nus faute d'emploi : les charger tous, sur un
+# boitier tenu d'une main au-dessus d'une fraise qui tourne, fabrique la
+# fausse manoeuvre. Feed+/- et Spindle+/- agissent deja nativement.
 	net pdnt.button.fn          whb.button.fn
-	net pdnt.button.reset       whb.button.reset
 	net pdnt.button.stop        whb.button.stop
 	net pdnt.button.start-pause whb.button.start-pause
-	net pdnt.button.safe-z      whb.button.safe-z
-	net pdnt.button.w-home      whb.button.w-home
-	net pdnt.button.probe-z     whb.button.probe-z
 	net pdnt.button.feed-plus   whb.button.feed-plus
 	net pdnt.button.feed-minus  whb.button.feed-minus
 	net pdnt.button.spindle-plus  whb.button.spindle-plus

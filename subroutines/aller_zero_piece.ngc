@@ -1,0 +1,23 @@
+O<aller_zero_piece> sub
+; =====================================================================
+; ALLER AU ZERO PIECE, EN SECURITE
+; PrintNC Flexi-HAL 6000 - Atelier du Verdier
+; =====================================================================
+; Appele par le bouton W-HOME de la pendante WHB04B-6.
+;
+; POURQUOI UN SOUS-PROGRAMME plutot que la commande du bouton QtDragon
+; « Goto User Zero » (G0 Z25;X0 Y0;Z0) : [HALUI]MDI_COMMAND n'execute
+; QU'UNE SEULE commande MDI (man halui). Le ';' n'y separe pas deux
+; ordres comme dans QtDragon -- en G-code il ouvre un COMMENTAIRE. La
+; ligne telle quelle aurait monte le Z et n'aurait jamais rejoint X Y :
+; un demi-geste, silencieux.
+;
+; L'ordre est celui du bouton d'origine, et il compte : on degage EN
+; HAUT avant de traverser en X Y, jamais l'inverse.
+; =====================================================================
+
+G0 Z25
+G0 X0 Y0
+G0 Z0
+O<aller_zero_piece> endsub
+M2
