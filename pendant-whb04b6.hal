@@ -1,0 +1,182 @@
+# pendant-whb04b6.hal
+# Pendante sans fil XHC WHB04B-6 -- cablage HAL pour la SIMULATION.
+#
+# CE FICHIER N'EST PAS CHARGE PAR DEFAUT. Pour l'activer, decommenter la
+# ligne "source pendant-whb04b6.hal" dans postgui_call_list_sim.hal.
+#
+# ATTENTION -- loadusr -W ATTEND que le composant soit pret. Dongle USB
+# debranche ou pendante eteinte => LinuxCNC NE DEMARRE PAS, et c'est voulu :
+# sans le composant les pins whb.* n'existent pas et tous les net ci-dessous
+# echoueraient un par un. Pour lancer la sim sans la pendante, recommenter
+# la ligne dans postgui_call_list_sim.hal.
+#
+# Machine simulee : XYZY, Y en tandem. Joints 0=X, 1=Y, 2=Z, 3=Y2.
+# Le selecteur rotatif de la pendante porte aussi A, B et C : ces axes
+# n'existent pas ici, ces trois positions ne feront rien. Normal.
+#
+# PREALABLE INDISPENSABLE -- LA REGLE UDEV.
+# Sans elle le composant demarre, cree toutes ses pins, et n'ouvre JAMAIS le
+# dongle : LinuxCNC a l'air correct, mais rien ne remonte de la pendante et le
+# dongle se reinitialise en boucle toutes les 20 s (personne ne l'interroge).
+# Un loadusr -W qui reussit ne prouve donc RIEN sur les permissions -- verifier
+# plutot que le composant tient le peripherique :
+#     ls -l /proc/$(pgrep -x xhc-whb04b-6)/fd | grep /dev/bus/usb
+# Poser la regle (le groupe plugdev de la regle amont n'existe pas sur Arch) :
+#     echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="10ce", ATTR{idProduct}=="eb93", MODE="0666", TAG+="uaccess"' \
+#       | sudo tee /etc/udev/rules.d/99-xhc-whb04b-6.rules
+#     sudo udevadm control --reload && sudo udevadm trigger
+# Puis DEBRANCHER et REBRANCHER le dongle : la regle ne s'applique qu'a
+# l'enumeration suivante.
+
+# La molette pilote axis.<lettre>.jog-*, ce qui exige le mode TELEOP, donc
+# une machine HOMEE. Avant homing LinuxCNC est en mode joint et la molette
+# reste sans effet -- ce n'est pas une panne.
+
+# ######################################################################
+# chargement du composant
+# ######################################################################
+#   -H  mode HAL (sans lui le composant tourne en mode interactif console)
+#   -s  Lead + molette = correction de broche
+#   -f  MPG  + molette = correction d'avance
+#   -B  ajoute les pas 5 mm et 10 mm au selecteur
+	loadusr -W xhc-whb04b-6 -HsfB
+
+# ######################################################################
+# marche / arret machine
+# ######################################################################
+	net pdnt.machine.is-on      halui.machine.is-on         => whb.halui.machine.is-on
+	net pdnt.machine.on         whb.halui.machine.on        => halui.machine.on
+	net pdnt.machine.off        whb.halui.machine.off       => halui.machine.off
+
+# ######################################################################
+# programme
+# ######################################################################
+	net pdnt.program.is-idle    halui.program.is-idle       => whb.halui.program.is-idle
+	net pdnt.program.is-running halui.program.is-running    => whb.halui.program.is-running
+	net pdnt.program.run        whb.halui.program.run       => halui.program.run
+	net pdnt.program.pause      whb.halui.program.pause     => halui.program.pause
+	net pdnt.program.resume     whb.halui.program.resume    => halui.program.resume
+	net pdnt.program.stop       whb.halui.program.stop      => halui.program.stop
+# halui.program.is-paused porte deja le signal program-is-paused
+# (remora-flexi-sim.hal, vers hold_toggle.is-on) : on s'y raccroche au lieu
+# de creer un second signal, ce que HAL refuserait.
+	net program-is-paused       => whb.halui.program.is-paused
+
+# ######################################################################
+# modes machine
+# ######################################################################
+	net pdnt.mode.auto          whb.halui.mode.auto         => halui.mode.auto
+	net pdnt.mode.manual        whb.halui.mode.manual       => halui.mode.manual
+	net pdnt.mode.mdi           whb.halui.mode.mdi          => halui.mode.mdi
+	net pdnt.mode.joint         whb.halui.mode.joint        => halui.mode.joint
+	net pdnt.mode.teleop        whb.halui.mode.teleop       => halui.mode.teleop
+	net pdnt.mode.is-auto       halui.mode.is-auto          => whb.halui.mode.is-auto
+	net pdnt.mode.is-manual     halui.mode.is-manual        => whb.halui.mode.is-manual
+	net pdnt.mode.is-mdi        halui.mode.is-mdi           => whb.halui.mode.is-mdi
+	net pdnt.mode.is-joint      halui.mode.is-joint         => whb.halui.mode.is-joint
+	net pdnt.mode.is-teleop     halui.mode.is-teleop        => whb.halui.mode.is-teleop
+
+# ######################################################################
+# prise d'origine
+# ######################################################################
+# whb.halui.home-all est documente dans le man mais N'EXISTE PAS dans le
+# binaire 2.9.10 (verifie par halcmd show pin) : c'est le bouton M-Home
+# qui pilote la prise d'origine.
+	net pdnt.home-all           whb.button.m-home           => halui.home-all
+# Y en tandem : le joint 3 se prend en meme temps que le joint 1, la
+# pendante n'a pas de voyant pour lui.
+	net pdnt.joint.x.is-homed   halui.joint.0.is-homed      => whb.halui.joint.x.is-homed
+	net pdnt.joint.y.is-homed   halui.joint.1.is-homed      => whb.halui.joint.y.is-homed
+	net pdnt.joint.z.is-homed   halui.joint.2.is-homed      => whb.halui.joint.z.is-homed
+
+# ######################################################################
+# selection d'axe et molette
+# ######################################################################
+	net pdnt.axis.x.select      whb.halui.axis.x.select     => halui.axis.x.select
+	net pdnt.axis.y.select      whb.halui.axis.y.select     => halui.axis.y.select
+	net pdnt.axis.z.select      whb.halui.axis.z.select     => halui.axis.z.select
+
+	net pdnt.axis.x.jog-counts  whb.axis.x.jog-counts       => axis.x.jog-counts
+	net pdnt.axis.y.jog-counts  whb.axis.y.jog-counts       => axis.y.jog-counts
+	net pdnt.axis.z.jog-counts  whb.axis.z.jog-counts       => axis.z.jog-counts
+
+	net pdnt.axis.x.jog-enable  whb.axis.x.jog-enable       => axis.x.jog-enable
+	net pdnt.axis.y.jog-enable  whb.axis.y.jog-enable       => axis.y.jog-enable
+	net pdnt.axis.z.jog-enable  whb.axis.z.jog-enable       => axis.z.jog-enable
+
+	net pdnt.axis.x.jog-scale   whb.axis.x.jog-scale        => axis.x.jog-scale
+	net pdnt.axis.y.jog-scale   whb.axis.y.jog-scale        => axis.y.jog-scale
+	net pdnt.axis.z.jog-scale   whb.axis.z.jog-scale        => axis.z.jog-scale
+
+	net pdnt.axis.x.jog-vel-mode whb.axis.x.jog-vel-mode    => axis.x.jog-vel-mode
+	net pdnt.axis.y.jog-vel-mode whb.axis.y.jog-vel-mode    => axis.y.jog-vel-mode
+	net pdnt.axis.z.jog-vel-mode whb.axis.z.jog-vel-mode    => axis.z.jog-vel-mode
+
+# ######################################################################
+# affichage des positions sur l'ecran de la pendante
+# ######################################################################
+	net pdnt.axis.x.pos-feedback halui.axis.x.pos-feedback  => whb.halui.axis.x.pos-feedback
+	net pdnt.axis.y.pos-feedback halui.axis.y.pos-feedback  => whb.halui.axis.y.pos-feedback
+	net pdnt.axis.z.pos-feedback halui.axis.z.pos-feedback  => whb.halui.axis.z.pos-feedback
+
+	net pdnt.axis.x.pos-relative halui.axis.x.pos-relative  => whb.halui.axis.x.pos-relative
+	net pdnt.axis.y.pos-relative halui.axis.y.pos-relative  => whb.halui.axis.y.pos-relative
+	net pdnt.axis.z.pos-relative halui.axis.z.pos-relative  => whb.halui.axis.z.pos-relative
+
+# ######################################################################
+# correction d'avance (molette en position MPG)
+# ######################################################################
+	net pdnt.feed-override.scale    whb.halui.feed-override.scale    => halui.feed-override.scale
+	net pdnt.feed-override.value    halui.feed-override.value        => whb.halui.feed-override.value
+	net pdnt.feed-override.increase whb.halui.feed-override.increase => halui.feed-override.increase
+	net pdnt.feed-override.decrease whb.halui.feed-override.decrease => halui.feed-override.decrease
+# Position "continu" du selecteur : vitesse = % * max-velocity.
+	net pdnt.max-velocity.value     whb.halui.max-velocity.value     => halui.max-velocity.value
+
+# ######################################################################
+# broche (molette en position Lead)
+# ######################################################################
+	net pdnt.spindle.is-on      halui.spindle.0.is-on       => whb.halui.spindle.is-on
+	net pdnt.spindle.start      whb.halui.spindle.start     => halui.spindle.0.start
+	net pdnt.spindle.stop       whb.halui.spindle.stop      => halui.spindle.0.stop
+	net pdnt.spindle.forward    whb.halui.spindle.forward   => halui.spindle.0.forward
+	net pdnt.spindle.reverse    whb.halui.spindle.reverse   => halui.spindle.0.reverse
+	net pdnt.spindle.increase   whb.halui.spindle.increase  => halui.spindle.0.increase
+	net pdnt.spindle.decrease   whb.halui.spindle.decrease  => halui.spindle.0.decrease
+	net pdnt.spindle.speed-cmd  spindle.0.speed-out-abs     => whb.halui.spindle-speed-cmd
+
+	net pdnt.so.scale           whb.halui.spindle-override.scale    => halui.spindle.0.override.scale
+	net pdnt.so.value           halui.spindle.0.override.value      => whb.halui.spindle-override.value
+	net pdnt.so.increase        whb.halui.spindle-override.increase => halui.spindle.0.override.increase
+	net pdnt.so.decrease        whb.halui.spindle-override.decrease => halui.spindle.0.override.decrease
+
+# ######################################################################
+# arrosage
+# ######################################################################
+	net pdnt.flood.is-on        halui.flood.is-on           => whb.halui.flood.is-on
+	net pdnt.flood.on           whb.halui.flood.on          => halui.flood.on
+	net pdnt.flood.off          whb.halui.flood.off         => halui.flood.off
+	net pdnt.mist.is-on         halui.mist.is-on            => whb.halui.mist.is-on
+	net pdnt.mist.on            whb.halui.mist.on           => halui.mist.on
+	net pdnt.mist.off           whb.halui.mist.off          => halui.mist.off
+
+# ######################################################################
+# boutons laisses en signaux libres -- observables dans halshow
+# ######################################################################
+# Aucun MDI_COMMAND n'est declare dans [HALUI] de remora-flexi-sim.ini,
+# donc les pins halui.mdi-command-NN N'EXISTENT PAS : les cabler ferait
+# echouer le chargement. Les boutons sont ici exposes en signaux nus, ce
+# qui suffit a verifier qu'ils repondent (halshow > Signals > pdnt.button.*).
+	net pdnt.button.fn          whb.button.fn
+	net pdnt.button.reset       whb.button.reset
+	net pdnt.button.stop        whb.button.stop
+	net pdnt.button.start-pause whb.button.start-pause
+	net pdnt.button.safe-z      whb.button.safe-z
+	net pdnt.button.w-home      whb.button.w-home
+	net pdnt.button.probe-z     whb.button.probe-z
+	net pdnt.button.feed-plus   whb.button.feed-plus
+	net pdnt.button.feed-minus  whb.button.feed-minus
+	net pdnt.button.spindle-plus  whb.button.spindle-plus
+	net pdnt.button.spindle-minus whb.button.spindle-minus
+	net pdnt.button.mode-step   whb.button.mode-step
+	net pdnt.button.mode-continuous whb.button.mode-continuous
