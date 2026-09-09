@@ -19,7 +19,8 @@ source custom_postgui.hal
 # TIENT vraiment -- un loadusr -W qui reussit ne prouve rien :
 #   ls -l /proc/$(pgrep -x xhc-whb04b-6)/fd | grep /dev/bus/usb
 #
-# Une fois active, LinuxCNC NE DEMARRE PLUS si la pendante est eteinte ou
-# le dongle absent : loadusr -W l'attend. Sur la machine de production
-# c'est un vrai risque d'atelier -- d'ou cette ligne laissee commentee.
-#source pendant-whb04b6.hal
+# ACTIVE depuis le 09/09/2026 : la pendante est en service sur la machine.
+# Consequence a connaitre : LinuxCNC NE DEMARRE PLUS si la pendante est
+# eteinte ou le dongle absent, car loadusr -W l'attend. Remettre le # devant
+# la ligne suivante suffit a retrouver un demarrage sans pendante.
+source pendant-whb04b6.hal
