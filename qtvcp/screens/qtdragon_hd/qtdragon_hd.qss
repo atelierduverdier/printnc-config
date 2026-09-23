@@ -532,6 +532,7 @@ QListWidget::item:selected {
     n'habille que le visualiseur de G-code. **/
 QTableView, QTableWidget {
     background: #1a1e23;
+    alternate-background-color: #232830;
     color: #e6e9ee;
     border: 1px solid #2a3038;
     border-radius: 4px;
@@ -542,6 +543,29 @@ QTableView, QTableWidget {
 }
 
 QTableView::item:selected, QTableWidget::item:selected {
+    background: #ff9a1f;
+    color: #20160a;
+}
+
+/** LES LIGNES ALTERNÉES du gestionnaire de fichiers (onglet FILE). qtvcp
+    y alterne les lignes de sa LISTE comme de son TABLEAU
+    (widgets/file_manager.py, setAlternatingRowColors). Sans couleur
+    alternée, la ligne paire sortait dans le blanc de Qt sous un texte
+    clair : « fond noir, fond blanc, fond noir, fond blanc... les fonds
+    blancs, je ne peux pas les voir » (Christophe, 23/09/2026). La liste,
+    elle, n'avait aucune règle : elle sortait blanche en entier. **/
+QListView, QTreeView {
+    background: #1a1e23;
+    alternate-background-color: #232830;
+    color: #e6e9ee;
+    border: 1px solid #2a3038;
+    border-radius: 4px;
+    selection-background-color: #ff9a1f;
+    selection-color: #20160a;
+    outline: none;
+}
+
+QListView::item:selected, QTreeView::item:selected {
     background: #ff9a1f;
     color: #20160a;
 }
