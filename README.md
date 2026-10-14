@@ -27,6 +27,12 @@ Fichiers de simulation (PC uniquement) : `remora-flexi-sim.ini`,
 `custom_postgui_sim.hal`. Ils remplacent le composant Flexi-HAL (SPI) et le VFD
 serie par des equivalents simules.
 
+Les reglages du **systeme** du Pi, faits hors de LinuxCNC (pilotes graphiques
+Mesa des backports, composition des fenetres coupee, heure calee sur srv),
+sont sauvegardes dans `systeme/`, avec la facon de les refaire sur un Pi neuf :
+voir `systeme/LISEZMOI.md`. Ces fichiers ne sont lus par rien, un `git pull`
+ne les pose pas.
+
 ---
 
 ## Sorties auxiliaires (relais)
